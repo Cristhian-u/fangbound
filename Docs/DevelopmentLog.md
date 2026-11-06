@@ -214,3 +214,40 @@ Assets/_Project/
 - Recorrer los cuatro bordes de `Camera Room Bounds` y verificar que el viewport no muestra fuera del rectángulo.
 - En Inspector, variar `Dead Zone Size`, `Smooth Time` y el BoxCollider2D para comprobar que la configuración por sala es utilizable.
 - Revisar la consola de Unity durante las pruebas.
+
+## Tarea 05: Sistema de pogo
+
+### Estado previo
+
+- Se leyeron `AGENTS.md`, `Docs/GDD.md` y este registro. La copia local estaba limpia en `main` y contiene el controlador, dash, doble salto, cámara y `MovementTest` de las tareas anteriores. No había código de pogo ni objetivos compatibles.
+- Se conservó `PlayerMovementData.asset` y no se modificaron los valores de movimiento existentes. El GDD no se modificó.
+
+### Implementación
+
+- `PlayerPogo` usa las acciones `Move` y `Attack` del Input System. Requiere estar en el aire, mantener abajo y pulsar ataque. Ejecuta un descenso y detecta objetivos solo durante la ventana configurada. Permite un intento por periodo aéreo; un impacto válido habilita otro y aterrizar también reinicia la disponibilidad.
+- `PlayerPogoData` define ventana de ataque, velocidad de descenso, velocidad de rebote, desplazamiento y tamaño de la zona de impacto. El estado temporal permanece en `PlayerPogo`.
+- `PogoTarget` marca colliders compatibles sin introducir vida, daño ni lógica de enemigos. El mismo objetivo no puede recibir impactos repetidos durante un ataque.
+- `PlayerController` recibió solo dos métodos de física para iniciar el descenso y aplicar el rebote. El rebote conserva el movimiento horizontal y no restaura dash ni doble salto. También limpia el salto almacenado y el corte de salto pendiente para que no anulen el impulso vertical.
+- Se añadió `J` a la acción `Attack`; se conserva el botón oeste del mando. La cruceta del mando se añadió a `Move` para permitir mantener abajo.
+- `MovementTest` incluye `PlayerPogo`, su asset de datos y dos objetivos dorados estáticos con colliders trigger, para que el controlador no los confunda con suelo. `PogoTestSceneSetup` permite volver a aplicar esta configuración desde `Fangbound/Configure Movement Test Pogo` sin reconstruir la escena.
+
+### Verificación realizada
+
+- Unity `6000.5.5f1` compiló los scripts y ejecutó `PogoTestSceneSetup.Configure` en modo batch; el proceso terminó con código `0` y confirmó los dos objetivos en `MovementTest`.
+- Se comprobó la serialización de `PlayerPogo`, sus referencias al asset de datos y las acciones, y los componentes `PogoTarget` de ambos objetivos.
+- La primera compilación detectó un uso incorrecto de `ContactFilter2D.NoFilter`; se corrigió y la compilación final no mostró errores C#.
+- No se ejecutó Play Mode. El tacto del descenso, el rebote y las combinaciones de habilidades aún requieren prueba manual.
+
+### Prueba manual pendiente
+
+1. Abrir `Assets/_Project/Scenes/Test/MovementTest.unity` y entrar en Play Mode. Saltar sobre el primer objetivo, mantener `S` o flecha abajo y pulsar `J`; comprobar descenso y rebote vertical.
+2. Dirigir el rebote con `A/D` o flechas y hacer otro pogo sobre el segundo objetivo sin tocar el suelo. En mando: stick o cruceta abajo más botón oeste; mover con stick o cruceta.
+3. Atacar hacia abajo lejos de los objetivos; debe haber descenso sin rebote y no se debe poder repetir el pogo hasta acertar o aterrizar.
+4. Mantener abajo y pulsar ataque desde el suelo; no debe iniciar el descenso. Probar también un ataque en el aire sin mantener abajo.
+5. Combinar pogo con doble salto y dash antes y después de un impacto. Confirmar que el pogo no devuelve usos consumidos y que el control horizontal vuelve tras el rebote.
+6. Revisar la consola para errores de ejecución y ajustar únicamente `PlayerPogoData.asset` si la ventana o la zona de impacto requieren calibración.
+
+### Limitaciones actuales
+
+- Solo los colliders con `PogoTarget` producen rebote. El GDD contempla suelo, pinchos y enemigos; su integración queda para las tareas correspondientes.
+- No hay animación ni efecto visual de ataque. La zona se puede ver como gizmo al seleccionar al jugador en Scene View.
