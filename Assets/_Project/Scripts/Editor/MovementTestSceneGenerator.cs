@@ -5,6 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using Fangbound.CameraSystem;
 using Fangbound.Player;
 
 namespace Fangbound.EditorTools
@@ -191,6 +192,69 @@ namespace Fangbound.EditorTools
             }
 
             Debug.Log($"Material sin fricción aplicado al jugador: {PlayerPhysicsMaterialPath}");
+        }
+
+        [MenuItem("Fangbound/Configure Movement Test Camera")]
+        public static void ConfigureMovementTestCamera()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            GameObject cameraObject = GameObject.Find("Main Camera");
+            GameObject player = GameObject.Find("Salamander Placeholder");
+            if (cameraObject == null || player == null)
+            {
+                throw new InvalidOperationException("No se encontró Main Camera o Salamander Placeholder en MovementTest.");
+            }
+
+            Camera camera = cameraObject.GetComponent<Camera>();
+            Rigidbody2D playerBody = player.GetComponent<Rigidbody2D>();
+            if (camera == null || !camera.orthographic || playerBody == null)
+            {
+                throw new InvalidOperationException("La cámara debe ser ortográfica y el jugador debe tener Rigidbody2D.");
+            }
+
+            GameObject roomBoundsObject = GameObject.Find("Camera Room Bounds");
+            if (roomBoundsObject == null)
+            {
+                roomBoundsObject = new GameObject("Camera Room Bounds");
+            }
+
+            BoxCollider2D roomBounds = roomBoundsObject.GetComponent<BoxCollider2D>();
+            if (roomBounds == null)
+            {
+                roomBounds = roomBoundsObject.AddComponent<BoxCollider2D>();
+            }
+
+            roomBoundsObject.transform.position = new Vector3(0f, 1.2f, 0f);
+            roomBounds.size = new Vector2(28f, 20f);
+            roomBounds.isTrigger = true;
+
+            CameraFollow2D cameraFollow = cameraObject.GetComponent<CameraFollow2D>();
+            if (cameraFollow == null)
+            {
+                cameraFollow = cameraObject.AddComponent<CameraFollow2D>();
+            }
+
+            SerializedObject serializedCameraFollow = new SerializedObject(cameraFollow);
+            SetObjectReference(serializedCameraFollow, "target", player.transform);
+            SetObjectReference(serializedCameraFollow, "roomBounds", roomBounds);
+            serializedCameraFollow.FindProperty("deadZoneSize").vector2Value = new Vector2(1.2f, 0.8f);
+            serializedCameraFollow.FindProperty("smoothTime").floatValue = 0.12f;
+            serializedCameraFollow.ApplyModifiedPropertiesWithoutUndo();
+            playerBody.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+            EditorUtility.SetDirty(roomBounds);
+            EditorUtility.SetDirty(cameraFollow);
+            EditorUtility.SetDirty(playerBody);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+
+            if (cameraFollow == null || roomBounds == null || !roomBounds.isTrigger ||
+                playerBody.interpolation != RigidbodyInterpolation2D.Interpolate)
+            {
+                throw new InvalidOperationException("No se pudo verificar el seguimiento o los límites de cámara.");
+            }
+
+            Debug.Log($"CameraFollow2D y límites de sala configurados en {ScenePath}");
         }
 
         private static void SetObjectReference(SerializedObject serializedObject, string propertyName, UnityEngine.Object value)

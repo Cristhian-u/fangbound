@@ -190,3 +190,27 @@ Assets/_Project/
 - Probar dash contra pared y junto a laterales de plataformas; comprobar que no atraviesa paredes ni suspende al personaje, y que la gravedad vuelve al terminar.
 - Desactivar ambos flags desde `PlayerAbilities` y comprobar que el movimiento y salto normal siguen operativos sin dash ni salto extra.
 - Revisar la consola de Unity durante estas pruebas.
+
+## Tarea 04: Cámara de seguimiento 2D
+
+### Decisión e implementación
+
+- Cinemachine no está declarado en `Packages/manifest.json` ni instalado en `Library/PackageCache`; no se instaló ningún paquete.
+- Se creó `Assets/_Project/Scripts/Camera/CameraFollow2D.cs`, implementado con `LateUpdate` y `Vector3.SmoothDamp`. Tiene objetivo, collider de límites, zona muerta X/Y y suavidad editables desde el Inspector.
+- Los límites usan el bounds de un `BoxCollider2D` trigger; la cámara se clampa considerando el tamaño ortográfico y aspect ratio para no mostrar fuera de la sala. El trigger no participa en las colisiones del jugador.
+- `MovementTest` conserva la cámara ortográfica, Renderer 2D, plataformas y material sin fricción. Se añadió `Camera Room Bounds` con tamaño `28 x 20`, centrado en `(0, 1.2)`, y se enlazó al seguimiento.
+- Se configuró una zona muerta de `1.2 x 0.8`, suavidad `0.12 s`, y `Rigidbody2D.interpolation = Interpolate` solo para reducir jitter visual. No se modificaron scripts ni datos de movimiento.
+
+### Verificación
+
+- Unity 6000.5.5f1 compiló el componente y el código de Editor; Tundra terminó con código `0` y sin errores C#.
+- El configurador abrió y guardó la escena existente; se verificaron la cámara ortográfica/tamaño, el objetivo, los límites trigger y la interpolación del Rigidbody2D.
+- No se ejecutó Play Mode. El seguimiento al caminar, dash, saltos, caídas, límites y jitter deben probarse manualmente.
+
+### Pruebas manuales pendientes
+
+- Abrir `Scenes/Test/MovementTest.unity` y entrar en Play Mode; caminar a ambos lados y comprobar que la cámara espera dentro de la zona muerta y sigue con suavidad al salir de ella.
+- Probar dash, salto normal, doble salto y caída desde plataformas; comprobar que el jugador permanece visible y que no hay vibración.
+- Recorrer los cuatro bordes de `Camera Room Bounds` y verificar que el viewport no muestra fuera del rectángulo.
+- En Inspector, variar `Dead Zone Size`, `Smooth Time` y el BoxCollider2D para comprobar que la configuración por sala es utilizable.
+- Revisar la consola de Unity durante las pruebas.
