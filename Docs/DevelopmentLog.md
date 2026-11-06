@@ -44,3 +44,149 @@
 - Abrir `Assets/_Project/Scenes/Test/MovementTest.unity` y comprobar cámara, encuadre, colores y colisiones en Play Mode.
 - Revisar y aprobar el mapa propuesto en `Docs/Region1Plan.md` antes de construir salas.
 - La siguiente tarea puede abordar el controlador de movimiento básico, de forma aislada y con pruebas específicas.
+
+## Tarea 02: Auditoría y movimiento básico
+
+### Auditoría de carpetas
+
+- `Assets/_Project/00_Scripts/Editor` contiene la herramienta de generación/configuración de `MovementTest`; se conserva en su ubicación porque es código de Editor existente.
+- `Assets/_Project/05_Art/Placeholder` contiene el sprite cuadrado gratuito usado por la escena.
+- `Assets/_Project/Scenes/Test` contiene la escena de prueba solicitada en la Tarea 01. `04_Scenes`, `03_Prefabs`, `06_Audio` y `07_Settings` permanecen vacías; no se borraron.
+- `01_Data` estaba vacía y ahora contiene `Player/PlayerMovementData.asset`.
+- Se crearon los scripts en la ruta explícita solicitada `Scripts/Player`. La estructura numerada anterior (`00_Scripts`, `01_Data`, etc.) se conserva; no se movieron ni renombraron assets para resolver diferencias de convención.
+- No se encontraron prefabs, ScriptableObjects ni scripts de juego preexistentes que duplicaran esta implementación. No se modificaron paquetes, ajustes globales, recursos internos ni el GDD.
+
+### Implementación
+
+- `Assets/_Project/Scripts/Player/PlayerController.cs`: lectura de Move/Jump/Sprint, aceleración, frenado, inversión rápida, orientación visual, salto variable, coyote time, jump buffer, comprobación de suelo por LayerMask y límite de caída.
+- `Assets/_Project/Scripts/Player/PlayerMovementData.cs`: ScriptableObject con parámetros de movimiento.
+- `Assets/_Project/01_Data/Player/PlayerMovementData.asset`: configuración inicial conectada al personaje.
+- `Assets/_Project/00_Scripts/Editor/MovementTestSceneGenerator.cs`: se añadió un comando de Editor para enlazar controlador y asset sin reconstruir la escena; también agrega un techo de prueba solo si no existe.
+- `Assets/_Project/Scenes/Test/MovementTest.unity`: mantiene las superficies previas, integra el controlador y añade el techo de prueba. Usa `Default` como capa de suelo.
+- Se reutilizó `Assets/Settings/InputSystem_Actions.inputactions`: Move incluye stick, cruceta, A/D y flechas; Jump incluye Espacio y botón inferior; Sprint usa Shift y pulsación del stick izquierdo.
+
+### Valores iniciales
+
+- Caminar `4.5`, correr `7.5`, aceleración `50`, frenado `60`, giro `90`.
+- Salto `13`, coyote time `0.12 s`, jump buffer `0.12 s`, corte al soltar `0.45`.
+- Gravedad del Rigidbody2D `3`, caída máxima `18`, distancia de detección de suelo `0.14`, ancho relativo `0.85`.
+
+### Verificación
+
+- Unity `6000.5.5f1` compiló los ensamblados de juego y Editor; Tundra terminó correctamente sin errores C# en el log.
+- El comando de Editor creó el asset y verificó las referencias serializadas, collider y Rigidbody2D del jugador. La escena guarda el `LayerMask` `Default` y conserva las plataformas.
+- No se probó en Play Mode. Aceleración, frenado, inversión, salto variable, coyote time, jump buffer y colisiones deben comprobarse manualmente en Unity.
+
+### Siguiente paso
+
+- Revisar la escena en Play Mode con los pasos indicados al entregar esta tarea. Si la detección de suelo o el arco del salto requieren ajuste, cambiar los valores del ScriptableObject antes de modificar el controlador.
+- La Tarea 03 puede comenzar tras validar estos fundamentos; dash, doble salto, pogo y combate permanecen fuera de esta entrega.
+
+## Tarea 02.1: El personaje se suspende contra plataformas
+
+### Diagnóstico
+
+- El CapsuleCollider2D del jugador y los colliders rectangulares de las plataformas no tenían Physics Material 2D asignado (`m_Material` nulo); `Physics2DSettings` tampoco define un material predeterminado propio. Al empujar horizontalmente contra una cara vertical, la fricción de contacto predeterminada podía oponerse a la gravedad y dejar al jugador suspendido.
+- `PlayerController.FixedUpdate` no anula la velocidad vertical al tocar una pared: conserva `body.linearVelocity.y`, salvo al iniciar un salto o limitar la caída máxima.
+- La comprobación de suelo es un OverlapBox bajo los pies, con un ancho del 85% de los bounds del capsule. En el contacto lateral vertical de esta escena queda dentro del ancho del personaje, por lo que la pared no entra en esa consulta. No se modificó esa detección.
+
+### Corrección
+
+- Se creó `Assets/_Project/01_Data/Player/PlayerNoFriction.physicsMaterial2D` desde la API de Unity Editor.
+- El material establece fricción y rebote en `0`, y combina ambos con `Minimum` para evitar reintroducir fricción/rebote al combinar con colliders sin material.
+- Se asignó únicamente al CapsuleCollider2D de `Salamander Placeholder`. No se cambiaron código ni valores de aceleración, velocidad o salto.
+- Se modificó el comando de Editor de `MovementTestSceneGenerator` para crear/reutilizar el material, asignarlo y verificar el estado guardado.
+
+### Verificación
+
+- Unity `6000.5.5f1` recompiló los ensamblados sin errores y ejecutó el comando de aplicación; el log terminó con código de salida `0`.
+- Se verificó el asset serializado: fricción `0`, rebote `0`, combinación mínima y referencia asignada al CapsuleCollider2D en `MovementTest`.
+- No se ejecutó Play Mode después de aplicar el cambio. La ausencia de suspensión y el contacto real con suelo, laterales y techo necesitan la prueba manual.
+
+### Prueba manual pendiente
+
+- En `MovementTest`, entrar en Play Mode y saltar hacia el lateral izquierdo de una plataforma manteniendo D; repetir contra el lateral derecho manteniendo A. En ambos casos debe seguir cayendo sin soltar la dirección.
+- Aterrizar en la parte superior y caminar sobre suelo/plataforma; confirmar que permanece apoyado y que el frenado del controlador evita deslizamiento anormal.
+- Saltar debajo de una plataforma y confirmar que su cara inferior detiene el ascenso.
+- Revisar la consola de Unity para errores de compilación o ejecución.
+
+## Tarea 02.2: Estructura sin numeración
+
+### Estructura final
+
+```text
+Assets/_Project/
+	Animations/
+	Art/
+		Placeholder/MovementTestSquare.asset
+	Audio/
+	Data/
+		Player/PlayerMovementData.asset
+		Player/PlayerNoFriction.physicsMaterial2D
+	Materials/
+	Prefabs/
+	Scenes/
+		Test/MovementTest.unity
+	Scripts/
+		Editor/MovementTestSceneGenerator.cs
+		Player/PlayerController.cs
+		Player/PlayerMovementData.cs
+	Settings/
+	Tests/
+```
+
+`Animations`, `Audio`, `Materials`, `Prefabs`, `Settings` y `Tests` están vacías, pero se conservaron/crearon como categorías previstas. No se eliminaron por estar vacías.
+
+### Movimientos realizados
+
+- `00_Scripts/Editor` se fusionó en `Scripts/Editor`; `MovementTestSceneGenerator.cs` y sus `.meta` se movieron mediante `AssetDatabase.MoveAsset`.
+- `01_Data` se trasladó a `Data`.
+- `03_Prefabs` se trasladó a `Prefabs`.
+- `04_Scenes` estaba vacía y se fusionó con `Scenes`; su raíz se retiró después de verificar que quedó vacía.
+- `05_Art` se trasladó a `Art`.
+- `06_Audio` se trasladó a `Audio`.
+- `07_Settings` se trasladó a `Settings`.
+- `Animations`, `Materials` y `Tests` se crearon con la API de carpetas de Unity.
+- `00_Scripts` quedó vacío al mover `Editor`; se retiró entonces mediante AssetDatabase. No quedaron carpetas numeradas.
+- No hubo conflictos de nombres ni assets que debieran quedarse sin mover. El migrador temporal se retiró tras completar la tarea.
+
+### Referencias y compilación
+
+- La migración capturó los GUIDs del árbol antes de mover y comprobó que siguieran resolviendo después, exceptuando solo las raíces vacías fusionadas y retiradas.
+- Se compararon además los `.meta` del generador de Editor, controlador, ScriptableObject, asset de datos, material físico, sprite placeholder y escena; todos conservan sus GUID originales.
+- Unity volvió a abrir `Scenes/Test/MovementTest.unity` y verificó `PlayerController`, sus referencias de datos e Input Actions, el material del jugador y los objetos de suelo/plataformas/pared/techo.
+- Unity 6000.5.5f1 compiló antes y después del traslado, y también después de retirar el migrador temporal. Tundra terminó con código 0 y sin errores C#.
+- El generador actualiza las rutas de datos y arte a `Data` y `Art`. No se modificó el código de movimiento ni el GDD.
+
+## Tarea 03: Dash y doble salto
+
+### Implementación
+
+- `Assets/_Project/Scripts/Player/PlayerAbilities.cs` mantiene dash y doble salto desactivados por defecto y permite configurar su disponibilidad desde el Inspector.
+- `PlayerController` conserva el movimiento horizontal y la detección de suelo existentes; el dash suspende temporalmente la velocidad/gravedad normal, usa la orientación actual y restaura la gravedad al finalizar. Se permite un dash por periodo aéreo, con recuperación al aterrizar y cooldown.
+- El doble salto reutiliza el buffer y la detección de suelo/coyote existentes. Solo se habilita tras un salto normal o de coyote; consume el salto aéreo adicional una sola vez y se reinicia al aterrizar.
+- La velocidad horizontal ahora es única y configurable (`7.5`), equivalente al máximo anterior; Shift deja de ser sprint y pasa a Dash.
+- `InputSystem_Actions.inputactions`: Sprint se sustituyó por Dash, asignado a `Left Shift` y `Gamepad/rightShoulder`. Jump conserva Espacio y botón inferior.
+- `MovementTest` tiene ambos flags de `PlayerAbilities` activos para prueba. Una instancia nueva de `PlayerAbilities` mantiene ambas opciones apagadas.
+- El hueco existente sirve para ensayar el dash; no se reconstruyó la escena ni se cambió su material sin fricción. La invulnerabilidad durante dash queda como parámetro configurable, sin sistema de daño.
+
+### Parámetros iniciales
+
+- Velocidad horizontal `7.5`; aceleración `50`, frenado `60`, giro `90`.
+- Dash: distancia `3.2`, velocidad `18`, duración máxima `0.18 s`, cooldown `0.35 s`; invulnerabilidad configurable, activa como opción de datos, pero aún sin sistema que la aplique a daño.
+- Doble salto: velocidad vertical `12`; salto normal conserva `13` y los valores existentes de corte, coyote y buffer.
+
+### Verificación
+
+- Unity 6000.5.5f1 compiló ensamblados de juego y Editor sin errores; Tundra terminó con código `0`.
+- El configurador volvió a abrir/guardar la escena y verificó la configuración de datos/acciones; el JSON de Input Actions se parseó y se comprobó que Dash tiene únicamente Shift y el hombro derecho.
+- La escena serializa `PlayerAbilities` con ambos flags activos y conserva la referencia al controlador, los datos de movimiento, el material sin fricción y las plataformas.
+- No se ejecutó Play Mode. Dash en suelo/aire, límite y recuperación aérea, doble salto/límite del tercer salto, combinación de habilidades, colisión con paredes y caída sin adherencia quedan pendientes de la prueba manual.
+
+### Pruebas manuales pendientes
+
+- Con ambas opciones activas en `MovementTest`, probar dash en suelo y aire; repetir dash en el mismo periodo aéreo (debe bloquearse), aterrizar y probarlo de nuevo.
+- Saltar y pulsar Espacio/botón inferior una segunda vez; intentar un tercer salto antes de aterrizar y confirmar que no ocurre. Repetir combinando dash y doble salto.
+- Probar dash contra pared y junto a laterales de plataformas; comprobar que no atraviesa paredes ni suspende al personaje, y que la gravedad vuelve al terminar.
+- Desactivar ambos flags desde `PlayerAbilities` y comprobar que el movimiento y salto normal siguen operativos sin dash ni salto extra.
+- Revisar la consola de Unity durante estas pruebas.
