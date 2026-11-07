@@ -30,6 +30,7 @@ namespace Fangbound.Player
         private float dashGravityScale;
         private bool dashRequested;
         private bool isDashing;
+        private bool externalControlLocked;
         private bool airDashAvailable = true;
         private int airJumpsRemaining;
         private int dashDirection;
@@ -38,6 +39,46 @@ namespace Fangbound.Player
 
         public bool IsGrounded { get; private set; }
         public bool IsDashing => isDashing;
+        public bool IsControlLocked => externalControlLocked;
+
+        public void SetExternalControlLocked(bool locked)
+        {
+            externalControlLocked = locked;
+            if (!locked)
+            {
+                return;
+            }
+
+            horizontalInput = 0f;
+            jumpBufferRemaining = 0f;
+            jumpReleased = false;
+            dashRequested = false;
+            if (isDashing)
+            {
+                EndDash();
+            }
+        }
+
+        public void ResetTransientState()
+        {
+            externalControlLocked = false;
+            dashRequested = false;
+            isDashing = false;
+            dashCooldownRemaining = 0f;
+            dashTimeRemaining = 0f;
+            dashDistanceRemaining = 0f;
+            dashGravityScale = movementData != null ? movementData.GravityScale : 1f;
+            airDashAvailable = true;
+            airJumpsRemaining = 0;
+            coyoteTimeRemaining = 0f;
+            jumpBufferRemaining = 0f;
+            jumpReleased = false;
+            horizontalInput = 0f;
+            if (body != null)
+            {
+                body.gravityScale = dashGravityScale;
+            }
+        }
 
         public bool TryStartPogoDive()
         {
@@ -120,6 +161,15 @@ namespace Fangbound.Player
                 return;
             }
 
+            if (externalControlLocked)
+            {
+                horizontalInput = 0f;
+                jumpBufferRemaining = 0f;
+                jumpReleased = false;
+                dashRequested = false;
+                return;
+            }
+
             horizontalInput = Mathf.Clamp(moveAction.ReadValue<Vector2>().x, -1f, 1f);
             jumpBufferRemaining = Mathf.Max(0f, jumpBufferRemaining - Time.deltaTime);
 
@@ -147,6 +197,18 @@ namespace Fangbound.Player
             if (isDashing)
             {
                 UpdateDash(fixedDeltaTime);
+                return;
+            }
+
+            if (externalControlLocked)
+            {
+                Vector2 lockedVelocity = body.linearVelocity;
+                if (lockedVelocity.y < -movementData.MaxFallSpeed)
+                {
+                    lockedVelocity.y = -movementData.MaxFallSpeed;
+                }
+
+                body.linearVelocity = lockedVelocity;
                 return;
             }
 

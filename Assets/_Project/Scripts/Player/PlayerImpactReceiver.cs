@@ -4,16 +4,18 @@ using UnityEngine;
 namespace Fangbound.Player
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(PlayerController), typeof(PlayerParry))]
+    [RequireComponent(typeof(PlayerController), typeof(PlayerParry), typeof(PlayerHealth))]
     public sealed class PlayerImpactReceiver : MonoBehaviour, IIncomingAttackReceiver
     {
         private PlayerController playerController;
         private PlayerParry playerParry;
+        private PlayerHealth playerHealth;
 
         private void Awake()
         {
             playerController = GetComponent<PlayerController>();
             playerParry = GetComponent<PlayerParry>();
+            playerHealth = GetComponent<PlayerHealth>();
         }
 
         public IncomingAttackOutcome ReceiveAttack(EnemyAttackInstance attack)
@@ -23,9 +25,19 @@ namespace Fangbound.Player
                 return IncomingAttackOutcome.Ignored;
             }
 
+            if (playerHealth.IsDead)
+            {
+                return IncomingAttackOutcome.IgnoredByDeath;
+            }
+
             if (playerController.IsDashing)
             {
                 return IncomingAttackOutcome.AvoidedByDash;
+            }
+
+            if (playerHealth.IsInvulnerable)
+            {
+                return IncomingAttackOutcome.IgnoredByInvulnerability;
             }
 
             if (playerParry.TryConsumeWindow())
@@ -33,8 +45,14 @@ namespace Fangbound.Player
                 return IncomingAttackOutcome.Parried;
             }
 
-            playerParry.ShowUnblockedImpact();
-            return IncomingAttackOutcome.Hit;
+            if (playerHealth.TryTakeDamage(attack.Damage, attack.SourcePosition))
+            {
+                return IncomingAttackOutcome.Hit;
+            }
+
+            return playerHealth.IsDead
+                ? IncomingAttackOutcome.IgnoredByDeath
+                : IncomingAttackOutcome.IgnoredByInvulnerability;
         }
     }
 }

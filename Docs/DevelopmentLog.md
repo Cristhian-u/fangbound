@@ -323,3 +323,37 @@ Assets/_Project/
 - Acertar tres parries: comprobar postura `3 → 0`, color vulnerable durante `1.5 s` y recuperación gradual hasta `3`.
 - Recibir ataque durante dash: no debe recibir impacto ni reducir postura. Probar también el feedback de impacto fuera de dash/parry.
 - Confirmar que Attack/J, pogo, dash, doble salto y movimiento siguen respondiendo; revisar la consola.
+
+## Tarea 08: Vida, daño, invulnerabilidad y knockback
+
+### Implementación
+
+- `PlayerHealthData` separa parámetros de diseño y `PlayerHealth` mantiene vida/estados temporales. Vida máxima e inicial: `5`; API pública `TryHeal`; eventos `HealthChanged`, `DamageTaken`, `Healed` y `Died`.
+- `PlayerImpactReceiver` sigue siendo el único receptor. Orden de resolución: ataque ya resuelto → muerte → dash invulnerable → i-frames posteriores al golpe → parry → daño real. Un impacto en dash no consume parry ni daña; uno durante i-frames tampoco puede registrarse como parry.
+- Los impactos válidos aplican daño, `0.8 s` de invulnerabilidad visual y knockback con control bloqueado temporalmente. El emisor suministra posición/damage mediante `EnemyAttackInstance`; no se introduce un segundo sistema de recepción.
+- Al llegar a cero, el jugador queda bloqueado, se detienen sus componentes de combate/pogo/parry, el cuerpo queda inmóvil y la HUD muestra estado de derrota. `R` reinicia vida, posición de `Player Spawn Point`, velocidad, gravedad y estados temporales; dash/doble salto siguen disponibles según las opciones actuales de `PlayerAbilities`.
+- `PlayerHealthUI` usa IMGUI provisional para mostrar bloques de vida y el aviso de muerte, sin recursos gráficos adicionales.
+- `MovementTest` se configuró con `PlayerHealth`, `PlayerHealthUI` y el asset de vida. No se modificaron movimiento, dash, salto, cámara, GDD ni estructura de carpetas.
+
+### Parámetros iniciales
+
+- Vida máxima: `5`.
+- Invulnerabilidad tras daño: `0.8 s`; parpadeo visual: `0.08 s`.
+- Knockback horizontal: `7`; vertical: `4.5`; bloqueo de control: `0.28 s`.
+- Daño del ataque de entrenamiento: `1` por ataque activo.
+
+### Verificación
+
+- Unity `6000.5.5f1` compiló el núcleo de salud y ejecutó `CombatTestSceneSetup.Configure`; Tundra terminó con código `0`.
+- Se verificaron las referencias serializadas de salud, Input Actions, spawn y HUD; la escena conserva `PlayerImpactReceiver`, parry/postura, enemigos de entrenamiento, objetivos de pogo y el material sin fricción.
+- El Input System contiene una única acción `Restart` ligada a R. El receptor comprueba dash e invulnerabilidad antes de consumir la ventana de parry.
+- No se ejecutó Play Mode; daño, i-frames, knockback, muerte y reinicio requieren prueba manual.
+
+### Pruebas manuales pendientes
+
+- Recibir un ataque sin parry: vida baja de `5` a `4`, aparece knockback/parpadeo y los golpes de los siguientes `0.8 s` se ignoran.
+- Parryar otro ataque y comprobar vida sin cambio ni knockback; fallar el parry y comprobar daño normal.
+- Activar dash durante la hitbox: no debe recibir daño ni registrar parry ni postura.
+- Recibir daño hasta cero: comprobar bloqueo, aviso de derrota y HUD; pulsar R y verificar posición, vida, gravedad, velocidades, controles e invulnerabilidad restaurados.
+- Tras reiniciar, probar ataque horizontal/ascendente, pogo y doble salto para comprobar que los componentes se reactivan.
+- Revisar la consola de Unity durante las pruebas.

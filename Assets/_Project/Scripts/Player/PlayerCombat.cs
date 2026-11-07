@@ -77,7 +77,7 @@ namespace Fangbound.Player
         private void Update()
         {
             if (attackAction == null || moveAction == null || !attackAction.WasPressedThisFrame() ||
-                playerController.IsDashing)
+                playerController.IsDashing || playerController.IsControlLocked)
             {
                 return;
             }
@@ -118,7 +118,7 @@ namespace Fangbound.Player
                 return;
             }
 
-            if (playerController.IsDashing)
+            if (playerController.IsDashing || playerController.IsControlLocked)
             {
                 EndAttack();
                 return;

@@ -6,6 +6,7 @@ namespace Fangbound.Combat
     public sealed class TrainingAttackData : ScriptableObject
     {
         [SerializeField, Min(0f)] private float initialDelay = 0.75f;
+        [SerializeField, Min(1)] private int damage = 1;
         [SerializeField, Min(0.01f)] private float telegraphDuration = 0.65f;
         [SerializeField, Min(0.01f)] private float activeDuration = 0.14f;
         [SerializeField, Min(0.01f)] private float cooldown = 1.3f;
@@ -15,6 +16,7 @@ namespace Fangbound.Combat
         [SerializeField] private Color attackColor = new Color(1f, 0.9f, 0.35f, 0.9f);
 
         public float InitialDelay => initialDelay;
+        public int Damage => damage;
         public float TelegraphDuration => telegraphDuration;
         public float ActiveDuration => activeDuration;
         public float Cooldown => cooldown;

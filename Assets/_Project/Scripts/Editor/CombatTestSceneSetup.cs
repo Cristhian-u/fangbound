@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Fangbound.Combat;
 using Fangbound.Player;
+using Fangbound.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace Fangbound.EditorTools
         private const string ScenePath = "Assets/_Project/Scenes/Test/MovementTest.unity";
         private const string CombatDataPath = "Assets/_Project/Data/Player/PlayerCombatData.asset";
         private const string ParryDataPath = "Assets/_Project/Data/Player/PlayerParryData.asset";
+        private const string PlayerHealthDataPath = "Assets/_Project/Data/Player/PlayerHealthData.asset";
         private const string EnemyPostureDataPath = "Assets/_Project/Data/Enemies/EnemyPostureData.asset";
         private const string TrainingAttackDataPath = "Assets/_Project/Data/Enemies/TrainingAttackData.asset";
         private const string InputActionsPath = "Assets/Settings/InputSystem_Actions.inputactions";
@@ -26,12 +28,13 @@ namespace Fangbound.EditorTools
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             GameObject player = GameObject.Find("Salamander Placeholder");
             GameObject environment = GameObject.Find("Environment");
+            GameObject spawnPoint = GameObject.Find("Player Spawn Point");
             InputActionAsset inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
             Sprite placeholderSprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
             PlayerPogoData pogoData = AssetDatabase.LoadAssetAtPath<PlayerPogoData>(
                 "Assets/_Project/Data/Player/PlayerPogoData.asset");
 
-            if (player == null || environment == null || inputActions == null || placeholderSprite == null || pogoData == null ||
+            if (player == null || environment == null || spawnPoint == null || inputActions == null || placeholderSprite == null || pogoData == null ||
                 player.GetComponent<PlayerController>() == null || player.GetComponent<PlayerPogo>() == null)
             {
                 throw new InvalidOperationException("MovementTest no tiene los componentes, assets o sistema de pogo requeridos.");
@@ -41,6 +44,7 @@ namespace Fangbound.EditorTools
             playerMap.FindAction("Move", true);
             playerMap.FindAction("Attack", true);
             playerMap.FindAction("Parry", true);
+            playerMap.FindAction("Restart", true);
 
             PlayerCombatData combatData = AssetDatabase.LoadAssetAtPath<PlayerCombatData>(CombatDataPath);
             if (combatData == null)
@@ -60,6 +64,9 @@ namespace Fangbound.EditorTools
 
             TrainingAttackData trainingAttackData = LoadOrCreateData<TrainingAttackData>(TrainingAttackDataPath);
             ConfigureTrainingAttackData(trainingAttackData);
+
+            PlayerHealthData healthData = LoadOrCreateData<PlayerHealthData>(PlayerHealthDataPath);
+            ConfigurePlayerHealthData(healthData);
 
             PlayerCombat playerCombat = player.GetComponent<PlayerCombat>();
             if (playerCombat == null)
@@ -82,6 +89,34 @@ namespace Fangbound.EditorTools
             SetObjectReference(serializedParry, "parryData", parryData);
             SetObjectReference(serializedParry, "inputActions", inputActions);
             serializedParry.ApplyModifiedPropertiesWithoutUndo();
+
+            PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth == null)
+            {
+                playerHealth = player.AddComponent<PlayerHealth>();
+            }
+
+            SerializedObject serializedHealth = new SerializedObject(playerHealth);
+            SetObjectReference(serializedHealth, "healthData", healthData);
+            SetObjectReference(serializedHealth, "inputActions", inputActions);
+            SetObjectReference(serializedHealth, "spawnPoint", spawnPoint.transform);
+            serializedHealth.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject healthUiObject = GameObject.Find("Player Health HUD");
+            if (healthUiObject == null)
+            {
+                healthUiObject = new GameObject("Player Health HUD");
+            }
+
+            PlayerHealthUI healthUi = healthUiObject.GetComponent<PlayerHealthUI>();
+            if (healthUi == null)
+            {
+                healthUi = healthUiObject.AddComponent<PlayerHealthUI>();
+            }
+
+            SerializedObject serializedHealthUi = new SerializedObject(healthUi);
+            SetObjectReference(serializedHealthUi, "playerHealth", playerHealth);
+            serializedHealthUi.ApplyModifiedPropertiesWithoutUndo();
 
             PlayerImpactReceiver impactReceiver = player.GetComponent<PlayerImpactReceiver>();
             if (impactReceiver == null)
@@ -106,6 +141,9 @@ namespace Fangbound.EditorTools
 
             EditorUtility.SetDirty(playerCombat);
             EditorUtility.SetDirty(combatData);
+            EditorUtility.SetDirty(playerHealth);
+            EditorUtility.SetDirty(healthUi);
+            EditorUtility.SetDirty(healthData);
             EditorUtility.SetDirty(playerParry);
             EditorUtility.SetDirty(impactReceiver);
             EditorUtility.SetDirty(pogoData);
@@ -122,6 +160,9 @@ namespace Fangbound.EditorTools
                 combatData,
                 inputActions,
                 pogoData,
+                playerHealth,
+                healthData,
+                healthUi,
                 playerParry,
                 parryData,
                 enemyPostureData,
@@ -178,11 +219,24 @@ namespace Fangbound.EditorTools
         {
             SerializedObject serializedData = new SerializedObject(attackData);
             serializedData.FindProperty("initialDelay").floatValue = 0.75f;
+            serializedData.FindProperty("damage").intValue = 1;
             serializedData.FindProperty("telegraphDuration").floatValue = 0.65f;
             serializedData.FindProperty("activeDuration").floatValue = 0.14f;
             serializedData.FindProperty("cooldown").floatValue = 1.3f;
             serializedData.FindProperty("hitboxOffset").vector2Value = new Vector2(-1.8f, -0.05f);
             serializedData.FindProperty("hitboxSize").vector2Value = new Vector2(3.6f, 0.75f);
+            serializedData.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigurePlayerHealthData(PlayerHealthData healthData)
+        {
+            SerializedObject serializedData = new SerializedObject(healthData);
+            serializedData.FindProperty("maximumHealth").intValue = 5;
+            serializedData.FindProperty("invulnerabilityDuration").floatValue = 0.8f;
+            serializedData.FindProperty("knockbackHorizontalForce").floatValue = 7f;
+            serializedData.FindProperty("knockbackVerticalForce").floatValue = 4.5f;
+            serializedData.FindProperty("knockbackControlDuration").floatValue = 0.28f;
+            serializedData.FindProperty("invulnerabilityFlashInterval").floatValue = 0.08f;
             serializedData.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -307,6 +361,9 @@ namespace Fangbound.EditorTools
             PlayerCombatData combatData,
             InputActionAsset inputActions,
             PlayerPogoData pogoData,
+            PlayerHealth playerHealth,
+            PlayerHealthData healthData,
+            PlayerHealthUI healthUi,
             PlayerParry playerParry,
             PlayerParryData parryData,
             EnemyPostureData postureData,
@@ -318,7 +375,7 @@ namespace Fangbound.EditorTools
             GameObject telegraphObject = GameObject.Find("Attack Telegraph");
             EnemyPosture enemyPosture = parryTarget != null ? parryTarget.GetComponent<EnemyPosture>() : null;
             TrainingAttackEmitter attackEmitter = parryTarget != null ? parryTarget.GetComponent<TrainingAttackEmitter>() : null;
-            if (playerPogo == null || playerParry == null || impactReceiver == null ||
+            if (playerPogo == null || playerParry == null || impactReceiver == null || playerHealth == null || healthUi == null ||
                 player.GetComponent<PlayerController>() == null || player.GetComponent<PlayerCombat>() == null ||
                 enemyPosture == null || attackEmitter == null || telegraphObject == null ||
                 GameObject.Find("Pogo Target - First")?.GetComponent<PogoTarget>() == null ||
@@ -348,6 +405,16 @@ namespace Fangbound.EditorTools
                 serializedPogo.FindProperty("inputActions").objectReferenceValue != inputActions)
             {
                 throw new InvalidOperationException("PlayerPogo perdió sus referencias serializadas.");
+            }
+
+            SerializedObject serializedHealth = new SerializedObject(playerHealth);
+            SerializedObject serializedHealthUi = new SerializedObject(healthUi);
+            if (serializedHealth.FindProperty("healthData").objectReferenceValue != healthData ||
+                serializedHealth.FindProperty("inputActions").objectReferenceValue != inputActions ||
+                serializedHealth.FindProperty("spawnPoint").objectReferenceValue != GameObject.Find("Player Spawn Point").transform ||
+                serializedHealthUi.FindProperty("playerHealth").objectReferenceValue != playerHealth)
+            {
+                throw new InvalidOperationException("PlayerHealth o PlayerHealthUI perdió referencias serializadas.");
             }
 
             SerializedObject serializedPosture = new SerializedObject(enemyPosture);

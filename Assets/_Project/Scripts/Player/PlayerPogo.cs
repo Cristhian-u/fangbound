@@ -49,15 +49,30 @@ namespace Fangbound.Player
 
         private void Update()
         {
-            if (attackAction != null && attackAction.WasPressedThisFrame() &&
+            if (attackAction != null && !controller.IsControlLocked && attackAction.WasPressedThisFrame() &&
                 moveAction.ReadValue<Vector2>().y < -0.5f)
             {
                 attackRequested = true;
             }
         }
 
+        public void ResetForRespawn()
+        {
+            attackRequested = false;
+            attackAvailable = true;
+            attackTimeRemaining = 0f;
+            hitTargets.Clear();
+        }
+
         private void FixedUpdate()
         {
+            if (controller.IsControlLocked)
+            {
+                attackRequested = false;
+                attackTimeRemaining = 0f;
+                return;
+            }
+
             if (controller.IsGrounded)
             {
                 attackAvailable = true;

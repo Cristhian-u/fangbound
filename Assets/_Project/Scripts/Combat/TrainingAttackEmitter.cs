@@ -116,7 +116,9 @@ namespace Fangbound.Combat
         {
             state = AttackState.Active;
             stateRemaining = attackData.ActiveDuration;
-            currentAttack = new EnemyAttackInstance();
+            currentAttack = new EnemyAttackInstance(
+                (Vector2)transform.position + attackData.HitboxOffset,
+                attackData.Damage);
             telegraphRenderer.color = attackData.AttackColor;
         }
 

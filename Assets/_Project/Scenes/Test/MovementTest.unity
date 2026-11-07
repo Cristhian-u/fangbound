@@ -230,6 +230,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &353120074
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 353120076}
+  - component: {fileID: 353120075}
+  m_Layer: 0
+  m_Name: Player Health HUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &353120075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 353120074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ceb542e7f299f34e9755f0ad8c6797d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fangbound.UI.PlayerHealthUI
+  playerHealth: {fileID: 1875870068}
+  blockSize: 26
+--- !u!4 &353120076
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 353120074}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &417896341
 GameObject:
   m_ObjectHideFlags: 0
@@ -1944,6 +1990,7 @@ GameObject:
   - component: {fileID: 1875870065}
   - component: {fileID: 1875870067}
   - component: {fileID: 1875870066}
+  - component: {fileID: 1875870068}
   m_Layer: 0
   m_Name: Salamander Placeholder
   m_TagString: Untagged
@@ -2178,6 +2225,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Fangbound.Player.PlayerParry
   parryData: {fileID: 11400000, guid: dae8a71de3959ae448cd609af6395b98, type: 2}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+--- !u!114 &1875870068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875870057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa60ec82307fc474ebdca95e2b6699f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fangbound.Player.PlayerHealth
+  healthData: {fileID: 11400000, guid: 28ed94c7be7abf549b8ad64bdd8b163e, type: 2}
+  inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  spawnPoint: {fileID: 498083590}
 --- !u!1 &2055277272
 GameObject:
   m_ObjectHideFlags: 0
@@ -2616,3 +2678,4 @@ SceneRoots:
   - {fileID: 950867967}
   - {fileID: 275168199}
   - {fileID: 278746565}
+  - {fileID: 353120076}
