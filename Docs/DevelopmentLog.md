@@ -609,3 +609,90 @@ Assets/_Project/
 - La señal inicial usa tiempo real y la vulnerabilidad usa tiempo de simulación. Las señales visuales no prolongan ni acortan la ventana de vulnerabilidad.
 - Sigue pendiente la medición manual exacta de los `0.8 s` de i-frames de `PlayerHealth`. No se cerró ese pendiente ni se modificó su sistema para incorporar feedback.
 - No se realizaron commits, push, cambios de rama ni trabajo de Tarea 11.
+
+## Tarea 11: Llamas del Recuerdo — checkpoints y respawn
+
+### Inspección y decisiones
+
+- Se leyeron `AGENTS.md`, `GDD.md`, este registro y `Region1Plan.md`, y se revisaron salud/muerte/R, Input System, controlador, cámara, HUD, combate, hitstop, MovementTest y prefabs. HEAD era `2482378` (T10); el usuario confirmó T01–T10 terminadas, probadas manualmente y con commit.
+- Existía un cambio local en `CombatFeedbackData.asset`: `normalHitstop=0.10` y `hitstopEnabled=0`. Se conserva exactamente; no se reactivó hitstop ni se modificaron otros parámetros de feedback en el asset.
+- R ya llamaba a `PlayerHealth.RestartForTesting`, que restablece al jugador en la misma escena y no la recarga. No es necesario añadir persistencia estática del checkpoint, archivos, PlayerPrefs ni objetos persistentes entre escenas.
+- La acción `Player/Interact` ya existía, con E y `<Gamepad>/buttonNorth`, y ningún componente la utilizaba. Se reutiliza esa acción sin editar Input Actions ni desplazar controles existentes. La lectura es por `WasPressedThisFrame`, sin repetición al mantener pulsado.
+- La decisión narrativa/visual quedó registrada oficialmente en GDD, sección 5, subsección **Llamas del Recuerdo — descanso y checkpoints (decisión oficial)**. Se reemplazó la referencia genérica de calidad de vida por su nombre oficial, sin duplicar el diseño ni definir la causa narrativa de la reaparición.
+
+### Arquitectura y archivos creados
+
+- `Assets/_Project/Scripts/World/MemoryFlameData.cs` y `Assets/_Project/Data/World/MemoryFlameData.asset`: parámetros de interacción, colores, brillo provisional, señal de activación y comprobación del punto de reaparición. Los estados temporales permanecen en componentes.
+- `Assets/_Project/Scripts/World/MemoryFlame.cs`: componente de la llama con rango, referencia a su hijo `Respawn Point`, renderers reemplazables y estado visual. Un registro de instancias activas permite buscar la llama más cercana dentro de su propio rango; se limpia al iniciar Play Mode sin recarga de dominio.
+- `Assets/_Project/Scripts/Player/PlayerCheckpoint.cs`: lee Interact, muestra la indicación provisional de descanso, mantiene el checkpoint actual y emite `CheckpointChanged`/`Rested`. Rechaza descanso muerto, en dash, con control bloqueado, fuera de rango o con destino inseguro. Una interacción válida usa `TryHeal(MaximumHealth)`; no codifica el máximo 5 por separado. Reutilizar la llama actual cura/señala sin crear otro checkpoint ni emitir otro cambio.
+- `Assets/_Project/Prefabs/World/MemoryFlame.prefab`: pedestal de piedra con tres sprites, llama flotante blanco-turquesa y brillo provisional. No tiene colliders, scripts de movimiento ni luces/partículas complejas; no cambia las colisiones del nivel. Los renderers y el punto de reaparición pueden reemplazarse/recolocarse sin reescribir la lógica.
+- `Assets/_Project/Scripts/Editor/MemoryFlameSceneSetup.cs`: menú `Fangbound/Configure Movement Test Memory Flames`; crea datos/prefab si faltan, enlaza el componente del jugador e incorpora dos instancias sin regenerar la escena ni reconfigurar sistemas anteriores.
+- `Assets/_Project/Scripts/Editor/MemoryFlameValidation.cs`: menú `Fangbound/Validate Memory Flames in Play Mode`; incorpora pruebas de E/R reales a la batería existente. Se añadieron sus `.meta` y los de carpetas/assets nuevos.
+
+### Archivos existentes modificados
+
+- `PlayerHealth.cs`: consulta opcionalmente el destino del checkpoint en el reinicio existente. Si no hay uno válido, conserva `spawnPosition`/`spawnRotation` anteriores. Desactiva brevemente combate/pogo/parry/controlador para limpiar sus ventanas mediante los `OnDisable` existentes, después restaura vida máxima, velocidad, gravedad, controles y estados como antes. Añade `Respawned` al terminar. No cambia recepción de daño, duración de i-frames, knockback, muerte ni HUD.
+- `CameraFollow2D.cs`: añade `SnapToTarget`, que conserva el eje Z, respeta los límites actuales y limpia la velocidad de suavizado al teletransportar. `PlayerCheckpoint` lo llama al recibir `Respawned`, también para el spawn alternativo. No se modifican el seguimiento habitual, dead zone ni smooth time.
+- `GroundEnemyValidation.cs`: integra la regresión de checkpoints. Para comprobar T10 aunque el diseñador haya desactivado hitstop, la batería usa una copia de sus datos en memoria con hitstop activo; mantiene las duraciones configuradas y restaura la referencia original al terminar o fallar. No guarda esa copia ni cambia el asset local.
+- `MovementTest.unity`: añade `PlayerCheckpoint`, el grupo `Memory Flames` y dos instancias del prefab; conserva geometría, cámara, spawn inicial, jugador, objetivos, entrenador, enemigo y feedback anteriores.
+- `Docs/GDD.md` y `Docs/DevelopmentLog.md`: decisión oficial y documentación de esta entrega. No se modifican Input Actions, parámetros de salud/movimiento/combate, datos de feedback, IA, física/capas ni el prefab enemigo. No hay commits, push, cambios de rama ni tareas posteriores.
+
+### Descanso, estado y seguridad
+
+- El checkpoint actual pertenece al componente del jugador durante la sesión. Solo la llama actual mantiene el brillo activo; al elegir otra, la anterior vuelve a tenue y puede volver a activarse. Cada descanso válido emite un destello blanco breve, también al reutilizar la misma llama.
+- El descanso restaura vida hasta el máximo existente (`5` en MovementTest), sin superarlo. No teletransporta, reinicia enemigos, abre menús ni desbloquea habilidades. Tampoco cambia los temporizadores de daño/invulnerabilidad al curar.
+- El punto configurado se valida al descansar y nuevamente antes de reaparecer. La comprobación usa el tamaño/offset real del collider del jugador, una holgura y la máscara de terreno: rechaza sólidos ocupando el cuerpo y exige soporte bajo los pies. Excluye el propio jugador y triggers; `EnemyBody` conserva su exclusión de contacto físico y no se convierte en suelo.
+- Si se desactiva/destruye la llama, se ocupa su destino o deja de haber suelo, el reinicio usa el spawn original. No se busca una posición arbitraria ni se atraviesan paredes para corregir un destino mal configurado.
+- No se recarga la escena al pulsar R, por lo que el checkpoint sobrevive a la muerte/reinicio. Salir de Play Mode o cargar otra escena/recrear al jugador inicia otra sesión; la persistencia entre niveles y el guardado permanente quedan fuera de esta entrega.
+
+### Configuración y posiciones
+
+| Parámetro | Valor inicial |
+| --- | --- |
+| Interacción | E / botón norte del mando, acción Interact existente |
+| Rango | 1.3 unidades |
+| Destello de activación | 0.30 s reales |
+| Llama tenue | Turquesa apagado, alfa 0.4 |
+| Llama actual | Blanco-turquesa, alfa 1 |
+| Brillo tenue / activo | Alfa 0.08 / 0.30 |
+| Holgura de respawn / sonda de suelo | 0.02 / 0.20 unidades |
+| Desplazamiento local del Respawn Point | (-0.6, 0.58) |
+
+- `Memory Flame - Start`: altar en `(-7.9, -2.1)`, destino aproximado `(-8.5, -1.52)` sobre el suelo inicial, a la izquierda de la zona de ataque del entrenador.
+- `Memory Flame - Upper`: altar en `(5.8, 2.725)`, destino aproximado `(5.2, 3.305)` sobre la plataforma alta existente, fuera del alcance vertical del enemigo terrestre. Se llega con las habilidades de movimiento ya disponibles.
+
+### Validación
+
+- Unity `6000.5.5f1` compiló y ejecutó el configurador mediante la API del Editor: `TASK11_SETUP_PASS`, salida `0`, en `Logs/Task11Setup.log`.
+- La ejecución final completa terminó con `TASK11_CHECKPOINT_PASS` y `TASK09_PLAYMODE_PASS` en `Logs/Task11Validation.log`, junto a las marcas de T10, sin errores C#, avisos C# ni excepciones. Incluye R con el cuerpo dinámico libre y desplazamiento horizontal real después de reaparecer, no solo la medición del destino con el fixture inmovilizado.
+- La regresión usa teclado sintético para Interact/E y Restart/R. Comprueba ausencia de activación fuera de rango/muerto; primer descanso con curación; tecla mantenida sin repetición; reactivación sin duplicar checkpoint; sustitución por la segunda llama; persistencia con muerte/R; vuelta a la primera; colores/activación; curación limitada al máximo; referencias del HUD/cámara; y limpieza de ventanas de combate, bloqueo y knockback.
+- También prueba que un destino ocupado se rechace y provoque fallback al spawn original, y que vuelva a ser válido al retirar el obstáculo. La batería anterior comprueba movimiento, dash sin empuje, pogo normal/vulnerable/letal, parry, postura, IA, muerte, hitstop y feedback.
+- Las pruebas disponen temporalmente de cuerpo inmovilizado en los casos de interacción y preparan algunos estados por los contratos existentes/reflexión. No se modifican ni guardan parámetros del juego para simular un éxito. La revisión humana del aspecto y del recorrido sigue siendo necesaria; no se generó una build standalone.
+
+### Pruebas manuales exactas en Unity
+
+1. Abrir `Assets/_Project/Scenes/Test/MovementTest.unity` en Unity `6000.5.5f1`. No regenerar la escena completa. Entrar en Play Mode: ambas llamas comienzan tenues y no hay checkpoint actual.
+2. Para comprobar la alternativa original, morir sin usar E y pulsar R: debe volver a `Player Spawn Point`, con vida completa y controles operativos.
+3. Acercarse a la llama del suelo inicial, alrededor de `x=-7.9`. Debe aparecer la indicación de descanso con E y el binding del mando disponible. Pulsar E: señal blanca, brillo activo y vida completa. Para probar curación, recibir daño del entrenador, alejarse a la izquierda y descansar cuando termine el bloqueo de knockback.
+4. Mantener E: no debe producir varios descansos. Soltar y volver a pulsar permite curarse otra vez. Alejarse más de `1.3` unidades: desaparece el aviso y E no activa la llama.
+5. Usar salto/doble salto y las plataformas existentes para llegar a la llama de la plataforma alta, cerca de `(5.8, 2.725)`. Pulsar E: esta se ilumina y la primera vuelve a tenue.
+6. Volver al combate, dejar que el enemigo o entrenador agote la vida y pulsar R. Debe reaparecer sobre la plataforma alta, aproximadamente en `(5.2, 3.305)`, con 5/5 de vida, sin knockback ni bloqueos. La cámara debe mostrarlo inmediatamente respetando sus límites; comprobar HUD, caminar, salto, ataque, parry, dash, doble salto y pogo.
+7. Volver a la primera llama y pulsar E: al morir/R debe reaparecer junto a ella. Los enemigos muertos no resucitan y los vivos conservan su estado; no hay respawn global del mundo.
+8. Para configurar otro destino, mover el hijo `Respawn Point` del prefab/instancia, manteniendo al menos la holgura sobre suelo libre. Activar Gizmos al seleccionar la llama muestra rango y referencia del cuerpo. Un punto dentro de un sólido o sin suelo será rechazado.
+9. Desde Edit Mode, usar `Fangbound/Validate Memory Flames in Play Mode` para repetir la batería completa. Los menús anteriores de validación incluyen también el nuevo caso. Los ajustes locales de hitstop permanecen intactos al finalizar.
+
+### Límites y pendiente conservado
+
+- Representación de sprites provisionales, sin arte final, partículas, audio, menús, viaje rápido, recuerdos/cinemáticas ni explicación narrativa definitiva de la reaparición. Las variantes regionales pueden sustituir los hijos visuales conservando el componente.
+- Comprobación conservadora mediante caja del cuerpo y máscara de terreno; para nuevos niveles se deben configurar correctamente las capas y el punto de spawn. No implementa búsqueda de rutas ni reparación automática de destinos.
+- Sigue pendiente la medición manual exacta de los `0.8 s` de i-frames de PlayerHealth, fuera del alcance de T11. Sus valores no se alteraron.
+
+## Ajuste final de T11: contraste del HUD de vida
+
+- El usuario confirmó T11 aprobada en sus pruebas manuales. Se ajustó únicamente la presentación de `PlayerHealthUI.cs`: lleno `#59D9D0`, vacío `#34343D`, borde `#91A9AC` de 2 px, configurables mediante campos serializados del componente. Se conservan los cinco indicadores actuales, tamaño de 26 px, separación de 5 px y posición original.
+- Los bloques usan `Texture2D.whiteTexture` con rellenos opacos, evitando que el fondo del skin de `GUI.Box` oscurezca los colores. El HUD sigue leyendo `CurrentHealth`/`MaximumHealth` en cada dibujo; no se modificaron salud, daño, invulnerabilidad, curación, muerte, respawn ni checkpoints. Se restaura `GUI.color` al terminar para no afectar otras indicaciones.
+- En `CombatFeedbackData.asset` se activó `Hitstop Enabled`. Se conserva la duración normal ya configurada en `0.10 s`, pogo `0.04 s` y parry `0.07 s`, sin cambios en otros parámetros.
+- Unity `6000.5.5f1` compiló y ejecutó la batería completa en una copia aislada para no cerrar el Editor del usuario. `Logs/Task11HudValidation.log` terminó con `TASK11_CHECKPOINT_PASS` y `TASK09_PLAYMODE_PASS`, incluidas las regresiones de T10, sin errores C#, avisos C# ni excepciones. Se cubren daño, curación/reactivación/cambio de llama, muerte y R; `git diff --check` pasó.
+- El contraste calculado entre lleno/vacío es aproximadamente `7.2:1`; lleno/fondo de cámara `9.6:1` y borde/fondo `6.6:1`. El borde mantiene distinguibles los huecos oscuros sobre el fondo de la escena.
+- Se revisaron capturas del Game View real y sus píxeles: `5/5`, `4/5`, `2/5` y `1/5` tienen exactamente los rellenos `#59D9D0`/`#34343D`; al curarse o cambiar checkpoint se conservan cinco llenos, al morir cinco vacíos y tras R cinco llenos. La comprobación gráfica aislada terminó con `HUD_RENDER_TRANSITIONS_PASS` en `Logs/Task11HudRender.log`; las imágenes están en `Logs/HudPreview-*.png`. La herramienta temporal de captura queda fuera de los archivos del producto, en la carpeta ignorada `.utmp`.
+- Prueba manual: en MovementTest recibir daño para comparar `5/5`, `4/5`, `2/5` y `1/5`; descansar con E para recuperar los cinco bloques turquesa; cambiar de llama; morir para ver los cinco huecos y reaparecer con R para recuperar `5/5`. Comprobar también el hitstop activo en impactos normales. No se hicieron commits, push ni cambios de rama. La medición manual exacta de los `0.8 s` de i-frames continúa pendiente.

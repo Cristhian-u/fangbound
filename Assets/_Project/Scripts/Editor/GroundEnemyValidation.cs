@@ -23,6 +23,9 @@ namespace Fangbound.EditorTools
         private static readonly Stack<IEnumerator> routines = new Stack<IEnumerator>();
         private static bool hadRuntimeError;
         private static double startedAt;
+        private static CombatHitstop validationHitstop;
+        private static CombatFeedbackData originalFeedbackData;
+        private static CombatFeedbackData validationFeedbackData;
 
         static GroundEnemyValidation()
         {
@@ -74,6 +77,14 @@ namespace Fangbound.EditorTools
 
         private static void Finish(bool success)
         {
+            if (validationHitstop != null)
+            {
+                validationHitstop.Cancel();
+                Field(validationHitstop, "feedbackData").SetValue(validationHitstop, originalFeedbackData);
+            }
+            if (validationFeedbackData != null) Object.Destroy(validationFeedbackData);
+            validationHitstop = null;
+            originalFeedbackData = validationFeedbackData = null;
             SessionState.SetBool(RunningKey, false);
             routines.Clear();
             Debug.Log(success ? "TASK09_PLAYMODE_PASS" : "TASK09_PLAYMODE_FAIL");
@@ -84,6 +95,16 @@ namespace Fangbound.EditorTools
         private static IEnumerator Validate()
         {
             yield return Wait(0.2f);
+            // Exercise feedback even when the designer has disabled it locally.
+            // Only the runtime copy is changed; preserve the user's asset settings.
+            validationHitstop = Object.FindAnyObjectByType<CombatHitstop>();
+            if (validationHitstop != null)
+            {
+                originalFeedbackData = (CombatFeedbackData)Field(validationHitstop, "feedbackData").GetValue(validationHitstop);
+                validationFeedbackData = Object.Instantiate(originalFeedbackData);
+                Field(validationFeedbackData, "hitstopEnabled").SetValue(validationFeedbackData, true);
+                Field(validationHitstop, "feedbackData").SetValue(validationHitstop, validationFeedbackData);
+            }
             GroundEnemyController enemy = Object.FindAnyObjectByType<GroundEnemyController>();
             EnemyHealth health = enemy.GetComponent<EnemyHealth>();
             EnemyPosture posture = enemy.GetComponent<EnemyPosture>();
@@ -98,6 +119,7 @@ namespace Fangbound.EditorTools
             yield return ValidateCollisionAndRecovery(player, enemy);
             yield return GroundEnemyPogoValidation.Validate(player);
             yield return CombatFeedbackValidation.Validate(player);
+            yield return MemoryFlameValidation.Validate(player);
             FreezePlayer(player, new Vector2(-10f, -1.5f));
 
             Rigidbody2D enemyBody = enemy.GetComponent<Rigidbody2D>();

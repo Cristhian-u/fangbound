@@ -21,6 +21,7 @@ namespace Fangbound.Player
         private PlayerPogo playerPogo;
         private PlayerParry playerParry;
         private PlayerImpactReceiver impactReceiver;
+        private PlayerCheckpoint checkpoint;
         private InputAction restartAction;
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
@@ -40,6 +41,7 @@ namespace Fangbound.Player
         public event Action<int> DamageTaken;
         public event Action<int> Healed;
         public event Action Died;
+        public event Action Respawned;
 
         private void Awake()
         {
@@ -50,6 +52,7 @@ namespace Fangbound.Player
             playerPogo = GetComponent<PlayerPogo>();
             playerParry = GetComponent<PlayerParry>();
             impactReceiver = GetComponent<PlayerImpactReceiver>();
+            checkpoint = GetComponent<PlayerCheckpoint>();
 
             if (healthData == null || inputActions == null)
             {
@@ -178,15 +181,27 @@ namespace Fangbound.Player
 
         public void RestartForTesting()
         {
+            Vector3 restartPosition = spawnPosition;
+            Quaternion restartRotation = spawnRotation;
+            if (checkpoint != null && checkpoint.TryGetRespawnPose(out Vector3 checkpointPosition, out Quaternion checkpointRotation))
+            {
+                restartPosition = checkpointPosition;
+                restartRotation = checkpointRotation;
+            }
+            // Also clear an in-progress attack/parry if this API is called while alive.
+            playerCombat.enabled = false;
+            playerPogo.enabled = false;
+            playerParry.enabled = false;
+            playerController.enabled = false;
             IsDead = false;
             CurrentHealth = MaximumHealth;
             invulnerabilityRemaining = 0f;
             knockbackControlRemaining = 0f;
             blinkElapsed = 0f;
 
-            transform.SetPositionAndRotation(spawnPosition, spawnRotation);
-            body.position = spawnPosition;
-            body.rotation = spawnRotation.eulerAngles.z;
+            transform.SetPositionAndRotation(restartPosition, restartRotation);
+            body.position = restartPosition;
+            body.rotation = restartRotation.eulerAngles.z;
             body.linearVelocity = Vector2.zero;
             body.angularVelocity = 0f;
             body.gravityScale = originalGravityScale;
@@ -202,6 +217,7 @@ namespace Fangbound.Player
             playerPogo.ResetForRespawn();
 
             HealthChanged?.Invoke(CurrentHealth, MaximumHealth);
+            Respawned?.Invoke();
         }
 
         private void EnterDeathState()

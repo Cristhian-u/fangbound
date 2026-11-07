@@ -143,9 +143,17 @@ Una barra que se recarga con parry perfecto y golpes. El combate defensivo alime
 
 ### Calidad de vida (cuentan mucho en un juego difícil)
 
-- Checkpoint visible antes de cada boss y reinicio rápido de la pelea.
+- Llama del Recuerdo visible antes de cada boss y reinicio rápido de la pelea.
 - Selector de dificultad con modo «historia» para la presentación.
 - Zona extra post-juego (arena de bosses): solo como visión.
+
+### Llamas del Recuerdo — descanso y checkpoints (decisión oficial)
+
+**Llamas del Recuerdo** es el nombre oficial de los puntos de descanso y checkpoints de FANGBOUND. Al descansar en una llama, esta se convierte en el checkpoint actual y restaura la vida; tras morir, el jugador reaparece junto a la última llama activada.
+
+Su identidad visual es una pequeña llama blanco-turquesa flotando sobre un altar o pedestal antiguo de piedra, con un aspecto minimalista, misterioso y melancólico. Antes de activarse presenta un brillo tenue; después de activarse su luz se intensifica. Los pedestales podrán variar según la región, manteniendo reconocible la llama. Deben poder aparecer coherentemente en las ocho regiones.
+
+Narrativamente están relacionadas con los recuerdos y el pasado: representan recuerdos que persisten, incluso los dolorosos. Algunas llamas especiales podrían revelar fragmentos de recuerdos de la salamandra y la Bestia Ancestral; no todos los checkpoints deben mostrar recuerdos. La explicación exacta de por qué permiten reaparecer después de morir **todavía no está definida** y no se establece aquí un lore definitivo.
 
 ## 6. Habilidades y combos
 

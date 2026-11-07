@@ -53,6 +53,16 @@ namespace Fangbound.CameraSystem
             transform.position = clampedPosition;
         }
 
+        public void SnapToTarget()
+        {
+            if (target == null) return;
+            Vector3 position = transform.position;
+            position.x = target.position.x;
+            position.y = target.position.y;
+            transform.position = ClampToRoom(position);
+            smoothVelocity = Vector3.zero;
+        }
+
         private static float GetDeadZoneTarget(float cameraPosition, float targetPosition, float deadZoneSize)
         {
             float halfDeadZone = deadZoneSize * 0.5f;
