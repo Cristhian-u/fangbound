@@ -220,6 +220,85 @@ namespace Fangbound.EditorTools
             Debug.Log($"TASK13_SETUP_PASS: ampliación aditiva a 150 m; {retained.Count} objetos originales conservados con sus identificadores; ruina intacta, nuevo mirador y arena desplazada 70 m.");
         }
 
+        [MenuItem("Fangbound/Connect Arboleda Routes for T14 (once)")]
+        public static void ConnectRoutes()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || !File.Exists(ScenePath))
+                throw new InvalidOperationException("Conectar la escena existente desde Edit Mode.");
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Guardar los cambios abiertos antes de conectar las rutas.");
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (GameObject.Find("T14 Interconnected Routes") != null || GameObject.Find("T13 Expansion") == null)
+                throw new InvalidOperationException("Se requiere T13 sin T14 aplicada; no se sobrescriben rutas existentes.");
+            // Validate every surface to be edited before making any changes.
+            ExpectSurface("Grove Crossing", new Vector2(72.75f, 4.4f), new Vector2(16.5f, 8.8f));
+            ExpectSurface("Lookout 1", new Vector2(68f, 10.55f), new Vector2(3.5f, 0.3f));
+            ExpectSurface("Lookout 2", new Vector2(73f, 12.55f), new Vector2(3.5f, 0.3f));
+            ExpectSurface("Lookout Catch", new Vector2(75.375f, 11.15f), new Vector2(1.05f, 0.3f));
+            ExpectSurface("Passage Low Rest", new Vector2(86.5f, 3.4f), new Vector2(11f, 6.8f));
+            ExpectPosition("Lookout Fork Sign", new Vector2(65.8f, 12.1f));
+            ExpectPosition("Memory Flame - Arboleda", new Vector2(117f, 2.4f));
+            ExpectPosition("Ground Enemy - Arena", new Vector2(127.5f, 2.92f));
+            if (GameObject.Find("Faint Crystal") != null || GameObject.Find("Crystal Glow") != null)
+                throw new InvalidOperationException("Revisar la escena: la decoración retirada ha reaparecido.");
+            foreach (string name in new[] { "Network Center 2", "Network Center 3", "Network Lower Entry", "Network Lower Tunnel", "Network Lower Step", "Lookout Bridge", "Lookout Upper Recovery" })
+                if (GameObject.Find(name) != null) throw new InvalidOperationException("Nombre ya utilizado: " + name);
+            square = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Placeholder/MovementTestSquare.asset");
+            if (square == null) throw new InvalidOperationException("Falta sprite existente.");
+            var retained = new System.Collections.Generic.Dictionary<GameObject, GlobalObjectId>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+                    retained.Add(item.gameObject, GlobalObjectId.GetGlobalObjectIdSlow(item.gameObject));
+
+            Transform network = Group("T14 Interconnected Routes", GameObject.Find("Level Geometry").transform);
+            Transform center = Group("Central Route", network);
+            Transform lower = Group("Lower Route", network);
+            Transform upper = GameObject.Find("Optional Lookout Route").transform;
+            upper.SetParent(network, true);
+            ResizeSurface("Grove Crossing", 68.5f, 4f, 8f, 0.3f, center);
+            Platform("Network Center 2", center, 75.5f, 3f, 7f);
+            Platform("Network Center 3", center, 80f, 3f, 8.8f);
+            Block("Network Lower Entry", lower, 68.25f, 7.5f, 6f);
+            Block("Network Lower Tunnel", lower, 76f, 8f, 4.6f);
+            Block("Network Lower Step", lower, 81.5f, 3f, 5.9f);
+            ResizeSurface("Lookout 1", 61.625f, 3.25f, 11f, 0.3f, upper);
+            ResizeSurface("Lookout 2", 67.25f, 3.5f, 13f, 0.3f, upper);
+            Platform("Lookout Bridge", upper, 72.75f, 3.5f, 13.9f);
+            Platform("Lookout Upper Recovery", upper, 70f, 1.8f, 12.2f);
+            ResizeSurface("Lookout Catch", 75.25f, 1.3f, 12f, 0.3f, upper);
+            ResizeSurface("Passage Low Rest", 87.5f, 9f, 6.8f, 6.8f);
+            GameObject.Find("Lookout Fork Sign").transform.position = new Vector3(60.8f, 12.8f);
+            foreach (var pair in retained)
+                if (pair.Key == null || !GlobalObjectId.GetGlobalObjectIdSlow(pair.Key).Equals(pair.Value))
+                    throw new InvalidOperationException("Se perdió un objeto original al conectar rutas.");
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log($"TASK14_SETUP_PASS: red local sin ampliar 150 m; {retained.Count} objetos originales conservados; tres rutas y conexión inferior-central, reconexión en x=83..92.");
+        }
+
+        private static void ExpectSurface(string name, Vector2 center, Vector2 size)
+        {
+            ExpectPosition(name, center);
+            GameObject surface = GameObject.Find(name);
+            BoxCollider2D collider = surface.GetComponent<BoxCollider2D>();
+            if (collider == null || collider.isTrigger || collider.size != Vector2.one || collider.offset != Vector2.zero ||
+                Vector2.Distance(collider.bounds.size, size) > 0.02f || surface.transform.parent.lossyScale != Vector3.one ||
+                Quaternion.Angle(surface.transform.rotation, Quaternion.identity) > 0.01f || GameObject.Find(name + " Moss") == null)
+                throw new InvalidOperationException("Revisar edición manual de la superficie antes de conectar: " + name);
+        }
+
+        private static void ResizeSurface(string name, float x, float width, float top, float thickness, Transform parent = null)
+        {
+            Transform surface = GameObject.Find(name).transform;
+            Transform cap = GameObject.Find(name + " Moss").transform;
+            if (parent != null) { surface.SetParent(parent, true); cap.SetParent(parent, true); }
+            surface.position = new Vector3(x, top - thickness * 0.5f);
+            surface.localScale = new Vector3(width, thickness, 1f);
+            cap.position = new Vector3(x, top - 0.04f);
+            cap.localScale = new Vector3(width, 0.08f, 1f);
+        }
+
         private static void ExpectPosition(string name, Vector2 expected)
         {
             GameObject item = GameObject.Find(name);

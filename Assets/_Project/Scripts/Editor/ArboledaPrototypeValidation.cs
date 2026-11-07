@@ -61,6 +61,8 @@ namespace Fangbound.EditorTools
         private static void ValidateScene()
         {
             Require(GameObject.Find("T13 Expansion") != null, "Falta la ampliación T13 guardada.");
+            Require(GameObject.Find("T14 Interconnected Routes") != null, "Falta la red de rutas T14 guardada.");
+            Require(GameObject.Find("Faint Crystal") == null && GameObject.Find("Crystal Glow") == null, "Reapareció decoración retirada.");
             Require(Object.FindObjectsByType<PlayerHealth>().Length == 1, "Debe existir un jugador.");
             Require(Object.FindObjectsByType<GroundEnemyController>().Length == 1, "Debe existir un enemigo.");
             Require(Object.FindObjectsByType<MemoryFlame>().Length == 1, "Debe existir una llama.");
@@ -81,7 +83,7 @@ namespace Fangbound.EditorTools
             foreach (Collider2D collider in GameObject.Find("Level Geometry").GetComponentsInChildren<Collider2D>())
                 Require(!collider.isTrigger && collider.gameObject.layer == 0, "Geometría debe ser sólida en Default.");
             Require(GameObject.Find("Optional Upper Route - Four Platforms").GetComponentsInChildren<Collider2D>().Length == 4, "La ruta superior debe tener cuatro plataformas.");
-            Require(GameObject.Find("Optional Lookout Route").GetComponentsInChildren<Collider2D>().Length == 7, "Mirador: tres apoyos de subida, captura y tres de regreso.");
+            Require(GameObject.Find("Optional Lookout Route").GetComponentsInChildren<Collider2D>().Length == 9, "Mirador: subida, puente, dos recuperaciones y regreso.");
             Require(Mathf.Abs(PlatformBounds("Safety Floor").size.x - 150f) < 0.01f, "Suelo continuo no cubre 150 m.");
             CombatFeedbackData feedback = AssetDatabase.LoadAssetAtPath<CombatFeedbackData>(CombatFeedbackSceneSetup.DataPath);
             Require(feedback.HitstopEnabled && Mathf.Approximately(feedback.NormalHitstop, 0.10f) &&
@@ -129,6 +131,7 @@ namespace Fangbound.EditorTools
             }
             Debug.Log(success ? "TASK12_PLAYMODE_PASS" : "TASK12_PLAYMODE_FAIL");
             Debug.Log(success ? "TASK13_PLAYMODE_PASS" : "TASK13_PLAYMODE_FAIL");
+            Debug.Log(success ? "TASK14_PLAYMODE_PASS" : "TASK14_PLAYMODE_FAIL");
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             else EditorApplication.ExitPlaymode();
         }
@@ -177,14 +180,23 @@ namespace Fangbound.EditorTools
             route.AddRange(variant == 1
                 ? new[] { "Upper 1", "Upper 2", "Upper 3", "Upper Discovery", "Ruin Return 1", "Ruin Return 2" }
                 : new[] { "B Lower 1", "B Lower 2", "B Return Step" });
-            route.AddRange(new[] { "Grove Entry Terrace", "Grove Entry", "Grove East", "Grove Switchback", "Grove Upper Rest", "Grove Crossing" });
-            if (variant == 2) route.AddRange(new[] { "Lookout 1", "Lookout 2", "Lookout Deck", "Lookout Return 1", "Lookout Return 2", "Lookout Return 3" });
+            route.AddRange(new[] { "Grove Entry Terrace", "Grove Entry", "Grove East" });
+            if (variant == 1)
+                route.AddRange(new[] { "Grove Low Recovery", "Network Lower Entry", "Network Lower Tunnel", "Network Lower Step" });
+            else
+            {
+                route.AddRange(new[] { "Grove Switchback", "Grove Upper Rest" });
+                route.AddRange(variant == 2
+                    ? new[] { "Lookout 1", "Lookout 2", "Lookout Bridge", "Lookout Deck", "Lookout Return 1", "Lookout Return 2", "Lookout Return 3" }
+                    : new[] { "Grove Crossing", "Network Center 2", "Network Center 3" });
+            }
             route.AddRange(new[] { "Passage Low Rest", "Passage 1", "Passage 2", "Passage Upper Rest", "Passage Descent 1",
                 "Passage Descent 2", "Passage Descent 3", "Passage Descent 4", "C Arena", "D Step", "D Deck" });
             for (int i = 1; i < route.Count; i++)
             {
                 Bounds source = PlatformBounds(route[i - 1]), target = PlatformBounds(route[i]);
-                if (target.max.y < source.max.y - 0.1f && target.min.x <= source.max.x + 0.05f)
+                if (target.max.y < source.max.y - 0.1f && (target.min.x <= source.max.x + 0.05f ||
+                    route[i - 1] == "Network Center 3"))
                     yield return DropTo(route[i - 1], route[i]);
                 else if (Mathf.Abs(target.max.y - source.max.y) < 0.05f && target.min.x <= source.max.x + 0.05f)
                 {
@@ -192,6 +204,19 @@ namespace Fangbound.EditorTools
                     Require(controller.IsGrounded, "Unión sin apoyo: " + route[i]);
                 }
                 else yield return JumpTo(route[i - 1], route[i]);
+                if (route[i] == "Grove Upper Rest") yield return CheckForkVisibility();
+                if (variant == 0 && route[i] == "Grove Crossing")
+                {
+                    yield return DropTo("Grove Crossing", "Network Lower Entry");
+                    yield return WalkTo(71.4f);
+                    yield return JumpTo("Network Lower Entry", "Grove Crossing");
+                    Debug.Log("TASK14_CONNECTION_PASS: central -> inferior -> central por conexión intermedia, sin teletransporte.");
+                    yield return JumpTo("Grove Crossing", "Grove Upper Rest");
+                    yield return DropTo("Grove Upper Rest", "Network Lower Entry");
+                    yield return WalkTo(71.4f);
+                    yield return JumpTo("Network Lower Entry", "Grove Crossing");
+                    Debug.Log("TASK14_LOOP_PASS: regreso a bifurcación -> entrada inferior -> conexión central, solo salto normal.");
+                }
                 // Deliberate misses with real movement, then climb back without
                 // teleporting, changing gravity, healing or using extra abilities.
                 if (variant == 1 && route[i] == "Upper 2")
@@ -203,8 +228,12 @@ namespace Fangbound.EditorTools
                     yield return JumpTo("Grove East", "Grove Switchback");
                     Debug.Log("TASK13_RECOVERY_PASS: grove, caída de 3.3 m y retorno por dos saltos normales.");
                 }
+                if (variant == 2 && route[i] == "Lookout 1")
+                    yield return MissAndRecover("Lookout 1", "Grove Upper Rest");
                 if (variant == 2 && route[i] == "Lookout 2")
-                    yield return MissAndRecover("Lookout 2", "Lookout Catch");
+                    yield return MissAndRecover("Lookout 2", "Lookout Upper Recovery");
+                if (variant == 2 && route[i] == "Lookout Bridge")
+                    yield return MissAndRecover("Lookout Bridge", "Lookout Catch");
                 if (variant == 2 && route[i] == "Passage 2")
                     yield return MissAndRecover("Passage 2", "Passage Catch");
                 if (route[i] == "C Arena")
@@ -219,7 +248,24 @@ namespace Fangbound.EditorTools
             yield return WalkTo(GameObject.Find("End Label").transform.position.x);
             CheckCameraAndSafety();
             Require(player.CurrentHealth == player.MaximumHealth, "Hubo daño fuera del encuentro.");
-            Debug.Log($"TASK12_ROUTE_PASS / TASK13_ROUTE_PASS: {new[] { "principal", "ruina y retorno", "mirador, retorno y recuperaciones" }[variant]}, solo A/D+Espacio; E en llama; final x={body.position.x:F2}; bot={Time.realtimeSinceStartupAsDouble - began:F1}s (no cronometraje humano).");
+            Debug.Log($"TASK12_ROUTE_PASS / TASK13_ROUTE_PASS / TASK14_ROUTE_PASS: {new[] { "central con cambios de ruta", "inferior y ruina", "superior y mirador" }[variant]}, solo A/D+Espacio; E en llama; final x={body.position.x:F2}; bot={Time.realtimeSinceStartupAsDouble - began:F1}s (no cronometraje humano).");
+        }
+
+        private static IEnumerator CheckForkVisibility()
+        {
+            // The decision point is the right end of the shared rest, reached
+            // by walking across it; not the left edge where the prior jump lands.
+            yield return WalkTo(PlatformBounds("Grove Upper Rest").max.x - .9f);
+            yield return Wait(.25f);
+            foreach (string name in new[] { "Lookout 1", "Grove Crossing", "Network Lower Entry" })
+            {
+                Bounds target = PlatformBounds(name);
+                Vector3 point = new Vector3(target.min.x + .4f, target.max.y);
+                Vector3 view = camera.WorldToViewportPoint(point);
+                Require(view.x > 0 && view.x < 1 && view.y > 0 && view.y < 1,
+                    $"Entrada fuera de cámara en la bifurcación: {name}, viewport={view}, camera={camera.transform.position}, aspect={camera.aspect}.");
+            }
+            Debug.Log("TASK14_FORK_VIEW_PASS: entradas superior, central e inferior visibles con la cámara existente.");
         }
 
         private static IEnumerator JumpTo(string from, string to)
