@@ -7,8 +7,10 @@ namespace Fangbound.Combat
     public sealed class EnemyPosture : MonoBehaviour
     {
         [SerializeField] private EnemyPostureData postureData;
+        [SerializeField] private SpriteRenderer postureIndicator;
 
         private SpriteRenderer spriteRenderer;
+        private SpriteRenderer feedbackRenderer;
         private Color normalColor;
         private float vulnerableRemaining;
         private float recoveryProgress;
@@ -28,7 +30,8 @@ namespace Fangbound.Combat
                 return;
             }
 
-            normalColor = spriteRenderer.color;
+            feedbackRenderer = postureIndicator != null ? postureIndicator : spriteRenderer;
+            normalColor = feedbackRenderer.color;
             CurrentPosture = postureData.MaximumPosture;
         }
 
@@ -90,19 +93,19 @@ namespace Fangbound.Combat
 
         private void RefreshColor()
         {
-            if (spriteRenderer == null || postureData == null)
+            if (feedbackRenderer == null || postureData == null)
             {
                 return;
             }
 
             if (IsVulnerable)
             {
-                spriteRenderer.color = postureData.VulnerableColor;
+                feedbackRenderer.color = postureData.VulnerableColor;
                 return;
             }
 
             float postureRatio = CurrentPosture / (float)postureData.MaximumPosture;
-            spriteRenderer.color = Color.Lerp(postureData.StrainedColor, normalColor, postureRatio);
+            feedbackRenderer.color = Color.Lerp(postureData.StrainedColor, normalColor, postureRatio);
         }
     }
 }

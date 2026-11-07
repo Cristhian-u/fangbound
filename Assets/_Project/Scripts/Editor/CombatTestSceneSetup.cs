@@ -240,7 +240,7 @@ namespace Fangbound.EditorTools
             serializedData.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void ConfigureParryTrainingTarget(
+        internal static void ConfigureParryTrainingTarget(
             Transform parent,
             Sprite sprite,
             EnemyPostureData postureData,
@@ -272,13 +272,24 @@ namespace Fangbound.EditorTools
                 telegraphObject.transform.SetParent(target.transform, false);
             }
 
-            telegraphObject.transform.localPosition = new Vector3(attackData.HitboxOffset.x, attackData.HitboxOffset.y, -0.1f);
-            telegraphObject.transform.localScale = new Vector3(attackData.HitboxSize.x, attackData.HitboxSize.y, 1f);
+            // The previous emitter queried world units, independent of the target scale.
+            Vector3 targetScale = target.transform.lossyScale;
+            telegraphObject.transform.localPosition = new Vector3(attackData.HitboxOffset.x / targetScale.x, attackData.HitboxOffset.y / targetScale.y, -0.1f);
+            telegraphObject.transform.localScale = new Vector3(attackData.HitboxSize.x / Mathf.Abs(targetScale.x), attackData.HitboxSize.y / Mathf.Abs(targetScale.y), 1f);
             SpriteRenderer telegraphRenderer = telegraphObject.GetComponent<SpriteRenderer>();
             telegraphRenderer.sprite = sprite;
             telegraphRenderer.color = attackData.TelegraphColor;
             telegraphRenderer.sortingOrder = 5;
             telegraphRenderer.enabled = false;
+
+            BoxCollider2D attackCollider = telegraphObject.GetComponent<BoxCollider2D>();
+            if (attackCollider == null) attackCollider = telegraphObject.AddComponent<BoxCollider2D>();
+            attackCollider.size = Vector2.one;
+            attackCollider.offset = Vector2.zero;
+            attackCollider.isTrigger = true;
+            attackCollider.enabled = false;
+            EnemyAttackHitbox attackHitbox = telegraphObject.GetComponent<EnemyAttackHitbox>();
+            if (attackHitbox == null) attackHitbox = telegraphObject.AddComponent<EnemyAttackHitbox>();
 
             EnemyPosture posture = target.GetComponent<EnemyPosture>();
             if (posture == null)
@@ -298,7 +309,7 @@ namespace Fangbound.EditorTools
 
             SerializedObject serializedEmitter = new SerializedObject(emitter);
             SetObjectReference(serializedEmitter, "attackData", attackData);
-            SetObjectReference(serializedEmitter, "posture", posture);
+            SetObjectReference(serializedEmitter, "attackHitbox", attackHitbox);
             SetObjectReference(serializedEmitter, "telegraphRenderer", telegraphRenderer);
             serializedEmitter.ApplyModifiedPropertiesWithoutUndo();
 
@@ -421,7 +432,7 @@ namespace Fangbound.EditorTools
             SerializedObject serializedEmitter = new SerializedObject(attackEmitter);
             if (serializedPosture.FindProperty("postureData").objectReferenceValue != postureData ||
                 serializedEmitter.FindProperty("attackData").objectReferenceValue != attackData ||
-                serializedEmitter.FindProperty("posture").objectReferenceValue != enemyPosture ||
+                serializedEmitter.FindProperty("attackHitbox").objectReferenceValue != telegraphObject.GetComponent<EnemyAttackHitbox>() ||
                 serializedEmitter.FindProperty("telegraphRenderer").objectReferenceValue != telegraphObject.GetComponent<SpriteRenderer>())
             {
                 throw new InvalidOperationException("El entrenador de parry perdió sus referencias de datos.");

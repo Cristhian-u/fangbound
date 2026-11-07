@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Fangbound.Combat;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -110,7 +111,13 @@ namespace Fangbound.Player
                 }
 
                 PogoTarget target = hit.GetComponentInParent<PogoTarget>();
-                if (target == null || !target.isActiveAndEnabled || !hitTargets.Add(target))
+                if (target == null || !target.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                IDamageable damageable = hit.GetComponentInParent<IDamageable>();
+                if ((damageable != null && !damageable.CanReceiveDamage) || !hitTargets.Add(target))
                 {
                     continue;
                 }
@@ -118,6 +125,8 @@ namespace Fangbound.Player
                 attackTimeRemaining = 0f;
                 attackAvailable = true;
                 controller.BounceFromPogo(pogoData.BounceSpeed);
+                // Bounce first: a lethal hit may disable or destroy the target.
+                damageable?.TakeDamage(pogoData.Damage);
                 return;
             }
 

@@ -357,3 +357,168 @@ Assets/_Project/
 - Recibir daño hasta cero: comprobar bloqueo, aviso de derrota y HUD; pulsar R y verificar posición, vida, gravedad, velocidades, controles e invulnerabilidad restaurados.
 - Tras reiniciar, probar ataque horizontal/ascendente, pogo y doble salto para comprobar que los componentes se reactivan.
 - Revisar la consola de Unity durante las pruebas.
+
+## Tarea 09: Enemigo terrestre (continuación del trabajo interrumpido)
+
+### Auditoría inicial
+
+- Se leyeron `AGENTS.md`, `GDD.md`, este registro y `Region1Plan.md`. El último commit era `891b90d` (Tarea 08); se respetó su condición de completada y probada indicada por el usuario.
+- Git solo mostraba dos archivos modificados (`EnemyPosture.cs`, `TrainingAttackEmitter.cs`) y el nuevo `EnemyAttackHitbox.cs` con su `.meta`. No había controlador terrestre, datos propios, vida de enemigo, prefab ni integración de Tarea 09 en la escena.
+- La extracción de la hitbox era una base válida, pero la migración estaba incompleta: el emisor requería una referencia todavía ausente en MovementTest; el configurador seguía buscando el campo retirado `posture`. Compilar esos scripts no garantizaba que el entrenador pudiera ejecutarse.
+- La hitbox calculaba `SourcePosition` a partir de los bounds de un collider desactivado, que no ofrecen una geometría válida. Además, excluir todo `transform.root` podía excluir al jugador si ambos estaban bajo un grupo común. Resolver el golpe también adelantaba el cooldown del entrenador, alterando sus ciclos.
+- El indicador visual opcional de `EnemyPosture` era válido y se conservó, con el renderer original como alternativa para el entrenador.
+
+### Archivos y comportamiento
+
+- `Assets/_Project/Scripts/Combat/EnemyAttackHitbox.cs`: se completó la extracción compartida. Usa la forma de un `BoxCollider2D`, calcula centro/tamaño mediante transforms y consulta física durante el ataque. El collider permanece desactivado: no añade una zona donde el enemigo pueda recibir golpes a distancia ni produce contactos adicionales. Cada ataque usa un único `EnemyAttackInstance`; comunica el resultado y aplica postura solo en `Parried`. Filtra el propietario, no todo el grupo de escena, y cancela el ataque al desactivarse.
+- `Assets/_Project/Scripts/Combat/TrainingAttackEmitter.cs`: usa la hitbox común y conserva las fases/tiempos originales. Un impacto resuelto no acorta su fase activa. Al desactivarse limpia hitbox y aviso.
+- `Assets/_Project/Scripts/Combat/EnemyPosture.cs`: se conservó el cambio previo del indicador opcional, sin reescribir las reglas de postura o recuperación.
+- `Assets/_Project/Scripts/Enemies/GroundEnemyData.cs` y `Data/Enemies/GroundEnemyData.asset`: parámetros de vida, velocidades, detección, ataque, multiplicador vulnerable y feedback. Los estados temporales quedan en componentes, no en el asset.
+- `Assets/_Project/Scripts/Enemies/EnemyHealth.cs`: implementa `IDamageable`, flash de daño y vida independiente de la postura. Durante vulnerabilidad recibe daño multiplicado. A cero cancela ataques, desactiva colliders/postura/simulación física y emite `Died` una sola vez. El cuerpo queda visible con color de muerte.
+- `Assets/_Project/Scripts/Enemies/GroundEnemyController.cs`: estados `Patrol`, `Chase`, `Telegraph`, `Attack`, `Recovery`, `Vulnerable` y `Dead`. Detecta por proximidad horizontal y tolerancia vertical; pierde al jugador por distancia, altura, desactivación o muerte. Fija orientación al comenzar el aviso. La ruptura de postura cancela el ataque y detiene la IA; al terminar la vulnerabilidad pasa por recuperación y retoma patrulla/persecución. Los límites horizontales restringen también la persecución; detecta suelo y obstáculos para no caminar fuera de una plataforma.
+- `Assets/_Project/Prefabs/Enemies/GroundEnemy.prefab`: prefab reutilizable con cuerpo, vida, postura, controlador, indicador de orientación, indicador de postura y zona de aviso/ataque. Usa el sprite provisional y el material sin fricción existentes. En otras escenas puede enlazarse `target`; si está vacío busca un `PlayerHealth` al iniciar.
+- `Assets/_Project/Scripts/Editor/CombatTestSceneSetup.cs`: se actualizó únicamente la creación/verificación del entrenador para enlazar la hitbox compartida. El aviso ahora coincide con la zona física original en unidades de mundo, compensando la escala del entrenador.
+- `Assets/_Project/Scripts/Editor/GroundEnemySceneSetup.cs`: menú `Fangbound/Configure Movement Test Ground Enemy`. Migra el entrenador, crea los assets nuevos si faltan e incorpora una instancia del prefab sin ejecutar el configurador general del jugador. Comprueba contratos, prefab, objetivos anteriores y ausencia de scripts faltantes.
+- `Assets/_Project/Scripts/Editor/GroundEnemyValidation.cs`: menú `Fangbound/Validate Ground Enemy in Play Mode`; regresión automatizada con la escena real. Se ejecuta desde Edit Mode, abre MovementTest y termina saliendo de Play Mode; en batch cierra el Editor con código de resultado. Las modificaciones de prueba solo ocurren en Play Mode y no se guardan en la escena.
+- `Assets/_Project/Scenes/Test/MovementTest.unity`: entrenador migrado y enemigo morado en el suelo derecho, inicialmente `(4.5, -1.58)`. Patrulla aproximadamente entre `x=1.4` y `x=6.8`. Conserva jugador, spawn, cámara, geometría, HUD, dos blancos de combate y dos objetivos de pogo.
+- Se añadieron los `.meta` de los scripts, carpeta `Enemies`, datos y prefab nuevos. Este registro documenta la entrega. No se modificaron scripts/datos/Input Actions del jugador, paquetes, GDD ni el plan de región. No se realizaron commits ni push.
+
+### Parámetros iniciales
+
+| Parámetro | Valor |
+| --- | --- |
+| Vida del enemigo | 4 |
+| Daño recibido durante vulnerabilidad | x2 |
+| Velocidad de patrulla / persecución | 1.3 / 2.6 unidades/s |
+| Detección / pérdida horizontal | 3.5 / 5.5 unidades |
+| Tolerancia vertical | 1.2 unidades |
+| Alcance para iniciar ataque | 1.3 unidades |
+| Daño / aviso / activo / recuperación | 1 / 0.65 s / 0.14 s / 1.3 s |
+| Offset / tamaño de ataque | (0.85, 0) / (1.2, 0.8), reflejados según orientación |
+| Postura compartida | 3 puntos; 1 por parry; vulnerable 1.5 s; recupera 1 punto/s |
+
+### Migración del entrenador
+
+- Se conserva la zona física anterior: centro `(-5.6, -1.4)` en MovementTest, tamaño `(3.6, 0.75)`, offset `(-1.8, -0.05)` respecto al entrenador. El aviso anterior se veía más pequeño por la escala `0.7` del padre; se corrigió su representación para mostrar la zona que ya dañaba.
+- Se conservan espera inicial `0.75 s`, aviso `0.65 s`, fase activa completa `0.14 s`, cooldown `1.3 s`, daño `1` y la resolución única por ataque.
+- La recepción sigue pasando por `PlayerImpactReceiver`: muerte, dash e i-frames mantienen prioridad sobre parry/daño. No hay segundo receptor ni cambios al sistema del jugador.
+
+### Validación realizada
+
+- Unity `6000.5.5f1` compiló los ensamblados de juego y Editor. El configurador generó el prefab y guardó MovementTest mediante la API de Unity, con `TASK09_SETUP_PASS` y salida `0` (`Logs/Task09Setup.log`).
+- La prueba automatizada en Play Mode terminó con `TASK09_PLAYMODE_PASS` (`Logs/Task09PlayMode.log`): patrulla en ambos sentidos/límites, detección y persecución, lado fijo del aviso, daño único, retorno al perder al jugador, regresión del entrenador, tres parries del enemigo, vulnerabilidad x2, recuperación de postura, muerte durante aviso, evento único de muerte, colliders cancelados y cuerpo detenido. También se probó una plataforma aislada con bordes y una pared.
+- La ejecución final está en `Logs/Task09Validation.log`, con `TASK09_PLAYMODE_PASS`, sin errores/avisos C# ni excepciones. Amplía la regresión a tres parries del propio entrenador, color vulnerable del renderer original y prioridad de i-frames frente a una ventana de parry abierta. Una pasada intermedia no observó ambos sentidos al medir el transform interpolado; se cambió la medición a `Rigidbody2D.position` y la ejecución completa posterior pasó. No se alteró la lógica de patrulla para obtener ese resultado.
+- `git diff --check` pasó. La comparación con HEAD de los objetos/componentes serializados del jugador confirmó que no cambiaron; tampoco hay diferencias en sus scripts, datos, Input Actions ni ajustes de proyecto.
+- La regresión usa física y componentes reales. Para aislar los casos inmoviliza/reposiciona al jugador, abre ventanas de parry mediante reflexión y llama a la consulta existente de `PlayerCombat`. La patrulla se mide con la posición física de `Rigidbody2D`, evitando depender del transform visual interpolado en modo sin gráficos. No reproduce pulsaciones humanas ni certifica el ajuste visual o la sensación de combate.
+- El primer lanzamiento dentro del sandbox falló por conexión IPC con Package Manager; se repitió fuera del sandbox. No fue un error C# del proyecto. Se actualizaron las búsquedas de objetos de los archivos nuevos a las APIs vigentes para evitar los avisos de obsolescencia de Unity 6.5.
+
+### Cómo probar manualmente en Unity
+
+1. Abrir `Assets/_Project/Scenes/Test/MovementTest.unity` con Unity `6000.5.5f1`, limpiar la consola y entrar en Play Mode. La escena ya está configurada; no hace falta regenerarla. Seleccionar `Environment/Ground Enemy` y activar Gizmos en Scene View para ver límites y zona de detección. Los valores de vida/postura/estado son propiedades públicas comprobadas por la validación automática; no hay HUD de enemigo en esta entrega.
+2. Sin acercarse, observar al enemigo morado en el suelo derecho: debe recorrer ambos sentidos, girar en sus límites y permanecer sobre el suelo. Acercarse usando el movimiento/dash/doble salto existentes: debe perseguir; alejarse más de `5.5` unidades o salir de su tolerancia vertical: debe volver a patrullar.
+3. Entrar en su alcance. Observar el aviso rojizo de `0.65 s` y el ataque amarillo de `0.14 s`. Cambiar de lado durante el aviso: la zona no debe girar para seguir al jugador. Sin parry/dash, el impacto debe quitar una vida al jugador, con el knockback y feedback existentes, una sola vez por ataque.
+4. Pulsar K o el hombro izquierdo justo antes del impacto. Cada parry correcto debe conservar la vida del jugador y reducir postura una vez (`3 → 2 → 1 → 0`). Al romperla, la franja superior debe mostrarse turquesa y el enemigo debe dejar de moverse/atacar durante `1.5 s`.
+5. Golpear con J antes de romper postura: debe restar `1` de vida. Golpear durante la vulnerabilidad: debe restar `2`. Si se deja vivir, observar el fin de la vulnerabilidad, recuperación progresiva de postura y reanudación del comportamiento. La vida no se regenera por recuperar postura.
+6. Agotar su vida con ataques: debe quedar gris/transparente, sin colisiones, movimiento, avisos ni nuevos impactos. Probar un golpe letal durante el aviso para comprobar su cancelación. Salir y volver a entrar en Play Mode para restaurar el enemigo; R conserva el reinicio existente del jugador y no resucita enemigos.
+7. Repetir con el entrenador a la izquierda: comprobar el aviso ampliado hasta la zona física real, ciclos anteriores, daño `1`, dash sin daño ni postura y tres parries hasta vulnerabilidad con su color original. Probar también ataque horizontal/ascendente, pogo, salto, doble salto, dash, muerte/R y HUD como regresión manual; revisar la consola.
+8. Para repetir la validación automática, salir de Play Mode y usar `Fangbound/Validate Ground Enemy in Play Mode`. La consola debe terminar con `TASK09_PLAYMODE_PASS`. Si se necesitan reconstruir los assets de Tarea 09, usar su menú de configuración específico; evitar el generador completo de MovementTest porque reconstruye la escena base.
+
+### Limitaciones y pendientes
+
+- Enemigo de prueba con sprites/colores provisionales, sin animaciones finales, audio, navegación compleja, saltos ni rutas entre plataformas. La detección es por proximidad, sin oclusión visual por paredes. Los límites pertenecen a cada instancia y los parámetros generales al asset.
+- Solo usa ataques parryables y la reducción de postura por parry del contrato existente. No incorpora ataques rojos no parryables, ejecución, daño de contacto ni daño de pogo: esos sistemas no forman parte de esta entrega.
+- Pendientes la revisión humana de visibilidad del aviso, sensación de combate y regresión completa con teclado/mando. No se generó ni ejecutó una build standalone.
+- **Se conserva pendiente la verificación manual específica de los `0.8 s` de i-frames de `PlayerHealth`.** Se verificó que un impacto inmediato durante invulnerabilidad se ignora; no se midió la frontera temporal de `0.8 s`. Para cerrarla, usar ataques independientes antes y después de ese límite y confirmar vida/parry/feedback. No se modificó `PlayerHealth` ni su asset.
+
+## Tarea 09.1: Corrección de empuje físico y recuperación de patrulla
+
+### Estado y causa identificada
+
+- El usuario confirmó la prueba manual satisfactoria de la Tarea 09: patrulla, detección, persecución, ataques, parry, postura, vulnerabilidad, vida y muerte. Esta corrección conserva esos sistemas y no inicia la Tarea 10.
+- Jugador y enemigo tenían `Rigidbody2D` dinámicos, masa `1`, rotación congelada y colliders sólidos en `Default`. La matriz de colisiones 2D permitía todos los contactos. Asignar `linearVelocity.x` desde la IA no impide que el solver de contactos aplique impulsos/desplace el enemigo durante el paso físico posterior; el material sin fricción tampoco evita el impulso normal del contacto.
+- `TryMove` rechazaba cualquier paso que terminase fuera de los límites de patrulla, incluso si acercaba al enemigo al intervalo válido. Tras ser empujado suficientemente lejos, ambos sentidos quedaban bloqueados y Patrol invertía orientación sin poder avanzar.
+- En Chase, un movimiento bloqueado simplemente dejaba velocidad horizontal a cero y volvía a intentarse. No había una retirada temporal ante paredes/bordes/límites. Telegraph, Attack y Recovery podían seguir funcionando, explicando que un enemigo inmóvil continuase atacando.
+
+### Solución y archivos de esta corrección
+
+- `Assets/_Project/Scripts/Enemies/GroundEnemyController.cs`: excluye con `Physics2D.IgnoreCollision` únicamente los pares entre su collider corporal y los colliders sólidos del jugador objetivo. Se aplica al iniciar y al reactivar el componente. Ambos cuerpos siguen siendo dinámicos y sólidos contra el terreno; no se cambian masas, gravedad ni restricciones físicas. Los cuerpos del jugador/enemigo ahora pueden atravesarse, conservando las consultas independientes de ataques y daño.
+- `ProjectSettings/TagManager.asset`: añade `EnemyBody` en el índice libre `8`. No modifica las capas existentes ni la Layer Collision Matrix. Esta separación es necesaria porque las consultas de suelo de `PlayerController` usan `OverlapBox` con máscara `Default`: ignorar contactos por pareja no impediría por sí solo que el enemigo fuese detectado como suelo al atravesarlo.
+- `Assets/_Project/Prefabs/Enemies/GroundEnemy.prefab`: solo cambia la capa del objeto raíz que contiene el collider sólido a `EnemyBody`. Sus hijos visuales/hitbox y todas las referencias/parámetros se conservan. MovementTest hereda el cambio del prefab; no necesita regenerarse.
+- `Assets/_Project/Scripts/Editor/GroundEnemySceneSetup.cs`: los prefabs nuevos usan `EnemyBody`; la verificación exige cuerpo sólido en esa capa y comprueba que no esté incluida en el suelo del jugador.
+- La patrulla prioriza regresar al intervalo si el cuerpo está fuera, orientándose hacia él. `TryMove` permite pasos que se acerquen desde fuera y mantiene las comprobaciones de paredes y suelo. No teletransporta ni atraviesa paredes/bordes para volver.
+- Una persecución bloqueada vuelve a Patrol, orientada para retirarse. Durante el tiempo de recuperación ya configurado (`1.3 s` inicialmente) pospone la nueva detección, evitando la alternancia inmediata Patrol/Chase frente al mismo obstáculo. Después puede volver a intentar perseguir. No se añaden estados de navegación ni pathfinding.
+- Se conservan orientación y tiempos de los ataques comprometidos. Si el desplazamiento ocurre durante Telegraph/Attack/Recovery, completa el ciclo y después recupera su posición mediante Patrol. La vulnerabilidad mantiene su parada temporal y el daño recibido x2; no hay instakill ni ejecuciones del enemigo básico. Las ejecuciones que eliminan una barra completa se reservan para futuros jefes según la decisión del usuario.
+- `Assets/_Project/Scripts/Editor/GroundEnemyValidation.cs`: amplía la regresión existente con acciones reales del Input System de caminar y dash en ambos sentidos, y desplazamientos forzados independientes de la prevención del empuje. La prueba dirige temporalmente la entrada al juego aun sin foco de ventana y restaura esas opciones en `finally`; no guarda cambios en Input Settings.
+- `Docs/DevelopmentLog.md`: documenta esta corrección. No se modifican scripts/datos del jugador, Input Actions, salud/postura/daño de enemigo, parámetros de dash ni sistemas del entrenador. Se preservan todos los cambios locales de Tarea 09 anteriores a esta petición. No hay commits ni push.
+
+### Validación automatizada
+
+- Unity `6000.5.5f1` compiló y ejecutó la batería completa en el proyecto principal. `Logs/Task09CollisionValidation.log` terminó con `TASK09_COLLISION_PASS`, `TASK09_RECOVERY_PASS` y `TASK09_PLAYMODE_PASS`, sin errores C#, avisos C# ni excepciones en esa ejecución. `git diff --check` pasó.
+- La regresión de colisiones comprueba contacto excluido solo entre cuerpos; terreno conservado; caminar/dash mediante A/D y Shift con el controlador real, en ambos sentidos; desplazamiento horizontal del enemigo menor de `0.03` unidades; cruce efectivo del jugador y velocidad de dash conservada; ausencia de daño de contacto; enemigo excluido del suelo consultado por el jugador; y exclusión de contacto restaurada al reactivar el enemigo.
+- La regresión de recuperación fuerza al enemigo fuera de cada límite y comprueba que regrese, coloca el límite detrás de una pared para verificar una persecución realmente bloqueada por terreno y observa la retirada en Patrol. También fuerza el desplazamiento durante Telegraph y comprueba Attack → Recovery → Patrol y regreso al intervalo.
+- Se conserva la batería anterior: patrulla normal, detección/persecución/ataque, pérdida del jugador, daño único, tres parries, aturdimiento y vulnerabilidad x2, recuperación de postura, muerte, bordes, paredes y regresión del entrenador con sus colores y resultados de impacto.
+- El primer intento con teclado sintético no produjo el cruce esperado en modo sin ventana. Se ajustó únicamente el foco de entrada de la prueba, de forma temporal y reversible. No se alteró el movimiento para conseguir el resultado.
+- Se preparó una copia ignorada por Git bajo `.utmp/Task09CollisionValidation` mientras el Editor principal estaba abierto. Su primer arranque registró una excepción interna del índice de búsqueda de Unity. Una vez cerrado el Editor principal, la validación de la corrección se ejecutó directamente en el proyecto principal; no se cerró ni terminó desde herramientas la sesión interactiva del usuario.
+
+### Pruebas manuales recomendadas
+
+1. Abrir MovementTest, comprobar que el objeto raíz del prefab GroundEnemy usa `EnemyBody` y entrar en Play Mode. Caminar y hacer dash a través del enemigo desde izquierda y derecha. Debe poder atravesarse sin empujarlo; el enemigo sigue sujeto a su IA y ambos cuerpos conservan el suelo.
+2. Repetir cuando el enemigo esté avisando un ataque, recuperándose o vulnerable: el contacto corporal no debe desplazarlo. Saltar cerca y encima de él; su cuerpo atravesable no debe habilitar un falso salto desde el aire ni actuar como plataforma.
+3. Alejarse para que patrulle. Durante Play Mode, mover temporalmente el cuerpo a `x=7.35`, `y≈-1.6` (entre límite derecho y pared), y luego a `x=0.95`, `y≈-1.6` (fuera del izquierdo pero todavía sobre suelo). Con el jugador lejos debe regresar a sus límites y continuar, sin teletransportarse. No guardar esos movimientos en Edit Mode.
+4. Probar una pared o borde delante de una persecución: debe detener el avance peligroso y retirarse brevemente patrullando, con posibilidad de reintentar si el jugador sigue cerca. No puede alcanzar una zona separada por paredes/saltos que requieran navegación; no debe atravesar obstáculos para hacerlo.
+5. Volver a acercarse para comprobar persecución, aviso y ataque. Acertar tres parries: postura `3 → 0`, aturdimiento de `1.5 s`, daño x2 durante vulnerabilidad y posterior recuperación. Agotar vida con ataques para comprobar muerte/cancelación; romper postura por sí solo no mata al enemigo.
+6. Repetir el entrenador anterior y la regresión del jugador: daño, parry, dash invulnerable, salto/doble salto, ataque horizontal/ascendente, pogo, muerte/R y HUD. R continúa reiniciando solo al jugador. Revisar la consola.
+7. Para repetir la batería automática, usar desde Edit Mode `Fangbound/Validate Ground Enemy in Play Mode`; debe terminar con `TASK09_COLLISION_PASS`, `TASK09_RECOVERY_PASS` y `TASK09_PLAYMODE_PASS`.
+
+### Pendiente conservado
+
+- La verificación manual de la frontera exacta de `0.8 s` de i-frames de `PlayerHealth` sigue abierta. La corrección no cambia su código ni sus datos. La regresión de impactos durante invulnerabilidad no sustituye esa medición temporal.
+
+## Tarea 09.2: Integración del pogo con el enemigo terrestre
+
+### Causa y alcance
+
+- El usuario confirmó que la Tarea 09 y la corrección de colisiones/patrulla funcionan en sus pruebas manuales. El problema pendiente era que el ataque descendente atravesaba al enemigo sin rebotar.
+- `PlayerPogo` ya detectaba su ventana descendente mediante `OverlapBox`, pero solo aceptaba colliders con `PogoTarget` en su jerarquía. El prefab terrestre tenía `EnemyHealth`/`IDamageable`, pero no esa marca. Además, el pogo de Tarea 05 solo producía rebote: todavía no enviaba daño a `IDamageable`.
+- Las colisiones corporales sin empuje y la capa `EnemyBody` no causan el fallo: el pogo usa una consulta independiente con `ContactFilter2D.noFilter`. No es necesario restaurar contactos físicos para que el ataque acierte.
+
+### Archivos de esta entrega
+
+- `Assets/_Project/Scripts/Player/PlayerPogo.cs`: conserva el sistema existente de entrada, ventana, consulta, disponibilidad y rebote. Tras encontrar `PogoTarget`, busca opcionalmente `IDamageable`, descarta los receptores que ya no pueden recibir daño y resuelve un único impacto. Usa el mismo `BounceFromPogo` y luego aplica `TakeDamage`; el rebote ya queda resuelto aunque el daño desactive o destruya al enemigo. Los blancos sin `IDamageable` conservan su rebote sin daño.
+- `Assets/_Project/Scripts/Player/PlayerPogoData.cs` y `Assets/_Project/Data/Player/PlayerPogoData.asset`: añaden `Damage`, inicialmente `1`, como parámetro de diseño. Conservan `BounceSpeed=13`, ventana `0.2 s`, offset `(0,-0.18)` y tamaño `(0.65,0.35)`.
+- `Assets/_Project/Prefabs/Enemies/GroundEnemy.prefab`: añade el componente existente `PogoTarget` al objeto raíz. No cambia colliders, capas, Rigidbody2D, referencias ni parámetros anteriores. MovementTest hereda la integración del prefab sin modificar la escena.
+- `Assets/_Project/Scripts/Editor/GroundEnemySceneSetup.cs`: añade la marca al crear futuros prefabs y verifica que el enemigo la tenga. La comprobación de los blancos antiguos usa sus dos nombres explícitos en lugar de exigir que solo existan dos `PogoTarget` en toda la escena.
+- `Assets/_Project/Scripts/Editor/GroundEnemyValidation.cs`: incorpora la nueva regresión a la batería de Play Mode existente, después de las pruebas de colisiones/recuperación.
+- `Assets/_Project/Scripts/Editor/GroundEnemyPogoValidation.cs` y su `.meta`: pruebas de integración con un teclado sintético del Input System y los componentes/consultas reales. Los fixtures se crean y eliminan únicamente en Play Mode. Las opciones temporales de foco de entrada se restauran al terminar.
+- `Docs/DevelopmentLog.md`: registro de la causa, solución y pruebas. Se preservan todos los cambios previos sin commit. No hay commits ni push y no se implementa la Tarea 10.
+
+### Comportamiento conservado
+
+- La salamandra cae por gravedad natural. No se modifica `PlayerController`, no se añade velocidad descendente ni se cambia la fuerza de rebote, dash, doble salto, parry o cámara.
+- El ataque descendente acertado causa `1` de daño inicial. `EnemyHealth` conserva su multiplicador x2 durante vulnerabilidad, por lo que ese mismo golpe causa `2` en dicho estado. Romper postura sigue produciendo aturdimiento/vulnerabilidad temporal, sin ejecuciones ni instakill.
+- La ventana se cierra tras el primer impacto válido y recupera la disponibilidad del pogo como antes. Varios colliders del mismo enemigo no multiplican daño ni rebote. Los golpes fallidos no rebotan ni restituyen el uso antes de aterrizar/acertar, y los ataques horizontal/ascendente no activan la ventana descendente.
+- Los dos objetivos dorados anteriores siguen aceptando el pogo. Se mantienen `EnemyBody`, exclusión de contacto entre cuerpos, colisiones con suelo y corrección de patrulla fuera de límites.
+
+### Validación y preparación de pruebas
+
+- Unity `6000.5.5f1` compiló y ejecutó la batería completa. La ejecución final de `Logs/Task09PogoValidation.log` terminó con `TASK09_POGO_PASS`, `TASK09_COLLISION_PASS`, `TASK09_RECOVERY_PASS` y `TASK09_PLAYMODE_PASS`, sin errores C#, avisos C# ni excepciones. Los tres impactos verificaron vida `4 → 3`, `4 → 2` vulnerable y `1 → 0` letal, conservando el rebote en todos los casos. `git diff --check` pasó.
+- Se compararon por hash 12 archivos protegidos con su estado al iniciar esta integración: movimiento, salud, combate y parry del jugador; controlador/vida del enemigo; datos de movimiento/salud; Input Actions; ajustes físicos/capas y MovementTest. Todos se conservaron. La única modificación de datos del jugador corresponde al nuevo daño de pogo; sus parámetros de rebote y hitbox permanecen iguales.
+- La regresión nueva usa S + J para pogo, D + J para ataque horizontal y W + J para ascendente mediante Input System. Comprueba daño y velocidad vertical reales, sin llamar directamente al rebote ni a la recepción de daño del jugador para simular un éxito.
+- Cubre enemigo vivo, vulnerable y golpe letal normal; impacto único con varios colliders; fallo sin daño/rebote ni aceleración añadida; horizontal/ascendente sin rebote; y ambos blancos dorados. La vulnerabilidad y la vida previa al golpe letal se preparan mediante los contratos existentes, para aislar cada caso; la batería anterior comprueba también los parries y la muerte por combate.
+- Se ejecuta la batería completa, incluidas las regresiones de colisiones sin empuje, recuperación de patrulla, combate, parry, postura, muerte y entrenador. Al comenzar, el Editor del usuario estaba abierto; por ello se utilizó una copia sincronizada del proyecto bajo `.utmp/Task09CollisionValidation`, ignorada por Git. No se controló ni cerró la sesión interactiva.
+- En el primer intento se detectó una espera insuficiente en la preparación del caso fallido: tras reposicionar al personaje, la prueba enviaba el ataque antes de actualizar su estado de suelo. Se añadió esa espera solo en el fixture. La copia también carecía de `UserSettings/Search.index`, provocando una excepción interna del buscador de Unity; se copiaron sus archivos de configuración existentes sin alterar el proyecto principal ni suprimir errores.
+- La preparación de los ataques normal/ascendente espera también a que termine `PlayerCombatData.AttackWindow` entre pulsaciones. No se redujo ni modificó la ventana del combate para encadenar artificialmente las pruebas.
+
+### Pruebas manuales recomendadas
+
+1. Abrir MovementTest y comprobar que el objeto raíz de GroundEnemy tiene `PogoTarget`, conserva su collider sólido en `EnemyBody` y mantiene sus datos anteriores. Entrar en Play Mode; no hace falta regenerar la escena.
+2. Saltar sobre el enemigo vivo y pulsar abajo + J durante la caída. Debe rebotar hacia arriba y aplicar un punto de daño por golpe, usando la misma fuerza de los blancos dorados. Dejar caer al personaje sin atacar para comprobar que el contacto corporal por sí solo no produce rebote.
+3. Acertar tres parries para romper postura y repetir el pogo durante el aturdimiento: debe rebotar y causar el daño vulnerable x2. Si el golpe agota la vida, debe completar la muerte y conservar el rebote.
+4. En otra sesión de Play Mode, dejar al enemigo con una vida mediante tres ataques normales y terminar con pogo: debe morir mientras la salamandra sale hacia arriba. R sigue reiniciando solo al jugador; para restaurar al enemigo, salir y volver a entrar en Play Mode.
+5. Usar abajo + J en el aire lejos de objetivos: caída natural, sin rebote, impulso descendente añadido ni daño remoto. Repetir ataques horizontal y ascendente contra el enemigo: deben causar su daño habitual sin rebote.
+6. Repetir pogo sobre los dos blancos dorados. Comprobar también salto/doble salto, dash a través del enemigo sin empujarlo, patrulla/persecución, parry, vulnerabilidad, muerte y entrenador anterior; revisar la consola.
+7. Desde Edit Mode se puede repetir la batería con `Fangbound/Validate Ground Enemy in Play Mode`. Los casos de pogo deben registrar `TASK09_POGO_CASE_PASS` y `TASK09_POGO_PASS`, además de las marcas de colisiones/recuperación y el resultado final general.
+
+### Pendiente conservado
+
+- Continúa pendiente la verificación manual específica de los `0.8 s` de i-frames de `PlayerHealth`. Esta integración no cambia vida, invulnerabilidad ni knockback del jugador.

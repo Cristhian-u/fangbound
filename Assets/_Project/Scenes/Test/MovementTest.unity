@@ -119,6 +119,72 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &7068302
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 950867967}
+    m_Modifications:
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5368483823635578115, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: target
+      value:
+      objectReference: {fileID: 1875870068}
+    - target: {fileID: 6532277742076857180, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+      propertyPath: m_Name
+      value: Ground Enemy
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+--- !u!4 &7068303 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1552449224802087789, guid: 7e7a5387849c697408667c1fde133e03, type: 3}
+  m_PrefabInstance: {fileID: 7068302}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &275168198
 GameObject:
   m_ObjectHideFlags: 0
@@ -1165,6 +1231,7 @@ Transform:
   - {fileID: 1067593268}
   - {fileID: 848488520}
   - {fileID: 1729616578}
+  - {fileID: 7068303}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1067593267
@@ -1620,7 +1687,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Fangbound.Combat.TrainingAttackEmitter
   attackData: {fileID: 11400000, guid: 559d0bacaf4acbc49a923a7d041c0939, type: 2}
-  posture: {fileID: 1729616580}
+  attackHitbox: {fileID: 1826057372}
   telegraphRenderer: {fileID: 1826057371}
 --- !u!114 &1729616580
 MonoBehaviour:
@@ -1635,6 +1702,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Fangbound.Combat.EnemyPosture
   postureData: {fileID: 11400000, guid: a1cd795e4f412d945b7e55d3288d6b80, type: 2}
+  postureIndicator: {fileID: 0}
 --- !u!61 &1729616581
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1890,6 +1958,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1826057370}
   - component: {fileID: 1826057371}
+  - component: {fileID: 1826057373}
+  - component: {fileID: 1826057372}
   m_Layer: 0
   m_Name: Attack Telegraph
   m_TagString: Untagged
@@ -1906,8 +1976,8 @@ Transform:
   m_GameObject: {fileID: 1826057369}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.8, y: -0.05, z: -0.1}
-  m_LocalScale: {x: 3.6, y: 0.75, z: 1}
+  m_LocalPosition: {x: -2.5714285, y: -0.05, z: -0.1}
+  m_LocalScale: {x: 5.142857, y: 0.75, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1729616578}
@@ -1972,6 +2042,64 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!114 &1826057372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1826057369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 429793e203c5fea49aa4ad47528f6bf7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Fangbound.Combat.EnemyAttackHitbox
+--- !u!61 &1826057373
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1826057369}
+  m_Enabled: 0
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &1875870057
 GameObject:
   m_ObjectHideFlags: 0
