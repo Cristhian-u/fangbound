@@ -37,21 +37,14 @@ namespace Fangbound.Player
             InputActionMap playerMap = inputActions.FindActionMap("Player", true);
             moveAction = playerMap.FindAction("Move", true);
             attackAction = playerMap.FindAction("Attack", true);
-            hitFilter.NoFilter();
+            hitFilter = ContactFilter2D.noFilter;
             hitFilter.useTriggers = true;
-        }
-
-        private void OnEnable()
-        {
-            if (moveAction != null && !moveAction.enabled) moveAction.Enable();
-            if (attackAction != null && !attackAction.enabled) attackAction.Enable();
         }
 
         private void OnDisable()
         {
             attackRequested = false;
             attackTimeRemaining = 0f;
-            if (attackAction != null && attackAction.enabled) attackAction.Disable();
         }
 
         private void Update()
@@ -74,7 +67,7 @@ namespace Fangbound.Player
             if (attackRequested)
             {
                 attackRequested = false;
-                if (attackAvailable && controller.TryStartPogoDive(pogoData.DiveSpeed))
+                if (attackAvailable && controller.TryStartPogoDive())
                 {
                     attackAvailable = false;
                     attackTimeRemaining = pogoData.AttackWindow;

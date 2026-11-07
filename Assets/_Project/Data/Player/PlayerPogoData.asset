@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: PlayerPogoData
   m_EditorClassIdentifier: Assembly-CSharp::Fangbound.Player.PlayerPogoData
   attackWindow: 0.2
-  diveSpeed: 12
   bounceSpeed: 13
   hitboxOffset: {x: 0, y: -0.18}
   hitboxSize: {x: 0.65, y: 0.35}

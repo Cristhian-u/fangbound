@@ -39,17 +39,14 @@ namespace Fangbound.Player
         public bool IsGrounded { get; private set; }
         public bool IsDashing => isDashing;
 
-        public bool TryStartPogoDive(float downwardSpeed)
+        public bool TryStartPogoDive()
         {
-            if (IsGrounded || isDashing || downwardSpeed <= 0f ||
+            if (IsGrounded || isDashing ||
                 (body.linearVelocity.y <= 0.01f && CheckGrounded()))
             {
                 return false;
             }
 
-            Vector2 velocity = body.linearVelocity;
-            velocity.y = Mathf.Min(velocity.y, -downwardSpeed);
-            body.linearVelocity = velocity;
             coyoteTimeRemaining = 0f;
             jumpBufferRemaining = 0f;
             jumpReleased = false;

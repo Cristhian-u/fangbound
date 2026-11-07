@@ -251,3 +251,41 @@ Assets/_Project/
 
 - Solo los colliders con `PogoTarget` producen rebote. El GDD contempla suelo, pinchos y enemigos; su integración queda para las tareas correspondientes.
 - No hay animación ni efecto visual de ataque. La zona se puede ver como gizmo al seleccionar al jugador en Scene View.
+
+## Tarea 06: Combate básico y ajuste del pogo
+
+### Ajuste del pogo
+
+- `PlayerController.TryStartPogoDive` ya no recibe velocidad de caída ni modifica `linearVelocity.y`; al iniciar el ataque solo limpia coyote time, jump buffer y corte pendiente. La caída queda a cargo de la gravedad normal.
+- Se conserva la ventana/hitbox de `PlayerPogo`, la condición en aire, el rebote de `BounceFromPogo`, el límite/reinicio del pogo y los controles abajo + J/botón oeste.
+- Se retiraron `DiveSpeed` y `diveSpeed` del componente/datos. Unity reserializó `PlayerPogoData.asset` sin el campo obsoleto; `attackWindow`, rebote y hitbox se conservaron.
+
+### Combate y objetivos
+
+- `Assets/_Project/Scripts/Player/PlayerCombat.cs` lee Move/Attack del Input System. J sin dirección vertical ataca horizontalmente hacia la orientación actual; izquierda/derecha + J fijan la dirección; arriba + J usa el hitbox ascendente. Abajo + J se reserva para pogo en aire y no produce ataque/impulso descendente en suelo.
+- PlayerCombat mantiene los objetivos ya golpeados durante cada ventana, evitando impactos repetidos sobre el mismo objetivo. Las zonas horizontal/ascendente, daño y ventana están en `PlayerCombatData`.
+- `Assets/_Project/Scripts/Combat/IDamageable.cs` separa la recepción de daño del ataque. `TrainingTarget` implementa vida configurable por componente, flash de color al recibir daño, degradado visual al perder vida y desactivación de collider al agotarse.
+- `Assets/_Project/Scripts/Editor/CombatTestSceneSetup.cs` configura el jugador/asset y añade dos blancos reutilizables para probar los ataques. Los dos objetivos dorados `PogoTarget` existentes no se reemplazaron.
+- `PlayerCombat` es dueño de habilitar/deshabilitar `Attack`; `PlayerController` sigue gestionando `Move`, que usan tanto combate como pogo.
+
+### Configuración inicial
+
+- PlayerCombatData: daño `1`, ventana `0.12 s`, hitbox horizontal offset `(0.65, 0.05)`, tamaño `(0.85, 0.55)`; ascendente offset `(0, 0.75)`, tamaño `(0.6, 0.8)`.
+- Cada objetivo de entrenamiento empieza con `3` puntos de vida y flash visual `0.1 s`.
+- Se conservan valores de movimiento, dash, salto, cámara y material sin fricción.
+
+### Verificación
+
+- Unity `6000.5.5f1` compiló el pogo corregido, el combate, los objetivos y el configurador; Tundra terminó con código `0` y sin errores C#.
+- El configurador abrió y guardó `MovementTest`, verificó referencias de `PlayerCombat` y `PlayerPogo`, creó el asset de datos y comprobó los blancos de entrenamiento y los dos `PogoTarget` existentes.
+- Se comprobó que la escena conserva el material sin fricción, y que `PlayerPogoData.asset` ya no serializa `diveSpeed`.
+- No se ejecutó Play Mode; los casos de combate y la sensación de caída/rebote requieren prueba manual.
+
+### Pruebas manuales pendientes
+
+- En Play Mode, mantener abajo + J en el aire: confirmar caída natural sin aceleración añadida y rebote solo al golpear un objetivo dorado. Repetir lejos de objetivos y desde el suelo; no debe haber rebote ni impulso descendente artificial.
+- Usar J quieto y derecha/izquierda + J para golpear horizontalmente; comprobar el lado al que mira y que el objetivo pierde vida una sola vez por ataque.
+- Usar arriba + J en suelo y aire; confirmar el impacto en el objetivo superior sin impulso automático del jugador.
+- Confirmar que abajo + J en aire prioriza pogo, abajo + J en suelo no ataca ni impulsa, y dash/doble salto conservan su comportamiento.
+- Repetir ataques hasta agotar los 3 puntos de vida; observar flash/degradado y que el objetivo deja de recibir impactos.
+- Revisar la consola de Unity durante las pruebas.
