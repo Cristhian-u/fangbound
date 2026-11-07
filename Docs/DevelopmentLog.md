@@ -289,3 +289,37 @@ Assets/_Project/
 - Confirmar que abajo + J en aire prioriza pogo, abajo + J en suelo no ataca ni impulsa, y dash/doble salto conservan su comportamiento.
 - Repetir ataques hasta agotar los 3 puntos de vida; observar flash/degradado y que el objetivo deja de recibir impactos.
 - Revisar la consola de Unity durante las pruebas.
+
+## Tarea 07: Parry y postura
+
+### Implementación
+
+- Se añadió la acción `Parry` al mapa `Player`: K y hombro izquierdo del mando. No comparte botón con Attack/J, Jump/A, ni Dash/Shift/hombro derecho; se activa por `WasPressedThisFrame`, no al mantenerlo.
+- `PlayerParry` gestiona una ventana finita, recuperación completa posterior al éxito/fallo y feedback provisional de éxito/fallo/impacto. Puede usarse en suelo y aire.
+- El impacto se detecta por la hitbox activa del ataque enemigo. `EnemyAttackInstance` se resuelve una sola vez; `PlayerImpactReceiver` devuelve `Parried`, `Hit`, `AvoidedByDash` o `Ignored`. Dash evita el impacto sin contarlo como parry y sin dar postura.
+- `EnemyPosture` separa postura de vida. Cada parry exitoso reduce postura; a cero activa vulnerabilidad temporal. Al terminar, postura se recupera progresivamente; un nuevo parry durante recuperación parcial la vuelve a reducir. La vulnerabilidad activa no acumula postura.
+- `TrainingAttackEmitter` ejecuta ciclos estáticos de espera → telegraph → hitbox activa → cooldown. No persigue ni navega; el telegraph visual representa la misma zona de impacto.
+- Se añadieron `EnemyPostureData`, `TrainingAttackData` y `PlayerParryData` para los parámetros. El receptor del jugador solo comunica el impacto; no introduce vida, muerte ni respawn del jugador.
+- `MovementTest` conserva combate y pogo previos, ambos objetivos de pogo, los blancos horizontal/ascendente y el material sin fricción. Se añadió el entrenador de parry con postura y telegraph.
+
+### Parámetros iniciales
+
+- Parry: ventana `0.15 s`, recuperación `0.4 s`, feedback visual `0.12 s`.
+- Postura: máximo `3`, daño por parry `1`, vulnerabilidad `1.5 s`, recuperación `1 punto/s`.
+- Entrenador: espera inicial `0.75 s`, telegraph `0.65 s`, ataque activo `0.14 s`, cooldown `1.3 s`. La zona se configura con offset `(-1.8, -0.05)` y tamaño `(3.6, 0.75)`.
+
+### Verificación
+
+- Unity 6000.5.5f1 compiló los componentes de parry/postura, receptor/emisor y el configurador; Tundra terminó con código `0` y sin errores C#.
+- `CombatTestSceneSetup.Configure` abrió/guardó `MovementTest` y verificó referencias de PlayerCombat, PlayerParry, PlayerPogo, datos de parry/postura/ataque, receiver, emisor y telegraph.
+- La escena contiene dos `PogoTarget`, dos blancos `IDamageable`, el entrenador `EnemyPosture`/`TrainingAttackEmitter` y el material sin fricción. No se cambió movimiento, dash, salto ni cámara.
+- No se ejecutó Play Mode; timing de parry, postura, vulnerabilidad y la interacción efectiva con dash quedan pendientes de prueba manual.
+
+### Pruebas manuales pendientes
+
+- Entrar en Play Mode y pulsar K o hombro izquierdo antes del golpe: el flash de éxito debe aparecer, no debe haber impacto y la postura del entrenador debe bajar una vez.
+- Pulsar demasiado pronto: el flash de fallo debe aparecer al cerrar la ventana y el siguiente ataque debe impactar. Pulsar después del impacto tampoco debe marcar parry.
+- Mantener K: debe producir un solo intento; probarlo en suelo y aire.
+- Acertar tres parries: comprobar postura `3 → 0`, color vulnerable durante `1.5 s` y recuperación gradual hasta `3`.
+- Recibir ataque durante dash: no debe recibir impacto ni reducir postura. Probar también el feedback de impacto fuera de dash/parry.
+- Confirmar que Attack/J, pogo, dash, doble salto y movimiento siguen respondiendo; revisar la consola.
