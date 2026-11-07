@@ -76,8 +76,6 @@ namespace Fangbound.EditorTools
             Visual("Fallen Stone", ruin, 40.05f, 8.55f, 0.65f, 0.25f, stone);
             Visual("Vine", ruin, 43.05f, 9.3f, 0.12f, 1.7f, moss);
             Visual("Moss", ruin, 42.5f, 10.4f, 1.3f, 0.08f, moss);
-            Visual("Crystal Glow", ruin, 41.4f, 9.3f, 0.65f, 0.8f, new Color(0.25f, 0.62f, 0.60f, 0.10f));
-            Visual("Faint Crystal", ruin, 41.4f, 9.3f, 0.23f, 0.4f, new Color(0.32f, 0.64f, 0.62f, 0.65f)).transform.rotation = Quaternion.Euler(0, 0, 30);
 
             Transform markers = Group("Start and Finish Markers");
             Text("Start Label", markers, "ARBOLEDA\nVERDESCENTE", 3f, 3f, 0.09f);
@@ -112,6 +110,121 @@ namespace Fangbound.EditorTools
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log("TASK12_SETUP_PASS: escena independiente de 80 unidades; dos rutas, una llama y un enemigo. Sin cambios en datos compartidos.");
+        }
+
+        [MenuItem("Fangbound/Expand Arboleda Prototype to T13 (once)")]
+        public static void Expand()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || !File.Exists(ScenePath))
+                throw new InvalidOperationException("Ampliar la escena existente desde Edit Mode.");
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Guardar los cambios abiertos antes de ampliar; no se descartan cambios manuales.");
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (GameObject.Find("T13 Expansion") != null)
+                throw new InvalidOperationException("T13 ya está aplicada; no se sobrescribe ni duplica la ampliación.");
+            // Check only objects which will move. Unrelated hand-authored objects
+            // remain intact; unexpected layouts stop here before any mutation.
+            ExpectPosition("C Arena", new Vector2(53.5f, 1.2f));
+            ExpectPosition("D Deck", new Vector2(74f, 0.9f));
+            ExpectPosition("Ground Enemy - Arena", new Vector2(57.5f, 2.92f));
+            ExpectPosition("Memory Flame - Arboleda", new Vector2(47f, 2.4f));
+            ExpectPosition("East Boundary", new Vector2(80.3f, 6f));
+            square = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Placeholder/MovementTestSquare.asset");
+            if (square == null) throw new InvalidOperationException("Falta sprite provisional existente.");
+            var retained = new System.Collections.Generic.Dictionary<GameObject, GlobalObjectId>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+                    retained.Add(item.gameObject, GlobalObjectId.GetGlobalObjectIdSlow(item.gameObject));
+
+            foreach (string name in new[] { "C - Checkpoint and Arena", "D - Finish", "Checkpoint", "Enemies", "Rest Sign",
+                "End Pillar Left", "End Pillar Right", "End Lintel", "End Moss", "End Label" })
+                GameObject.Find(name).transform.position += Vector3.right * 70f;
+            GameObject.Find("C - Checkpoint and Arena").name = "E - Checkpoint and Arena";
+            GameObject.Find("D - Finish").name = "F - Finish";
+            Transform floor = GameObject.Find("Safety Floor").transform;
+            floor.position = new Vector3(75f, -2f);
+            floor.localScale = new Vector3(150f, 4f, 1f);
+            foreach (string side in new[] { "West Boundary", "East Boundary" })
+            {
+                Transform wall = GameObject.Find(side).transform;
+                wall.position = new Vector3(side == "West Boundary" ? -0.3f : 150.3f, 9f);
+                wall.localScale = new Vector3(0.6f, 26f, 1f);
+            }
+            BoxCollider2D bounds = GameObject.Find("Camera Room Bounds").GetComponent<BoxCollider2D>();
+            bounds.transform.position = new Vector3(75f, 9f);
+            bounds.size = new Vector2(150f, 26f);
+
+            Transform expansion = Group("T13 Expansion", GameObject.Find("Level Geometry").transform);
+            Transform ruinRecovery = Group("Ruin Recovery and Return", expansion);
+            Platform("Ruin Catch", ruinRecovery, 33.45f, 1f, 4.6f);
+            Platform("Ruin Return 1", ruinRecovery, 46f, 3f, 6.5f);
+            Platform("Ruin Return 2", ruinRecovery, 49f, 3f, 4.7f);
+            Transform grove = Group("C - Switchback Grove", expansion);
+            Block("Grove Entry Terrace", grove, 48f, 8f, 2.4f);
+            Block("Grove Base", grove, 58.75f, 13.5f, 2.4f);
+            Block("Grove Entry", grove, 55f, 6f, 3.9f);
+            Block("Grove East", grove, 60f, 4f, 5.5f);
+            Platform("Grove Switchback", grove, 54f, 4f, 7.2f);
+            Platform("Grove Upper Rest", grove, 61.5f, 6f, 8.8f);
+            Block("Grove Low Recovery", grove, 63.25f, 2.5f, 3.9f);
+            Block("Grove Crossing", grove, 72.75f, 16.5f, 8.8f);
+
+            Transform lookout = Group("Optional Lookout Route", expansion);
+            Platform("Lookout 1", lookout, 68f, 3.5f, 10.7f);
+            Platform("Lookout 2", lookout, 73f, 3.5f, 12.7f);
+            Platform("Lookout Deck", lookout, 78.5f, 5f, 14.5f);
+            Platform("Lookout Catch", lookout, 75.375f, 1.05f, 11.3f);
+            Platform("Lookout Return 1", lookout, 82.5f, 3f, 12.5f);
+            Platform("Lookout Return 2", lookout, 85.5f, 3f, 10.6f);
+            Platform("Lookout Return 3", lookout, 88.5f, 3f, 8.7f);
+
+            Transform passage = Group("D - Stepped Passages", expansion);
+            Block("Passage Low Rest", passage, 86.5f, 11f, 6.8f);
+            Block("Passage Recovery Terrace", passage, 100f, 16f, 6.8f);
+            Block("Passage 1", passage, 94f, 4f, 8.6f);
+            Platform("Passage 2", passage, 99.75f, 3.5f, 10.4f);
+            Platform("Passage Upper Rest", passage, 105.5f, 4f, 11.9f);
+            Platform("Passage Catch", passage, 102.5f, 1.7f, 8.7f);
+            Block("Passage Descent 1", passage, 108.5f, 2f, 9.9f);
+            Block("Passage Descent 2", passage, 110.5f, 2f, 7.9f);
+            Block("Passage Descent 3", passage, 112.5f, 2f, 5.9f);
+            Block("Passage Descent 4", passage, 114.5f, 2f, 4.1f);
+
+            Transform decor = Group("T13 Grove and Lookout Decoration", GameObject.Find("Provisional Decoration").transform);
+            Visual("Lookout Broken Post", decor, 76.35f, 14.95f, 0.3f, 0.9f, stone);
+            Visual("Lookout Rock", decor, 80.5f, 14.7f, 0.7f, 0.4f, stone);
+            for (int i = 0; i < 3; i++)
+                Visual("Lookout Grass", decor, 80.15f + i * 0.2f, 15.1f, 0.1f, 0.8f - i * 0.15f, moss)
+                    .transform.rotation = Quaternion.Euler(0, 0, 15f - i * 15f);
+            for (int i = 0; i < 5; i++)
+                Visual("Distant Rock Spire", decor, 83f + i * 3f, 11f - i * 0.3f, 2f, 8f - i * 0.7f,
+                    new Color(0.075f, 0.14f, 0.15f), -10).transform.rotation = Quaternion.Euler(0, 0, 10f - i * 4f);
+            for (int i = 0; i < 10; i++)
+            {
+                float x = 86f + i * 6.3f, height = 8f + (i % 3) * 2f;
+                Visual("Extension Trunk", decor, x, height * 0.5f, 0.45f, height, new Color(0.09f, 0.16f, 0.16f), -8);
+                Visual("Extension Canopy", decor, x, height, 5.5f, 1.6f, new Color(0.10f, 0.20f, 0.18f), -9);
+            }
+            Text("Grove Turn Sign", decor, "<  ASCENSO", 53.5f, 9.2f, 0.055f);
+            Text("Lookout Fork Sign", decor, "MIRADOR  ^", 65.8f, 12.1f, 0.055f);
+            Text("Lookout Label", decor, "MIRADOR", 78.5f, 16.8f, 0.065f);
+            Text("Lookout Return Sign", decor, "REGRESO  >", 82f, 14.3f, 0.045f);
+            Text("Passage Sign", decor, "PASARELAS  >", 90.5f, 10.8f, 0.055f);
+            Text("Descent Sign", decor, "DESCENSO  >", 106.5f, 13.6f, 0.05f);
+            foreach (var pair in retained)
+                if (pair.Key == null || !GlobalObjectId.GetGlobalObjectIdSlow(pair.Key).Equals(pair.Value))
+                    throw new InvalidOperationException("Se perdió la identidad de un objeto existente.");
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log($"TASK13_SETUP_PASS: ampliación aditiva a 150 m; {retained.Count} objetos originales conservados con sus identificadores; ruina intacta, nuevo mirador y arena desplazada 70 m.");
+        }
+
+        private static void ExpectPosition(string name, Vector2 expected)
+        {
+            GameObject item = GameObject.Find(name);
+            if (item == null || Vector2.Distance(item.transform.position, expected) > 0.05f)
+                throw new InvalidOperationException("Revisar cambios manuales antes de desplazar: " + name);
         }
 
         private static Transform Group(string name, Transform parent = null)
