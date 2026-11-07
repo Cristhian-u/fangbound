@@ -696,3 +696,57 @@ Assets/_Project/
 - El contraste calculado entre lleno/vacío es aproximadamente `7.2:1`; lleno/fondo de cámara `9.6:1` y borde/fondo `6.6:1`. El borde mantiene distinguibles los huecos oscuros sobre el fondo de la escena.
 - Se revisaron capturas del Game View real y sus píxeles: `5/5`, `4/5`, `2/5` y `1/5` tienen exactamente los rellenos `#59D9D0`/`#34343D`; al curarse o cambiar checkpoint se conservan cinco llenos, al morir cinco vacíos y tras R cinco llenos. La comprobación gráfica aislada terminó con `HUD_RENDER_TRANSITIONS_PASS` en `Logs/Task11HudRender.log`; las imágenes están en `Logs/HudPreview-*.png`. La herramienta temporal de captura queda fuera de los archivos del producto, en la carpeta ignorada `.utmp`.
 - Prueba manual: en MovementTest recibir daño para comparar `5/5`, `4/5`, `2/5` y `1/5`; descansar con E para recuperar los cinco bloques turquesa; cambiar de llama; morir para ver los cinco huecos y reaparecer con R para recuperar `5/5`. Comprobar también el hitstop activo en impactos normales. No se hicieron commits, push ni cambios de rama. La medición manual exacta de los `0.8 s` de i-frames continúa pendiente.
+
+## T12 — Primer recorrido jugable de Arboleda Verdescente
+
+### Entrega y reutilización
+
+- Nueva escena independiente: `Assets/_Project/Scenes/Test/ArboledaPrototype.unity`. Puede abrirse y ejecutarse directamente; no necesita arrancar MovementTest ni ejecutar configuradores.
+- Se copió la configuración de jugador, spawn, cámara, límites, HUD y servicio de hitstop de MovementTest mediante la API del Editor, y se sustituyó únicamente la geometría de la nueva copia. Se instanciaron los prefabs oficiales `GroundEnemy.prefab` y `MemoryFlame.prefab`, enlazando el objetivo del enemigo al jugador de la escena.
+- No se modificaron scripts de ejecución, prefabs, estadísticas, datos de movimiento/combate, Input Actions, matriz física, GDD, Region1Plan ni Build Settings. MovementTest conserva el mismo hash SHA-256 anterior al trabajo. Los parámetros y sistemas existentes siguen compartidos.
+- Se crearon dos utilidades bajo `Scripts/Editor`: `ArboledaPrototypeSceneSetup.cs`, configuración puntual que rechaza sobrescribir una escena existente, y `ArboledaPrototypeValidation.cs`, prueba de integración del recorrido. No generan geometría en ejecución ni son dependencias de la escena guardada. Se incluyen los `.meta` de escena y scripts.
+
+### Recorrido provisional
+
+| Sección | Distribución |
+| --- | --- |
+| A — Inicio | Spawn en `(3, 0.6)`, espacio llano inicial, señal de dirección y dos escalones amplios de 0.9/1.8 m de altura. |
+| B — Bifurcación | Meseta de 10 m a altura 2.4; camino principal con plataformas bajas y escalón de retorno. Cuatro plataformas superiores conducen al descubrimiento ambiental. |
+| Ruta superior | Superficies a alturas 3.9, 5.4, 6.9 y 8.4; anchuras 3.4/3.8/4/6 m. Ruina de columnas incompletas, piedra caída, musgo y cristal turquesa tenue, sin componentes interactivos. Se baja por la derecha a la arena antes de la llama. |
+| C — Descanso y combate | Arena plana de 19 m entre `x=44..63`, altura 2.4. Llama en `(47, 2.4)`, respawn en `(46.4, 2.98)`. Único enemigo en `(57.5, 2.92)`, patrulla original aproximadamente `54.4..59.8`, alejado del checkpoint y los extremos. |
+| D — Final | Escalón y plataforma amplia con arco de piedra, vegetación y rótulo «FIN DEL RECORRIDO», cerca de `x=75`. Sin transición, puerta, victoria ni nueva interacción. |
+
+- Anchura transitable: 80 m. Suelo sólido continuo a altura 0 con espesor de 4 m y límites sólidos laterales; caer de las plataformas permite volver a saltar desde suelo seguro. No hay daño ambiental, precipicios abiertos, triggers de muerte ni recuperación de caída.
+- Altura de plataforma máxima: 8.4 m; envolvente vertical del personaje con salto normal completo: aproximadamente 12.2 m sobre el suelo. Los límites de cámara cubren `x=0..80`, `y=-4..16`, incluyendo margen sobre saltos y bajo el suelo. Se conservan dead zone, suavizado y tamaño ortográfico existentes.
+- Jerarquía: `Level Geometry` contiene suelo/límites, `Main Route` con A–D y `Optional Upper Route - Four Platforms`; grupos separados para decoración provisional, enemigos, checkpoint e hitos de inicio/final.
+
+### Capacidades y márgenes
+
+- Datos existentes inspeccionados: velocidad horizontal 7.5 m/s, velocidad inicial de salto 13 m/s, gravedad 3 × 9.81 m/s² y paso físico 0.02 s. Cálculo continuo de salto sostenido: altura 2.87 m y alcance aproximado en plano 6.63 m a velocidad constante; no incluye aceleración ni discretización.
+- Medición con la física real: altura libre de unos **2.74 m**. La subida máxima diseñada es **1.5 m** en la rama superior; los huecos de esa rama son como máximo **1.4 m**. El camino principal tiene huecos de hasta **2 m** y subida máxima de **1.3 m** entre apoyos previstos. Se usa salto normal sostenido, sin cambiar fuerza, gravedad ni capacidades aprobadas.
+- Las plataformas superiores son sólidas también por debajo. Bajo la segunda plataforma, el salto del camino inferior encuentra su techo y alcanza aproximadamente 1.66 m; el aterrizaje en el siguiente bloque se comprobó físicamente. No se añadieron plataformas de un solo sentido ni capas nuevas.
+
+### Validaciones ejecutadas
+
+- Unity **6000.5.5f1** creó la escena con `TASK12_SETUP_PASS`, salida 0. Se utilizó una copia aislada bajo `.utmp/Task09CollisionValidation` para mantener abierto el Editor del usuario; los logs quedan en `Logs/` y no se versionan.
+- `Logs/Task12Validation.log`: `TASK12_SCENE_PASS`, todos los `TASK12_JUMP_PASS`, dos `TASK12_ROUTE_PASS`, `TASK12_ENCOUNTER_PASS` y `TASK12_PLAYMODE_PASS`, salida 0. Se verificaron referencias, prefabs, ausencia de scripts perdidos, plataformas sólidas en Default, HUD/servicio de hitstop, límites de patrulla y exclusión de colisión corporal jugador/enemigo.
+- El bot usa eventos del New Input System sobre el cuerpo dinámico real: A/D y Espacio durante ambas rutas, E en el checkpoint y J/R en el encuentro. Dash y doble salto se deshabilitan **solo temporalmente en la prueba** y se restauran al terminar; en la escena permanecen disponibles. No se teletransporta al personaje durante cada recorrido ni se añaden fuerzas o velocidades para superar saltos.
+- Para aislar las plataformas, la IA se deshabilita temporalmente durante las dos travesías; después se reactiva y se comprueban patrulla, detección/persecución, telegrafiado y daño real al jugador. Se retrocede a la llama y se cura con E; se prepara una muerte mediante el contrato de daño existente, se pulsa R y se verifica vida completa, posición segura y cámara. Finalmente, ataques normales con J matan al enemigo sin exigir habilidades especiales. Los reinicios entre pruebas utilizan el respawn existente.
+- La validación observa el cuerpo dentro del viewport y del volumen seguro durante los desplazamientos/saltos. Ambas rutas llegan al final y activan la misma llama después de reconectar. No es una prueba de todas las relaciones de aspecto ni sustituye la valoración humana del seguimiento de cámara.
+- `Logs/Task12Regression.log`: batería anterior completa con `TASK09_COLLISION_PASS`, `TASK09_RECOVERY_PASS`, `TASK09_POGO_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS` y `TASK09_PLAYMODE_PASS`, salida 0. Incluye caminar/dash sin empuje, retorno desde límites/paredes, pogo vivo/vulnerable/letal, entrenador, parry, ruptura de postura, daño vulnerable, muerte, feedback, hitstop, curación y R. No se observaron errores C#, avisos C# ni excepciones en estas ejecuciones finales.
+- Hitstop permanece habilitado: normal **0.10 s**, pogo **0.04 s**, parry **0.07 s**. HUD conserva los cinco bloques turquesa `#59D9D0`, huecos `#34343D` y bordes actuales. Se compararon hashes de los archivos protegidos para comprobar su conservación.
+- Se revisaron seis capturas del Game View real: inicio, bifurcación, ruina, arena, final y vista general. Se redujeron/reubicaron rótulos decorativos que invadían la zona del personaje y se repitió T12 con éxito. `Logs/Task12Render.log` terminó con `TASK12_RENDER_PASS`, salida 0; vistas en `Logs/ArboledaPreview-*.png`. La herramienta temporal de captura permanece fuera del producto, bajo `.utmp`; posicionar al personaje para estas vistas no cuenta como prueba de navegación. La escena y los dos scripts entregados se compararon por hash con los archivos finales validados.
+
+### Prueba manual y límites pendientes
+
+1. Abrir `ArboledaPrototype.unity` directamente en Unity 6000.5.5f1 y pulsar Play. Comprobar inicio, cinco bloques de vida y cámara. Usar A/D o flechas y Espacio mantenido para saltos completos; avanzar por el camino inferior hasta el arco final sin dash, doble salto, pogo ni parry.
+2. Reiniciar Play Mode y tomar la rama superior desde la meseta de B. Subir las cuatro plataformas, observar la ruina/cristal y bajar por su extremo derecho hacia la arena, antes de la llama. Probar caídas voluntarias entre plataformas: debe haber suelo seguro y salida mediante saltos normales.
+3. Descansar con E junto a la llama antes de acercarse al enemigo. Comprobar destello y estado activo. Recibir daño, retirarse y volver a descansar para curarse. Morir en el encuentro y pulsar R: reaparecer junto a la llama con 5/5, controles operativos y cámara en el destino.
+4. Probar combate normal, parry, vulnerabilidad temporal por postura rota, pogo —incluido letal—, dash sin empuje y muerte enemiga. Confirmar feedback/HUD/hitstop. En la escena los enemigos muertos no reaparecen al usar R, según el contrato existente.
+5. Alcanzar el arco y comprobar que solo señala el final. Revisar legibilidad de señales, ruta opcional, siluetas, cristal tenue y cámara en la relación de aspecto habitual. Reabrir MovementTest para una comprobación manual breve de compatibilidad.
+6. Desde Edit Mode: `Fangbound/Validate Arboleda Prototype in Play Mode` repite T12; `Fangbound/Validate Ground Enemy in Play Mode` repite la batería anterior. No es necesario regenerar escenas.
+
+- Es un bloqueado geométrico provisional de Arboleda, sin arte final ni mapa/narrativa definitivos. No se generó una build standalone.
+- **Duración humana pendiente:** los recorridos automáticos aislados duraron 16.7 s (principal) y 17.9 s (superior), con trayectorias ya conocidas, sin exploración ni combate durante la travesía. No se ha demostrado el objetivo de 3–5 minutos de primera exploración; la velocidad aprobada y el tamaño compacto permiten atravesarlo rápidamente. Cronometrar una primera partida y decidir el ritmo tras esa prueba, sin presentar los tiempos del bot como una sesión humana.
+- Sigue pendiente la medición manual exacta de los **0.8 s** de i-frames de PlayerHealth. No se alteró ese sistema.
+- No se hicieron commits, push ni cambios de rama.
