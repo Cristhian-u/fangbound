@@ -1,3 +1,5 @@
+using System;
+using Fangbound.Combat;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,6 +22,7 @@ namespace Fangbound.Player
 
         public bool IsWindowOpen => windowRemaining > 0f;
         public bool IsRecovering => recoveryRemaining > 0f;
+        public event Action Succeeded;
 
         private void Awake()
         {
@@ -102,6 +105,8 @@ namespace Fangbound.Player
             windowRemaining = 0f;
             recoveryRemaining = parryData.RecoveryDuration;
             ShowFeedback(parryData.SuccessColor);
+            Succeeded?.Invoke();
+            CombatHitstop.Request(CombatHitstopKind.Parry);
             return true;
         }
 

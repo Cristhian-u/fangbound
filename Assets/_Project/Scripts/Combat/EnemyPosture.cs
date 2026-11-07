@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Fangbound.Combat
@@ -11,6 +12,7 @@ namespace Fangbound.Combat
 
         private SpriteRenderer spriteRenderer;
         private SpriteRenderer feedbackRenderer;
+        private CombatVisualFeedback visualFeedback;
         private Color normalColor;
         private float vulnerableRemaining;
         private float recoveryProgress;
@@ -18,10 +20,15 @@ namespace Fangbound.Combat
         public int CurrentPosture { get; private set; }
         public bool IsVulnerable { get; private set; }
         public bool IsRecovering { get; private set; }
+        public SpriteRenderer VisualRenderer => feedbackRenderer;
+        public Color VisualColor => postureData == null ? normalColor : IsVulnerable ? postureData.VulnerableColor :
+            Color.Lerp(postureData.StrainedColor, normalColor, CurrentPosture / (float)postureData.MaximumPosture);
+        public event Action Broken;
 
         private void Awake()
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
+            visualFeedback = GetComponent<CombatVisualFeedback>();
 
             if (postureData == null)
             {
@@ -85,6 +92,7 @@ namespace Fangbound.Combat
             {
                 IsVulnerable = true;
                 vulnerableRemaining = postureData.VulnerableDuration;
+                Broken?.Invoke();
             }
 
             RefreshColor();
@@ -93,19 +101,12 @@ namespace Fangbound.Combat
 
         private void RefreshColor()
         {
-            if (feedbackRenderer == null || postureData == null)
+            if (feedbackRenderer == null || postureData == null || (visualFeedback != null && visualFeedback.isActiveAndEnabled))
             {
                 return;
             }
 
-            if (IsVulnerable)
-            {
-                feedbackRenderer.color = postureData.VulnerableColor;
-                return;
-            }
-
-            float postureRatio = CurrentPosture / (float)postureData.MaximumPosture;
-            feedbackRenderer.color = Color.Lerp(postureData.StrainedColor, normalColor, postureRatio);
+            feedbackRenderer.color = VisualColor;
         }
     }
 }

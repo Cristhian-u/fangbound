@@ -127,6 +127,7 @@ namespace Fangbound.Player
                 controller.BounceFromPogo(pogoData.BounceSpeed);
                 // Bounce first: a lethal hit may disable or destroy the target.
                 damageable?.TakeDamage(pogoData.Damage);
+                if (damageable != null) CombatHitstop.Request(CombatHitstopKind.Pogo);
                 return;
             }
 

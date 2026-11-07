@@ -97,6 +97,7 @@ namespace Fangbound.EditorTools
             trainer.enabled = false;
             yield return ValidateCollisionAndRecovery(player, enemy);
             yield return GroundEnemyPogoValidation.Validate(player);
+            yield return CombatFeedbackValidation.Validate(player);
             FreezePlayer(player, new Vector2(-10f, -1.5f));
 
             Rigidbody2D enemyBody = enemy.GetComponent<Rigidbody2D>();

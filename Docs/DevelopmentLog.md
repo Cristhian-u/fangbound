@@ -522,3 +522,90 @@ Assets/_Project/
 ### Pendiente conservado
 
 - Continúa pendiente la verificación manual específica de los `0.8 s` de i-frames de `PlayerHealth`. Esta integración no cambia vida, invulnerabilidad ni knockback del jugador.
+
+## Tarea 10: Feedback de combate provisional
+
+### Auditoría y puntos de confirmación
+
+- Se leyeron `AGENTS.md`, `GDD.md`, este registro y `Region1Plan.md`, y se inspeccionaron combate, pogo, salud del jugador/enemigo, postura, parry, hitbox compartida y entrenador. El árbol de trabajo estaba limpio y HEAD era `aa44d6b` (Tarea 09 con pogo y correcciones); el usuario confirmó las tareas 01–09 probadas manualmente y con commit.
+- No existía hitstop ni otro propietario de `Time.timeScale`. Sí existían destellos de `EnemyHealth`/`TrainingTarget`, feedback de éxito/fallo de `PlayerParry` y color vulnerable/de recuperación de `EnemyPosture`. Se reutilizaron sin reemplazar el combate.
+- Un impacto normal se confirma dentro de `PlayerCombat.ApplyHitbox`, tras validar `IDamageable.CanReceiveDamage` y aplicar `TakeDamage`; su conjunto de objetivos ya evita daño repetido por varios colliders. El pogo confirma su impacto en `PlayerPogo`, después de reconocer `PogoTarget`, rebotar y aplicar daño. El éxito de parry se confirma exclusivamente en `PlayerParry.TryConsumeWindow`; `PlayerImpactReceiver` conserva su orden muerte → dash → i-frames → parry → daño. La ruptura se confirma cuando `EnemyPosture` pasa a cero.
+
+### Arquitectura y archivos creados
+
+- `Assets/_Project/Scripts/Combat/CombatFeedbackData.cs`: ScriptableObject con opciones de hitstop y feedback visual. `Assets/_Project/Data/Combat/CombatFeedbackData.asset` contiene los valores iniciales; no almacena estados de ejecución.
+- `Assets/_Project/Scripts/Combat/CombatHitstop.cs`: servicio único por escena, con solicitudes normal/pogo/parry, reloj no escalado, combinación acotada de solicitudes y restauración del tiempo. Expone `IsActive`, `PauseCount` y `Cancel` para diagnóstico/validación.
+- `Assets/_Project/Scripts/Combat/CombatVisualFeedback.cs`: coordinación pequeña de apariencia y señales. En enemigos gestiona el color del cuerpo y del indicador de postura; en el jugador gestiona únicamente un sprite hijo de éxito, manteniendo la propiedad del cuerpo en los sistemas anteriores. Se suscribe a daño confirmado, muerte, parry correcto y ruptura. Sus contadores sirven para comprobar efectos únicos.
+- `Assets/_Project/Scripts/Editor/CombatFeedbackSceneSetup.cs`: menú `Fangbound/Configure Movement Test Combat Feedback`. Crea datos si faltan, actualiza el prefab mediante la API del Editor y enlaza jugador, entrenador y servicio en MovementTest, sin ejecutar los configuradores generales de movimiento/combate.
+- `Assets/_Project/Scripts/Editor/CombatFeedbackValidation.cs`: menú `Fangbound/Validate Combat Feedback in Play Mode`, que ejecuta la batería anterior ampliada con regresiones específicas de feedback e interrupciones.
+- Unity generó los `.meta` de scripts, datos y carpeta nueva. No se añadieron materiales, shaders, recursos externos, paquetes ni dependencias de pago; las señales reutilizan el sprite cuadrado y material existentes.
+
+### Archivos existentes modificados
+
+- `PlayerCombat.cs`: solicita un hitstop normal por ataque confirmado; un indicador temporal por ventana impide una segunda solicitud dentro del mismo ataque, además del filtrado de colliders existente.
+- `PlayerPogo.cs`: solicita hitstop de pogo solo si el impacto válido tiene `IDamageable`. Mantiene rebote previo al daño, fuerza `13`, daño actual y caída natural; los blancos dorados sin daño no activan pausa.
+- `PlayerParry.cs`: emite `Succeeded` y solicita hitstop tras consumir correctamente la ventana. Conserva lectura de inputs, colores anteriores, ventana `0.15 s` y recuperación `0.4 s`.
+- `EnemyHealth.cs`: emite `DamageTaken` tras descontar vida y expone su color de muerte. Delega el color al coordinador cuando está instalado/activo, y conserva el destello anterior como alternativa si no lo está. Daño, multiplicador vulnerable, colliders, Rigidbody2D y muerte mantienen sus reglas.
+- `EnemyPosture.cs`: emite `Broken` en la transición a cero y expone renderer/color derivados del estado existente. Delega únicamente la escritura visual cuando hay coordinador; conserva su alternativa anterior. No se modificaron la pérdida de postura, los `1.5 s` de vulnerabilidad ni la recuperación.
+- `GroundEnemyValidation.cs` y `GroundEnemyPogoValidation.cs`: incorporan la batería nueva y verifican hitstop único en pogo vivo, vulnerable y letal, y ausencia de pausa al fallar.
+- `GroundEnemy.prefab`: añade coordinador y señal visual hija. `MovementTest.unity`: añade esas referencias al jugador/entrenador y el objeto `Combat Hitstop`; la instancia terrestre hereda el feedback del prefab. Se conservaron los IDs/referencias de los componentes existentes.
+- `Docs/DevelopmentLog.md`: documenta esta tarea. No se modificaron `PlayerController`, `PlayerHealth`, cámara, datos de movimiento/combate/parry/pogo/postura/vida, Input Actions, IA terrestre, hitbox compartida, física/capas, paquetes, GDD ni plan de región. No se realizaron commits, push ni cambios de rama.
+
+### Hitstop y restauración
+
+- Se usa `Time.timeScale=0` durante una micro-pausa porque permite detener juntos movimiento, gravedad, hitboxes y temporizadores de combate, sin alternar `Rigidbody2D.simulated`, cambiar colliders, reescribir motores ni guardar/restaurar velocidades. El rebote del pogo queda almacenado antes de la pausa y se conserva al reanudar.
+- El servicio guarda la escala previa, utiliza `Time.realtimeSinceStartupAsDouble` para el vencimiento y no cambia `Time.fixedDeltaTime`. No depende de una coroutine escalada que pudiera quedar detenida con su propia pausa.
+- Las solicitudes simultáneas comparten una única pausa: puede prevalecer la duración mayor, calculada desde el comienzo original, pero nunca se suman duraciones ni se crea una cola. Las duraciones se limitan a un máximo configurable en Inspector de `0.2 s`.
+- Restaura al vencer, al desactivar/destruir el servicio, al perder foco o al recibir pausa de aplicación. También limpia la referencia estática al iniciar Play Mode sin recarga de dominio. No inicia hitstop si otro sistema ya tiene la escala a cero; si detecta un cambio externo a una escala distinta de cero, lo respeta.
+- Los `Update` de entrada siguen ejecutándose. Los controles existentes almacenan salto/dash/pogo y las ventanas de ataque/parry permanecen en tiempo de simulación. Se verificaron pulsaciones breves de salto/dash durante la pausa, liberadas antes de reanudar.
+- Todos los temporizadores escalados se detienen coherentemente con el mundo, incluidos parry, recuperación, vulnerabilidad e i-frames. No se cambiaron sus valores ni el código de salud. Una pausa añade tiempo real de presentación: `0.8 s` de simulación no equivale a `0.8 s` de reloj si interviene hitstop. La medición manual exacta pendiente de PlayerHealth debe hacerse también con hitstop desactivado para aislar el sistema original.
+- Se desactiva globalmente desmarcando `Hitstop Enabled` en el asset; desactivar el componente `CombatHitstop` cancela inmediatamente una pausa activa. En escenas sin el servicio, las solicitudes son inocuas. No hay cambios globales persistentes al salir de Play Mode.
+
+### Prioridades y efectos visuales
+
+- Muerte tiene prioridad: cancela destello/señal y conserva el color final de cuerpo e indicador; el jugador conserva su manejo de muerte y el coordinador oculta su señal de éxito.
+- Ruptura emite una señal dorada más grande y persistente que el parry. El indicador existente mantiene su turquesa durante toda la vulnerabilidad; el cuerpo terrestre recibe además un tinte derivado de ese estado.
+- Un daño durante vulnerabilidad mezcla brevemente blanco sobre el tinte del cuerpo, mientras la franja turquesa conserva su identidad. Al terminar el destello vuelve al color derivado del estado actual, no a un color normal que borre la postura.
+- El parry exitoso mantiene el feedback anterior del jugador y añade una señal cian breve detrás de su sprite. El fallo no emite `Succeeded`, no genera esa señal y no solicita hitstop.
+- Las señales son sprites cuadrados provisionales, sin colliders, que crecen ligeramente y se desvanecen. Usan tiempo no escalado para seguir siendo visibles durante la micro-pausa. El color del cuerpo enemigo y el indicador tienen un único coordinador activo; los scripts anteriores solo escriben su alternativa cuando ese coordinador no está activo.
+- Telegraph sigue en su renderer independiente y no se sobrescribe. El controlador existente lo cancela al morir o entrar en vulnerabilidad. El entrenador conserva sus ciclos y capacidades originales.
+
+### Valores provisionales
+
+| Parámetro | Valor inicial |
+| --- | --- |
+| Hitstop normal / pogo / parry | 0.05 / 0.04 / 0.07 s reales |
+| Destello de daño | 0.10 s reales, blanco |
+| Señal de parry | 0.16 s reales, cian, escala 1.35 |
+| Señal inicial de ruptura | 0.25 s reales, dorado, escala 1.7 |
+| Tinte vulnerable del cuerpo | Mezcla de 0.6 con el color de postura |
+| Destello durante vulnerabilidad | Mezcla de 0.4 con blanco |
+| Ventana de vulnerabilidad existente | 1.5 s de simulación, sin cambio |
+
+### Validación realizada
+
+- Unity `6000.5.5f1` compiló y ejecutó `CombatFeedbackSceneSetup.Configure`: `TASK10_SETUP_PASS` y salida `0` en `Logs/Task10Setup.log`.
+- La batería completa se ejecutó en Play Mode del proyecto principal y terminó con `TASK10_VISUAL_PASS`, `TASK10_PARRY_PASS`, `TASK10_HITSTOP_PASS`, `TASK10_FEEDBACK_PASS` y `TASK09_PLAYMODE_PASS` en `Logs/Task10Validation.log`, sin errores C#, avisos C# ni excepciones.
+- Se probaron ataque fallido sin pausa; horizontal y ascendente con pausa; un único impacto/destello con colliders duplicados; pogo vivo/vulnerable/letal con rebote conservado y pausa única; ruptura única; daño sin perder la franja vulnerable; apariencia tras recuperación; y muerte que no vuelve a colorearse por un efecto tardío.
+- Se comprobó parry fallido sin éxito ni pausa, tres parries exitosos del entrenador sin duplicación ni daño, ruptura del entrenador y recuperación. La batería anterior sigue comprobando además parry/postura del enemigo terrestre, ataques, patrulla/persecución, bordes, muerte, colisiones sin empuje y los dos blancos antiguos de pogo.
+- Se probaron veinte solicitudes solapadas sin acumular pausas, restauración automática a escala previa `0.5`, cancelación al desactivar/perder foco, respeto de escala externa `0.75`, opción desactivada y rechazo de una pausa externa a cero. Se verificaron inputs reales de salto/dash durante la pausa, recuperación posterior y congelación coherente de relojes de parry/i-frames. `fixedDeltaTime` permaneció igual.
+- Las pruebas usan física/componentes reales y teclado sintético. Se preparan por reflexión algunas ventanas de parry/estados y una copia temporal de los datos de feedback para disponer de pausas largas en los casos de input; esos datos no se guardan. No se hizo una prueba humana ni se generó una build standalone.
+
+### Pruebas manuales recomendadas
+
+1. Abrir MovementTest en Unity `6000.5.5f1` y entrar en Play Mode. La escena y el prefab ya están configurados; no hace falta ejecutar los generadores anteriores.
+2. Golpear con J horizontal y arriba + J: observar micro-pausa y destello del enemigo; fallar lejos de objetivos y comprobar que no hay pausa. Repetir con el enemigo moviéndose y revisar que sigue patrullando/persiguiendo/avisando al recuperarse.
+3. Hacer abajo + J en el aire sobre el enemigo: comprobar daño, micro-pausa y rebote normal de fuerza 13, también en un golpe letal. Fallar y repetir sobre los blancos dorados: deben conservar su comportamiento anterior.
+4. Usar K/hombro izquierdo justo antes del impacto del entrenador y del enemigo. El éxito debe producir la señal cian y pausa más marcada; el fallo conserva su color anterior y no genera señal de éxito. Acertar tres parries para observar la señal dorada de ruptura y el indicador turquesa durante la vulnerabilidad.
+5. Golpear durante vulnerabilidad: el destello debe percibirse sin perder la franja turquesa; al terminar debe recuperar su apariencia actual. Matar durante el destello o ruptura: debe quedar con su color final, sin señal residual ni recoloreado posterior.
+6. Probar movimiento, salto, doble salto, dash sin empuje, parry, muerte/R y controles de teclado/mando. Pulsar salto/dash durante una micro-pausa y comprobar la respuesta al reanudar. Revisar la consola y comprobar que nunca queda congelado.
+7. Comparar con `Hitstop Enabled` desmarcado en `Assets/_Project/Data/Combat/CombatFeedbackData.asset`. Reponerlo al terminar; ajustar únicamente los parámetros de ese asset si la intensidad o duración requieren calibración. No cambiar todavía valores de combate/movimiento.
+8. Para repetir las pruebas automáticas desde Edit Mode: `Fangbound/Validate Combat Feedback in Play Mode`. También el menú anterior de validación terrestre ejecuta ahora la batería ampliada.
+
+### Limitaciones y pendientes
+
+- Feedback provisional sin sonidos, partículas complejas, materiales/shaders definitivos, animaciones finales ni camera shake. La percepción visual y el balance deben revisarse manualmente; esta entrega no los certifica.
+- El hitstop es global y detiene también el resto de la simulación de la escena. Si se añade posteriormente un gestor de menús/pausa que escriba simultáneamente el mismo valor cero, deberá coordinar la propiedad del tiempo mediante `Cancel`; dos escritores de cero no pueden distinguirse por leer `Time.timeScale`. Actualmente no existe ese segundo gestor.
+- La señal inicial usa tiempo real y la vulnerabilidad usa tiempo de simulación. Las señales visuales no prolongan ni acortan la ventana de vulnerabilidad.
+- Sigue pendiente la medición manual exacta de los `0.8 s` de i-frames de `PlayerHealth`. No se cerró ese pendiente ni se modificó su sistema para incorporar feedback.
+- No se realizaron commits, push, cambios de rama ni trabajo de Tarea 11.

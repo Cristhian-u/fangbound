@@ -21,6 +21,7 @@ namespace Fangbound.EditorTools
             PlayerController controller = player.GetComponent<PlayerController>();
             PlayerPogo pogo = player.GetComponent<PlayerPogo>();
             PlayerPogoData data = (PlayerPogoData)ReadField(pogo, "pogoData");
+            CombatHitstop hitstop = Object.FindAnyObjectByType<CombatHitstop>();
             PlayerCombatData combatData = (PlayerCombatData)ReadField(player.GetComponent<PlayerCombat>(), "combatData");
             RigidbodyConstraints2D constraints = RigidbodyConstraints2D.FreezeRotation;
             InputSettings.BackgroundBehavior background = InputSystem.settings.backgroundBehavior;
@@ -43,6 +44,7 @@ namespace Fangbound.EditorTools
                     "El fixture de pogo perdió las colisiones sin empuje.");
 
                 PlacePlayer(player, new Vector2(102.3f, 2f), constraints);
+                int missedPauseCount = hitstop != null ? hitstop.PauseCount : 0;
                 yield return Wait(0.04f); // Refresh grounded state after the fixture teleport.
                 float fixedStart = Time.fixedTime;
                 float initialVelocity = body.linearVelocity.y;
@@ -53,6 +55,7 @@ namespace Fangbound.EditorTools
                     "El pogo fallido rebotó, dañó o añadió impulso vertical a la caída natural.");
                 Require((float)ReadField(pogo, "attackTimeRemaining") <= 0f && !(bool)ReadField(pogo, "attackAvailable"),
                     "El pogo fallido no cerró su ventana o devolvió un uso sin impacto.");
+                if (hitstop != null) Require(hitstop.PauseCount == missedPauseCount, "Pogo fallido activó hitstop.");
                 yield return Release(keyboard);
 
                 // Ordinary attacks use the same target with its PogoTarget present.
@@ -100,6 +103,7 @@ namespace Fangbound.EditorTools
                     extra.GetComponent<BoxCollider2D>().isTrigger = true;
                     Bounds bounds = fixture.GetComponent<Collider2D>().bounds;
                     int previousHealth = health.CurrentHealth;
+                    int previousPauseCount = hitstop != null ? hitstop.PauseCount : 0;
                     int expectedDamage = data.Damage * (posture.IsVulnerable ? enemyData.VulnerableDamageMultiplier : 1);
                     int expectedHealth = Mathf.Max(0, previousHealth - expectedDamage);
                     PlacePlayer(player, new Vector2(bounds.center.x, bounds.max.y + playerCollider.bounds.extents.y + 0.12f), constraints);
@@ -108,6 +112,7 @@ namespace Fangbound.EditorTools
                     yield return Until(() => health.CurrentHealth == expectedHealth, 0.4f, attackCase);
                     Require(body.linearVelocity.y > 0f && body.linearVelocity.y <= data.BounceSpeed + 0.01f,
                         $"Pogo {attackCase}: no hubo rebote con la fuerza existente.");
+                    if (hitstop != null) Require(hitstop.PauseCount == previousPauseCount + 1, $"Pogo {attackCase}: hitstop ausente o duplicado.");
                     Require((float)ReadField(pogo, "attackTimeRemaining") <= 0f && (bool)ReadField(pogo, "attackAvailable"),
                         $"Pogo {attackCase}: no cerró el impacto o no devolvió el uso.");
                     if (attackCase == "Lethal")

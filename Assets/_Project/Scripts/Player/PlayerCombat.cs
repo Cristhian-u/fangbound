@@ -32,6 +32,7 @@ namespace Fangbound.Player
         private AttackDirection currentAttack;
         private float attackTimeRemaining;
         private int facingDirection = 1;
+        private bool hitstopRequested;
 
         private void Awake()
         {
@@ -72,6 +73,7 @@ namespace Fangbound.Player
             currentAttack = AttackDirection.None;
             attackTimeRemaining = 0f;
             hitTargets.Clear();
+            hitstopRequested = false;
         }
 
         private void Update()
@@ -107,6 +109,7 @@ namespace Fangbound.Player
             }
 
             currentAttack = moveInput.y > 0.5f ? AttackDirection.Upward : AttackDirection.Horizontal;
+            hitstopRequested = false;
             attackTimeRemaining = combatData.AttackWindow;
             hitTargets.Clear();
         }
@@ -167,6 +170,11 @@ namespace Fangbound.Player
                 }
 
                 damageable.TakeDamage(combatData.Damage);
+                if (!hitstopRequested)
+                {
+                    hitstopRequested = true;
+                    CombatHitstop.Request(CombatHitstopKind.Normal);
+                }
             }
         }
 
@@ -175,6 +183,7 @@ namespace Fangbound.Player
             currentAttack = AttackDirection.None;
             attackTimeRemaining = 0f;
             hitTargets.Clear();
+            hitstopRequested = false;
         }
 
         private void OnDrawGizmosSelected()
