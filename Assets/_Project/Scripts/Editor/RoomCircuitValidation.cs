@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using Fangbound.CameraSystem;
 using Fangbound.Combat;
 using Fangbound.Enemies;
@@ -22,6 +23,7 @@ namespace Fangbound.EditorTools
     public static class RoomCircuitValidation
     {
         const string Running = "Fangbound.Task17.Running", Fresh = "Fangbound.Task17.Fresh", Next = "Fangbound.Task17.Next", Index = "Fangbound.Task17.Index";
+        const string Ruins = "Fangbound.Task18.Ruins";
         static readonly Stack<IEnumerator> routines = new Stack<IEnumerator>();
         static Keyboard keyboard;
         static Gamepad gamepad;
@@ -41,9 +43,12 @@ namespace Fangbound.EditorTools
         }
 
         [MenuItem("Fangbound/Validate Three Room Circuit in Play Mode")]
-        public static void Run() { SessionState.SetBool(Fresh, false); Begin(0); }
-        public static void RunC() { SessionState.SetBool(Fresh, false); Begin(1); }
-        public static void RunF() { SessionState.SetBool(Fresh, false); Begin(2); }
+        public static void Run() { SessionState.SetBool(Ruins, false); SessionState.SetBool(Fresh, false); Begin(0); }
+        public static void RunC() { SessionState.SetBool(Ruins, false); SessionState.SetBool(Fresh, false); Begin(1); }
+        public static void RunF() { SessionState.SetBool(Ruins, false); SessionState.SetBool(Fresh, false); Begin(2); }
+        public static void RunD() { SessionState.SetBool(Ruins, false); SessionState.SetBool(Fresh, false); Begin(3); }
+        [MenuItem("Fangbound/Validate Ruins D Circuit in Play Mode")]
+        public static void RunRuins() { SessionState.SetBool(Ruins, true); SessionState.SetBool(Fresh, false); Begin(0); }
 
         // Editor-only fixtures for manual tests in rooms without enemies/hazards.
         [MenuItem("Fangbound/Room Circuit/Damage 1 HP (Play Mode)")]
@@ -84,7 +89,7 @@ namespace Fangbound.EditorTools
             return player != null;
         }
 
-        static string PathFor(int i) => RoomCircuitSceneSetup.SceneFolder + "/" + RoomCircuitSceneSetup.RoomNames[i] + ".unity";
+        static string PathFor(int i) => i == 3 ? RuinsRoomSceneSetup.ScenePath : RoomCircuitSceneSetup.SceneFolder + "/" + RoomCircuitSceneSetup.RoomNames[i] + ".unity";
         static void Begin(int index)
         {
             Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Ejecutar desde Edit Mode.");
@@ -100,7 +105,8 @@ namespace Fangbound.EditorTools
         {
             var entries = new Dictionary<string, HashSet<string>>();
             var exits = new List<(string scene, string entry)>();
-            for (int i = 0; i < 3; i++)
+            bool hasRuins = File.Exists(RuinsRoomSceneSetup.ScenePath);
+            for (int i = 0; i < (hasRuins ? 4 : 3); i++)
             {
                 var scene = EditorSceneManager.OpenScene(PathFor(i));
                 Require(EditorBuildSettings.scenes.Any(s => s.enabled && s.path == scene.path), "Sala fuera de Build Settings.");
@@ -113,10 +119,12 @@ namespace Fangbound.EditorTools
                     Object.FindObjectsByType<GroundEnemyController>().Length == 0, "Llamas/enemigos inesperados.");
                 RoomEntrance[] points = room.GetComponentsInChildren<RoomEntrance>();
                 entries[scene.path] = new HashSet<string>(points.Select(p => p.EntranceId));
-                Require(points.Length == 3 && entries[scene.path].Count == 3 && entries[scene.path].Contains("start"), "IDs de entradas inválidos.");
+                int pointCount = i == 3 ? 2 : i == 1 && hasRuins ? 4 : 3;
+                Require(points.Length == pointCount && entries[scene.path].Count == pointCount && entries[scene.path].Contains("start"), "IDs de entradas inválidos.");
                 foreach (RoomEntrance point in points) Require(point.IsSafe(room.Player), "Entrada insegura: " + point.name);
                 RoomExit[] connections = room.GetComponentsInChildren<RoomExit>();
-                Require(connections.Length == 2 && connections.Select(e => e.ConnectionId).Distinct().Count() == 2, "Salidas duplicadas.");
+                int exitCount = i == 3 ? 1 : i == 1 && hasRuins ? 3 : 2;
+                Require(connections.Length == exitCount && connections.Select(e => e.ConnectionId).Distinct().Count() == exitCount, "Salidas duplicadas.");
                 foreach (RoomExit exit in connections)
                 {
                     Require(exit.Destination != null, "Salida sin destino: " + exit.name);
@@ -130,7 +138,7 @@ namespace Fangbound.EditorTools
                         Require(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(child.gameObject) == 0, "Script ausente.");
             }
             foreach (var exit in exits) Require(entries.ContainsKey(exit.scene) && entries[exit.scene].Contains(exit.entry), "Destino sin entrada correspondiente.");
-            Debug.Log("TASK17_ASSETS_PASS: tres escenas independientes, seis enlaces, entradas seguras, referencias y registro de carga válidos.");
+            Debug.Log("TASK17_ASSETS_PASS: salas independientes, entradas seguras, referencias y registro de carga válidos; incluye D=" + hasRuins);
         }
 
         static void Tick()
@@ -141,7 +149,7 @@ namespace Fangbound.EditorTools
             try
             {
                 if (routines.Count == 0) { started = EditorApplication.timeSinceStartup; routines.Push(Validate()); }
-                Require(EditorApplication.timeSinceStartup - started < 240, "Validación T17 excedió 240 s.");
+                Require(EditorApplication.timeSinceStartup - started < 300, "Validación de salas excedió 300 s.");
                 IEnumerator step = routines.Peek();
                 if (!step.MoveNext()) { routines.Pop(); if (routines.Count == 0) Finish(!hadError); }
                 else if (step.Current is IEnumerator nested) routines.Push(nested);
@@ -158,9 +166,10 @@ namespace Fangbound.EditorTools
                 InputSystem.settings.backgroundBehavior = background;
                 InputSystem.settings.editorInputBehaviorInPlayMode = editorInput;
             }
-            if (success && SessionState.GetInt(Index, 0) == 0 && !SessionState.GetBool(Fresh, false))
+            if (success && SessionState.GetInt(Index, 0) == 0 && !SessionState.GetBool(Fresh, false) && !SessionState.GetBool(Ruins, false))
             { SessionState.SetBool(Next, true); EditorApplication.ExitPlaymode(); return; }
-            Debug.Log(success ? "TASK17_PLAYMODE_PASS" : "TASK17_PLAYMODE_FAIL");
+            Debug.Log(SessionState.GetBool(Ruins, false) ? (success ? "TASK18_PLAYMODE_PASS" : "TASK18_PLAYMODE_FAIL") :
+                (success ? "TASK17_PLAYMODE_PASS" : "TASK17_PLAYMODE_FAIL"));
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             else EditorApplication.ExitPlaymode();
         }
@@ -180,6 +189,7 @@ namespace Fangbound.EditorTools
                 "Una sesión nueva heredó vida, checkpoint o desbloqueos.");
             string initial = RoomSession.Instance.CurrentRoom.Definition.RoomId;
             Debug.Log("TASK17_DIRECT_START_PASS: " + initial);
+            if (SessionState.GetBool(Ruins, false)) { yield return ValidateRuinsCircuit(); yield break; }
             if (SessionState.GetBool(Fresh, false) || SessionState.GetInt(Index, 0) != 0)
             {
                 yield return CheckAbilityInputs(false, false);
@@ -283,6 +293,97 @@ namespace Fangbound.EditorTools
             Debug.Log("TASK17_SESSION_END_FIXTURE: checkpoint activo, desbloqueos y daño antes de salir de Play.");
         }
 
+        static IEnumerator ToRuinsFromC()
+        {
+            yield return Jump("C Terrace 6", "C Ruins Approach");
+            yield return Jump("C Ruins Approach", "C Ruins Gate");
+            yield return Cross("C-to-D");
+        }
+
+        static IEnumerator RuinsUp()
+        {
+            yield return Jump("Safety Floor", "D Base Step");
+            yield return Jump("D Base Step", "D West Landing");
+            yield return Jump("D West Landing", "D Broken Crossing");
+            yield return Jump("D Broken Crossing", "D East Rest");
+            yield return Jump("D East Rest", "D Inner Ledge");
+            yield return Jump("D Inner Ledge", "D Upper Chamber");
+        }
+
+        static IEnumerator UpperRuinsDownToCrossing()
+        {
+            yield return Drop("D Upper Chamber", "D Inner Ledge", -1, 10.9f);
+            yield return Drop("D Inner Ledge", "D East Rest", 1, 15.1f);
+            yield return Drop("D East Rest", "D Broken Crossing", -1, 10.9f);
+        }
+
+        static IEnumerator ValidateRuinsCircuit()
+        {
+            yield return Walk(6.1f); yield return Press(Key.E);
+            Require(Player.GetComponent<PlayerCheckpoint>().Location.IsValid, "La Llama B no se activó antes de viajar a D.");
+            ExecuteDebugMenu("Damage 1 HP (Play Mode)"); yield return Until(() => !Player.IsInvulnerable, 2);
+            ExecuteDebugMenu("Damage 1 HP (Play Mode)"); yield return Until(() => !Player.IsInvulnerable, 2);
+            yield return Cross("B-to-C");
+            yield return Drop("C Upper", "C Terrace 6", 1, 10.1f);
+            yield return ToRuinsFromC();
+            Require(Player.CurrentHealth == 3 && Player.GetComponent<PlayerCheckpoint>().Location.IsValid &&
+                Player.GetComponent<PlayerCheckpoint>().CurrentCheckpoint == null, "D perdió vida o registro estable de checkpoint.");
+            yield return RuinsUp();
+            Require(Object.FindObjectsByType<RoomExit>().Length == 1 && Object.FindAnyObjectByType<RoomExit>().Destination.RoomId == "C",
+                "D contiene una salida funcional inesperada.");
+            Debug.Log("TASK18_ASCENT_PASS: cámara superior a 10.8, solo movimiento y salto normal, sin habilidades.");
+            yield return Drop("D Upper Chamber", "D Inner Ledge", -1, 10.9f);
+            yield return Jump("D Inner Ledge", "D Upper Chamber");
+            yield return UpperRuinsDownToCrossing();
+            yield return Jump("D Broken Crossing", "D West Lookout");
+            yield return Drop("D West Lookout", "D Entry Roof", -1, .8f);
+            Require(RoomSession.Instance.CurrentRoom.Definition.RoomId == "D", "La caída del mirador activó la salida.");
+            yield return Jump("D Entry Roof", "D West Landing");
+            yield return Jump("D West Landing", "D Broken Crossing");
+            yield return Jump("D Broken Crossing", "D West Lookout");
+            Debug.Log("TASK18_ENTRY_RECOVERY_PASS: caída lateral sobre dintel, sin activar salida y con retorno por salto normal.");
+            yield return Jump("D West Lookout", "D Inner Ledge");
+            yield return Jump("D Inner Ledge", "D Upper Chamber");
+            Debug.Log("TASK18_OPTIONAL_LOOP_PASS: mirador lateral y reconexión con ascenso principal.");
+            yield return UpperRuinsDownToCrossing();
+            yield return Drop("D Broken Crossing", "Safety Floor", 1, 13.1f);
+            yield return Jump("Safety Floor", "D Base Step");
+            yield return Jump("D Base Step", "D West Landing");
+            yield return Jump("D West Landing", "D Broken Crossing");
+            Debug.Log("TASK18_RECOVERY_PASS: caída al suelo y regreso al recorrido, sin daño.");
+            yield return Drop("D Broken Crossing", "D West Landing", -1, 4.9f);
+            yield return Drop("D West Landing", "D Base Step", 1, 8.1f);
+            yield return Drop("D Base Step", "Safety Floor", -1, 6.1f);
+            yield return Cross("D-to-C");
+            yield return Jump("C Ruins Gate", "C Ruins Approach");
+            yield return Jump("C Ruins Approach", "C Terrace 6");
+            yield return Drop("C Terrace 6", "C Terrace 4", -1, 6.9f);
+            yield return Drop("C Terrace 4", "C Terrace 2", 1, 11.1f);
+            yield return Drop("C Terrace 2", "Safety Floor", 1, 15.1f);
+            yield return Cross("C-to-F"); yield return FUp(); yield return Cross("F-to-B");
+            Require(Player.CurrentHealth == 3 && !Player.GetComponent<PlayerAbilities>().DashUnlocked &&
+                !Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked, "El circuito curó o requirió desbloqueos.");
+            CheckFlameVisual();
+            Debug.Log("TASK18_CIRCUIT_PASS: B-C-D-C-F-B, 3/5 y checkpoint B conservados; ambos desbloqueos bloqueados.");
+            yield return BDown(); yield return Walk(6.1f); yield return Press(Key.E);
+            ExecuteDebugMenu("Unlock Dash and Double Jump (session)");
+            ExecuteDebugMenu("Damage 1 HP (Play Mode)"); yield return Until(() => !Player.IsInvulnerable, 2);
+            yield return Cross("B-to-C"); yield return Drop("C Upper", "C Terrace 6", 1, 10.1f);
+            yield return ToRuinsFromC();
+            Require(Player.CurrentHealth == 4 && Player.GetComponent<PlayerAbilities>().DashUnlocked &&
+                Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked, "D perdió desbloqueos o curó al entrar.");
+            yield return CheckAbilityInputs(true, true);
+            yield return Cross("D-to-C");
+            yield return Cross("C-to-D");
+            Require(Player.CurrentHealth == 4 && Player.GetComponent<PlayerAbilities>().DashUnlocked &&
+                Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked, "El regreso D-C-D alteró vida o desbloqueos.");
+            Debug.Log("TASK18_UNLOCKED_RETURN_PASS: D-C-D, 4/5 y ambos desbloqueos conservados.");
+            yield return DieAndRestart(true);
+            Require(Player.GetComponent<PlayerAbilities>().DashUnlocked && Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked,
+                "Reaparecer desde D perdió desbloqueos.");
+            Debug.Log("TASK18_CHECKPOINT_PASS: muerte en D, R hacia Llama B activa, 5/5 y desbloqueos conservados.");
+        }
+
         static void ExecuteDebugMenu(string command)
         {
             Require(EditorApplication.ExecuteMenuItem("Fangbound/Room Circuit/" + command), "Menú de pruebas no disponible: " + command);
@@ -299,7 +400,7 @@ namespace Fangbound.EditorTools
             int facing = Player.GetComponent<SpriteRenderer>().flipX ? -1 : 1;
             // Separate fixtures, away from exits and with clear vertical space.
             // The complete traversal tests below continue from the original pose.
-            Vector3 fixture = new Vector3(room.Definition.RoomId == "C" ? 16f : room.Definition.RoomId == "F" ? 3.3f : 4f, .58f);
+            Vector3 fixture = new Vector3(room.Definition.RoomId == "D" ? 13f : room.Definition.RoomId == "C" ? 16f : room.Definition.RoomId == "F" ? 3.3f : 4f, .58f);
             Keys();
             Player.RestoreAfterSceneLoad(fixture, Quaternion.identity, health, false);
             Controller.SetFacingDirection(1);

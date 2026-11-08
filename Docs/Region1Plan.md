@@ -4,6 +4,8 @@
 
 **Documento de propuesta, pendiente de aprobación del desarrollador.** T16 planifica la región; no construye salas ni modifica `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
+**Estado técnico posterior:** el circuito de muestra B–C–F de T17 está aprobado mediante pruebas automatizadas y manuales, según el contexto de T18. T18 añade una primera escena jugable de D y C ↔ D; su aprobación manual sigue pendiente. La sección 11 distingue esa implementación de la propuesta regional completa.
+
 | Estado | Decisión |
 | --- | --- |
 | Confirmado por GDD e instrucciones | Región compuesta por áreas interconectadas, con exploración horizontal/vertical, circuitos, alternativas, descubrimientos, atajos, dificultad progresiva y descansos estratégicos. |
@@ -180,3 +182,20 @@ Antes de construir la región completa, el desarrollador debe aprobar o ajustar:
 - Ritmo y densidad de encuentros, duración de exploración y alcance de producción, sin fijarlos a partir del prototipo lineal ni de tiempos de un bot.
 
 Para la primera prueba humana: llegar al claro, elegir una bajada, reconocer el punto de regreso por otro acceso, repetir en sentido contrario y señalar qué lugares altos despiertan curiosidad. Revisar orientación y deseo de explorar por separado de la precisión de salto y del combate. Los sistemas técnicos T01–T15 permanecen fuera de los cambios de esta tarea; la medición manual exacta de los 0.8 s de i-frames sigue pendiente.
+
+## 11. Estado técnico T18 — primera sala de Ruinas del Colmillo
+
+`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_D_RuinasColmillo.unity` es una muestra técnica compacta de D, pendiente de pruebas manuales. No representa todavía las dos salas conceptuales asignadas a D en el reparto de 16 salas, ni implementa la memoria opcional. Comparte `RoomPlayerRig`, contratos de transición y sesión de T17; no contiene enemigos, Llamas, adquisiciones ni coleccionables.
+
+**Conectividad real:** B ↔ C ↔ F ↔ B permanece; se añade C ↔ D, correspondiente al ascenso L3. En C se conservan todas las plataformas y puertos anteriores y se incorpora una rama desde `C Terrace 6` hacia dos apoyos orientales a altura 6, en `x=15..18` y `x=20..24`. Las coordenadas son locales a cada escena, no un mapa continuo regional.
+
+| Salida nueva | Destino / entrada | Centro del jugador al aparecer | Orientación |
+| --- | --- | --- | --- |
+| C-to-D: `(22.8, 7)`, suelo a 6 | D / from-C | `(4, 0.58)` | Derecha |
+| D-to-C: `(1.2, 1)`, suelo a 0 | C / from-D | `(20.5, 6.58)` | Izquierda |
+
+D ocupa 22 unidades de anchura y tiene suelo seguro continuo a 0. Su inicio directo coincide con la llegada desde C. El ascenso principal alterna derecha/izquierda entre apoyos a **1.8, 3.6, 5.4, 7.2, 9 y 10.8**; todos los saltos ascendentes principales suben 1.8, por debajo del salto normal medido de 2.74. El mirador occidental a 7.2 sale del cruce a 5.4 y reconecta con el apoyo interior a 9. El dintel de entrada a 2.8 recibe la caída lateral del mirador y permite regresar al apoyo de 3.6 sin caer sobre el trigger de salida. Otras caídas terminan en plataformas inferiores o en el suelo, desde donde se puede repetir el ascenso. El regreso previsto baja en zigzag y sale por el extremo inferior izquierdo.
+
+La cámara superior tiene columnas deterioradas, dintel roto, musgo, raíces y un hueco visual oriental. Ese hueco prepara la lectura de la futura conexión L4, pero **no hay salida, entrada ni escena E**. El circuito superior B–C–D–E–B permanece incompleto hasta tareas posteriores. Tampoco se implementan P1–P3 ni adquisición de habilidades.
+
+CameraFollow2D mantiene su comportamiento y tamaño ortográfico 5.5; solo D amplía sus límites locales a `x=0..22, y=-4..21`. Dash/doble salto empiezan bloqueados según el prefab aprobado y no son necesarios para el recorrido, mirador o retorno. La única Llama del circuito sigue en B; la sesión conserva ese checkpoint, vida y desbloqueos al viajar a D. El detalle de validaciones y las comprobaciones humanas pendientes se registra en `DevelopmentLog.md` bajo T18.
