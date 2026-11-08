@@ -4,7 +4,7 @@
 
 **Documento de propuesta, pendiente de aprobación del desarrollador.** T16 planifica la región; no construye salas ni modifica `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
-**Estado técnico posterior:** el circuito de muestra B–C–F de T17 está aprobado mediante pruebas automatizadas y manuales, según el contexto de T18. T18 añade una primera escena jugable de D y C ↔ D; su aprobación manual sigue pendiente. La sección 11 distingue esa implementación de la propuesta regional completa.
+**Estado técnico posterior:** T17 y T18 están aprobadas mediante pruebas automatizadas y manuales, según el contexto recibido para T19. B–C–F y C ↔ D están implementadas. T19 añade una primera escena de E y D ↔ E, pendiente de aprobación manual; E ↔ B sigue aplazada. Las secciones 11–12 distinguen las muestras jugables de la propuesta regional completa.
 
 | Estado | Decisión |
 | --- | --- |
@@ -185,7 +185,7 @@ Para la primera prueba humana: llegar al claro, elegir una bajada, reconocer el 
 
 ## 11. Estado técnico T18 — primera sala de Ruinas del Colmillo
 
-`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_D_RuinasColmillo.unity` es una muestra técnica compacta de D, pendiente de pruebas manuales. No representa todavía las dos salas conceptuales asignadas a D en el reparto de 16 salas, ni implementa la memoria opcional. Comparte `RoomPlayerRig`, contratos de transición y sesión de T17; no contiene enemigos, Llamas, adquisiciones ni coleccionables.
+`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_D_RuinasColmillo.unity` es una muestra técnica compacta de D, aprobada manualmente en T18. No representa todavía las dos salas conceptuales asignadas a D en el reparto de 16 salas, ni implementa la memoria opcional. Comparte `RoomPlayerRig`, contratos de transición y sesión de T17; no contiene enemigos, Llamas, adquisiciones ni coleccionables.
 
 **Conectividad real:** B ↔ C ↔ F ↔ B permanece; se añade C ↔ D, correspondiente al ascenso L3. En C se conservan todas las plataformas y puertos anteriores y se incorpora una rama desde `C Terrace 6` hacia dos apoyos orientales a altura 6, en `x=15..18` y `x=20..24`. Las coordenadas son locales a cada escena, no un mapa continuo regional.
 
@@ -196,6 +196,41 @@ Para la primera prueba humana: llegar al claro, elegir una bajada, reconocer el 
 
 D ocupa 22 unidades de anchura y tiene suelo seguro continuo a 0. Su inicio directo coincide con la llegada desde C. El ascenso principal alterna derecha/izquierda entre apoyos a **1.8, 3.6, 5.4, 7.2, 9 y 10.8**; todos los saltos ascendentes principales suben 1.8, por debajo del salto normal medido de 2.74. El mirador occidental a 7.2 sale del cruce a 5.4 y reconecta con el apoyo interior a 9. El dintel de entrada a 2.8 recibe la caída lateral del mirador y permite regresar al apoyo de 3.6 sin caer sobre el trigger de salida. Otras caídas terminan en plataformas inferiores o en el suelo, desde donde se puede repetir el ascenso. El regreso previsto baja en zigzag y sale por el extremo inferior izquierdo.
 
-La cámara superior tiene columnas deterioradas, dintel roto, musgo, raíces y un hueco visual oriental. Ese hueco prepara la lectura de la futura conexión L4, pero **no hay salida, entrada ni escena E**. El circuito superior B–C–D–E–B permanece incompleto hasta tareas posteriores. Tampoco se implementan P1–P3 ni adquisición de habilidades.
+La cámara superior tiene columnas deterioradas, dintel roto, musgo, raíces y un hueco visual oriental. En T18 ese hueco solo preparaba L4; T19 añade allí el paso hacia E descrito en la sección 12. El circuito superior B–C–D–E–B permanece incompleto hasta tareas posteriores. Tampoco se implementan P1–P3 ni adquisición de habilidades.
 
 CameraFollow2D mantiene su comportamiento y tamaño ortográfico 5.5; solo D amplía sus límites locales a `x=0..22, y=-4..21`. Dash/doble salto empiezan bloqueados según el prefab aprobado y no son necesarios para el recorrido, mirador o retorno. La única Llama del circuito sigue en B; la sesión conserva ese checkpoint, vida y desbloqueos al viajar a D. El detalle de validaciones y las comprobaciones humanas pendientes se registra en `DevelopmentLog.md` bajo T18.
+
+## 12. Estado técnico T19 — primera sala de Copas del Vigía
+
+`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_E_CopasVigia.unity` es una primera muestra jugable de E, pendiente de aprobación manual. No equivale a completar las tres salas conceptuales asignadas a E ni incorpora adquisiciones. Se continúa el ascenso de D desde su cámara superior: no se coloca un acceso nuevo arbitrario en el suelo de las ruinas.
+
+| Conexión implementada L4 | Destino / entrada | Aparición del jugador | Orientación |
+| --- | --- | --- | --- |
+| D-to-E, trigger `(20, 11.8)`, suelo 10.8 | E / from-D | `(4, 0.58)` | Derecha |
+| E-to-D, trigger `(1.2, 1)`, suelo 0 | D / from-E | `(16.5, 11.38)` | Izquierda |
+
+Las posiciones son locales a cada escena. La topología jugable es **B ↔ C ↔ F ↔ B**, **C ↔ D ↔ E**. E solo tiene salida a D. **L5 E ↔ B no está implementada**, por el alcance explícito de T19; el diagrama regional sigue siendo una propuesta del circuito completo, no una afirmación de conexiones ya construidas.
+
+E mide 32 unidades de anchura y tiene suelo de recuperación continuo a 0. Ramas marrones con cubierta verde, troncos y copas de fondo separados por espacios abiertos sustituyen la piedra y las columnas de D; todos los detalles ornamentales carecen de colisión y se dibujan detrás del jugador. Los únicos sólidos son plataformas y límites Default, siguiendo las capas y el movimiento existentes. No hay decoración turquesa ni nuevos objetos interactivos.
+
+| Apoyo | Extensión horizontal | Altura superior | Función |
+| --- | --- | --- | --- |
+| E Fork Bough | 7..15.5 | 1.4 | Bifurcación amplia y lugar de descanso inicial |
+| E Main West Bough | 2.8..7.5 | 3.2 | Primer giro occidental |
+| E Main Crossing | 9..14 | 5.1 | Salto hacia el centro, con despegue libre bajo la copa |
+| E Main Return | 3..7 | 6.5 | Regreso a la izquierda y pausa |
+| E Crown Junction | 9.5..17 | 8.5 | Reconexión de ambas rutas |
+| E Watch Approach | 19..24 | 9.8 | Travesía superior hacia el mirador |
+| E Watch Lookout | 25.5..32 | 11.4 | Destino amplio con siluetas naturales y bosque inferior sugerido |
+| E Side Sprig | 18..22.5 | 2.5 | Inicio de la travesía exterior desde la bifurcación |
+| E Side Outer Bough | 25..30 | 4.5 | Vista oriental y cambio de dirección |
+| E Side Inner Bough | 19..23.5 | 6.6 | Regreso hacia la copa central |
+| E Lower Catch | 22.8..26 | 0.9 | Aterrizaje bajo la rama exterior y recuperación |
+
+**Ruta principal:** bifurcación → rama occidental → cruce central → descanso occidental → copa central → aproximación → mirador. Sus subidas son 1.4, 1.8, 1.9, 1.4, 2, 1.3 y 1.6; se alternan plataformas de 4–8.5 de anchura y huecos distintos, sin saltos de precisión extrema.
+
+**Ruta secundaria:** bifurcación → rama baja oriental → rama exterior → giro hacia la rama interior → copa central → mirador. Introduce una travesía más larga hacia fuera y dos saltos de regreso, con subidas 1.1, 2, 2.1 y 1.9 antes de reconectar. Desde la rama exterior se puede descender al apoyo bajo de 0.9 y regresar a la rama de 2.5, formando un pequeño circuito de recuperación; no es obligatorio repetirlo para llegar al mirador.
+
+Se vuelve por los apoyos principales o por los orientales. Una caída por el extremo derecho aterriza en el suelo y permite subir por el apoyo de 0.9 y la rama baja. Al bajar por la izquierda de esa rama baja, el suelo entre ambas rutas permite saltar a la bifurcación y volver a la entrada. No se necesita dash ni doble salto para subir o regresar. CameraFollow2D conserva comportamiento y tamaño 5.5, con límites locales de E `x=0..32, y=-4..23`.
+
+Para estudiar después L5, el extremo oriental del mirador ofrece un candidato de descenso hacia el tronco de B, pendiente de diseño y pruebas propias. Actualmente termina en el límite sólido de la sala: no hay marco de salida, trigger ni entrada falsa hacia B. T19 no obliga a conservar esa ubicación si la evaluación humana aconseja otro retorno. Tampoco añade checkpoints, enemigos, recompensas ni habilidades; sigue vigente la Llama de B. Las validaciones y limitaciones se detallan en `DevelopmentLog.md` bajo T19.
