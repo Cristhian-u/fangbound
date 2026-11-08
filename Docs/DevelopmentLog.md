@@ -891,3 +891,207 @@ Assets/_Project/
 7. Revisar legibilidad de entradas, cambios de altura, aterrizajes fuera de los ejemplos del bot y otras relaciones de aspecto. Las pruebas automáticas prueban transitabilidad y visibilidad de apoyos, no que la elección resulte intuitiva para un jugador nuevo. Repetir `Fangbound/Validate Arboleda Prototype in Play Mode` para T14 y el menú de enemigo para la regresión de MovementTest.
 
 - El nivel sigue siendo un prototipo; no se modificó el mapa definitivo ni se generó build standalone. Sigue pendiente la medición manual exacta de los **0.8 s** de i-frames de PlayerHealth. Sin commits, push ni cambios de rama.
+
+## T15 — Exploración vertical y conexiones múltiples
+
+### Diseño y conservación
+
+- T01–T14 aprobadas manualmente por el desarrollador. Se aprovechó el volumen bajo las pasarelas, aproximadamente **x=92..108**, para crear una hondonada compacta de raíces. No se amplió la anchura de 150 unidades ni fue necesario excavar bajo el suelo existente: la nueva zona está entre el suelo a **0** y la terraza a **6.8**, por debajo del recorrido conocido.
+- Se conservan completas las tres rutas y la conexión intermedia de T14. Desde su descanso común se puede seguir por las pasarelas anteriores o bajar a la nueva zona y volver a aparecer en `Passage 2`, con la ruina y el mirador todavía accesibles por sus rutas anteriores. Inicio, llama `(117, 2.4)`, enemigo `(127.5, 2.92)`, arena y arco no se desplazaron. No reaparecen `Faint Crystal` ni `Crystal Glow`.
+- **Acceso occidental, x=96..98:** salir por la derecha de `Passage 1`, bajar al apoyo de **4.8**, girar a la izquierda al de **2.8** y después a la derecha hasta la base de **1.0**. La abertura queda entre los tramos del techo; también se puede entrar desde la terraza de recuperación a 6.8.
+- **Tramo inferior:** suelo seguro continuo y piedra central de **0.9**, con superficies amplias, cambios de altura y un cambio de dirección en el acceso occidental. Es una zona transitable propia, no un hueco sin salida ni una segunda colección de tres rutas independientes.
+- **Acceso oriental, x=103..106:** piedra central → apoyo a **2.8** → apoyo a **4.8** → terraza oriental a **6.8**. Desde allí se salta hacia la izquierda al `Passage Catch` existente, a **8.7**, y se vuelve a `Passage 2`, a **10.4**, continuando por el recorrido conocido. La misma secuencia permite bajar por el este y volver a subir por el oeste.
+- La mayor subida nueva es **2.0**, frente a los aproximadamente **2.74** del salto normal. No se requieren dash, doble salto, pogo, parry ni coyote deliberado. Los apoyos inferiores y el suelo permiten recuperarse sin daño ni teletransporte. Algunos saltos bajo techos tienen menor altura efectiva; se comprueba que aun así alcanzan su destino con entrada normal.
+- Identidad provisional: piedra/musgo en tonos tierra apagados, fondo cálido oscuro y raíces colgantes sin collider. Sin cristales, luces turquesas, textos obligatorios, enemigos, peligros, interacciones, habilidades ni arte definitivo nuevos.
+
+### Cambios locales y herramientas
+
+- `Passage Recovery Terrace` era un bloque macizo de 16 × 6.8 que ocupaba todo el espacio inferior. Se conserva su objeto/collider como tramo occidental de techo de 4 × 0.3 y se añaden tramos central y oriental, dejando dos aberturas. `Passage 1` también era macizo: se conserva exactamente su superficie superior y se reduce el volumen inferior para liberar la escalera occidental. Ambos mantienen collider sólido, sin triggers.
+- `Passage Catch` conserva su altura y área anterior de aterrizaje; se ensancha 0.9 hacia la derecha para servir de conexión con la salida oriental. Las demás plataformas aprobadas, incluido el suelo, permanecen sin cambios.
+- Nueva jerarquía `Level Geometry/T15 Root Underpass`, con techo/aberturas y ambos ascensos; decoración en `Provisional Decoration/T15 Root Hollow Decoration`. Se preservan los **222 GameObjects y 690 identificadores serializados** previos. La escena pasa a **771 registros**: solo cambian ocho Transform anteriores y los dos colores del tramo de techo reutilizado; no cambian datos de componentes funcionales originales.
+- `ArboledaPrototypeSceneSetup.AddUnderpass`, menú `Fangbound/Add Arboleda Underpass for T15 (once)`, valida T14, posiciones y dimensiones antes de editar, rechaza repetición y escenas con cambios pendientes. No reconstruye ni ejecuta configuradores previos. La escena guardada no depende del helper para jugar.
+- `ArboledaPrototypeValidation` conserva los tres recorridos T14 y añade un circuito continuo oeste→inferior→este→pasarelas→este→inferior→oeste, incluida caída al suelo y recuperación. Se amplía el descenso de pruebas para aceptar dirección izquierda; no se modifican sistemas de ejecución.
+- Archivos de producto de esta entrega: `ArboledaPrototype.unity`, ambos scripts de Editor anteriores y este registro. Movimiento, salto, gravedad, dash, doble salto, combate, colisiones sin empuje, cámara, HUD, hitstop, checkpoints, prefabs y datos compartidos se conservan. Tampoco cambian MovementTest, GDD o Region1Plan.
+
+### Validación
+
+- Unity **6000.5.5f1** en copia aislada: `Logs/Task15Setup.log`, `TASK15_SETUP_PASS`, salida 0. Compilación del cambio y guardado nativo aprobados; ningún identificador original eliminado.
+- `Logs/Task15Validation.log`: `TASK15_PLAYMODE_PASS`, salida 0, conservando también los marcadores T12/T13/T14. `TASK15_FORWARD_PASS`, `TASK15_REVERSE_PASS` y `TASK15_FLOOR_RECOVERY_PASS` confirman el circuito completo en ambos sentidos y caída/recuperación desde el suelo. Se usa teclado sintético con física real y controles normales, sin teletransporte dentro del circuito ni cambios de gravedad o fuerza de salto.
+- Los tres recorridos independientes desde el spawn hasta el arco pasaron: central con circuito T15 70.4 s, inferior/ruina 43.1 s, superior/mirador 56.1 s. Son tiempos del bot con trayectorias conocidas, no una medida de exploración humana. La IA se aísla durante navegación y se reactiva para comprobar el encuentro real, curación E, muerte/R, cámara y muerte enemiga. Las recuperaciones y conexiones de T14 siguen pasando.
+- `Logs/Task15Checkpoint.log`: `DIAG01_PLAYMODE_PASS`, salida 0; E y botón norte de mando, curación 3→5 y 4→5, destello/brillo activo, rango conservado, muerte/R con destino seguro, movimiento/cámara/vida restaurados y ausencia de cristales. Se posicionan fixtures entre muestras de interacción; no se presentan como navegación continua.
+- `Logs/Task15Regression.log`: `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`, salida 0. Batería existente de MovementTest sin modificarla: caminar/dash sin empuje, IA y recuperación, pogo vivo/vulnerable/letal y objetivos anteriores, entrenador, parry/postura, daño/muerte, feedback/hitstop y cambio de checkpoints.
+- `Logs/Task15Render.log`: `TASK15_RENDER_PASS`, salida 0. Capturas reales del Game View; se revisaron `Logs/Task15Preview-WestEntrance.png`, `Logs/Task15Preview-LowerCenter.png` y `Logs/Task15Preview-EastRoof.png`: abertura occidental y primer apoyo visibles, identidad inferior diferenciada y plataformas del retorno oriental visibles. La captura posiciona fixtures y no sustituye las pruebas de física ni una evaluación humana de orientación.
+- Sin errores/avisos C# ni excepciones en las cinco ejecuciones finales. La escena guardada se abrió en procesos independientes para navegación, interacción y capturas. Escena entregada y ambos scripts coinciden por hash con la copia validada; solo se retiraron espacios finales del YAML. Los **198 archivos protegidos** conservan sus hashes iniciales. `git diff --check` correcto; únicamente cambian los cuatro archivos de producto indicados. Auxiliares temporales y registros/capturas quedan fuera del producto, en `.utmp` y `Logs`.
+
+### Comprobación de la continuación oficial de T15
+
+- Recibida la continuación de los apartados 10–18, se contrastó con la implementación entregada, sin reiniciarla ni modificar de nuevo la escena. Escena y ambos scripts mantienen los mismos hashes que las ejecuciones anteriores; los 198 archivos protegidos siguen intactos. Esta revisión adicional solo actualiza este registro.
+- `CameraFollow2D` conserva su comportamiento, tamaño ortográfico 5.5, zona muerta 1.2 × 0.8 y suavizado 0.12. Sus límites siguen centrados en `(75, 9)`, tamaño `150 × 26`: cubren `x=0..150`, `y=-4..22`, incluida la nueva zona inferior a partir de 0. No se necesita ampliación de límites. El runner comprueba al jugador dentro del viewport durante descensos, travesía, ascensos, cambios de ruta y después de R.
+- Las aberturas y apoyos visibles, el cambio de tono y las raíces cubren la orientación provisional sin textos nuevos, mapa, minimapa, brújula ni objetos turquesas. No se establece lore nuevo. La facilidad de descubrimiento y reconocimiento por una persona sigue pendiente de prueba manual; no se deduce de los tiempos ni de los marcadores del bot.
+
+| Validaciones oficiales | Evidencia vigente y alcance |
+| --- | --- |
+| 1 y 16: apertura y compilación | Cinco procesos de Unity completados con salida 0, sin errores/avisos C# ni excepciones; escena entregada idéntica a la probada. |
+| 2: tres rutas de T14 | Tres travesías independientes hasta el arco; conexión intermedia y bucle anterior conservados. |
+| 3–7: acceso, avance inferior, dos conexiones y regreso bidireccional | `TASK15_FORWARD_PASS` y `TASK15_REVERSE_PASS`: circuito continuo por ambos accesos usando dirección y salto normal, sin teletransporte dentro del circuito. |
+| 8–9: bloqueos y caídas | Recuperaciones de T14 y `TASK15_FLOOR_RECOVERY_PASS`, con salud completa y salida alcanzable. Sin bloqueos en los recorridos y muestras probados; no es una comprobación exhaustiva de cada posición posible. |
+| 10: cámara | Comprobación de viewport durante los recorridos y tras respawn, límites adecuados y parámetros/código conservados; capturas de entrada, interior y retorno revisadas. |
+| 11: ruina y mirador | Incluidos en las travesías inferior/ruina y superior/mirador. Cristal y brillo ausentes; siete objetos de ruina conservados. |
+| 12–14: llama, enemigo y arco | E/mando, curación, muerte/R; encuentro con IA real y llegada al arco desde las tres alternativas. Una sola llama y un solo enemigo; prefabs y datos intactos. |
+| 15: MovementTest | `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS` y `TASK11_CHECKPOINT_PASS`; asset y sistemas anteriores sin modificaciones. |
+
+- Protecciones de editor conservadas: cambios pendientes y configuración inesperada detienen el helper antes de editar; T15 aplicada impide repetición. Se edita el prototipo existente. La copia bajo `.utmp` solo aísla las pruebas, no es una escena paralela de producto. Las restricciones finales se mantienen: sin cambios de movimiento/combate, enemigos/checkpoints nuevos, habilidades, interacciones, daño ambiental, cristales restaurados, arte definitivo, ampliación horizontal, commits, push o cambios de rama.
+
+### Pruebas manuales pendientes
+
+1. Abrir directamente `ArboledaPrototype.unity`, sin regenerarla. Recorrer las tres rutas de T14 y su conexión central/inferior, llegar al descanso común y continuar hasta `Passage 1`.
+2. Bajar por la abertura occidental, reconocer el cambio de tono y las raíces, recorrer la zona inferior y subir por el este hasta `Passage Catch` y `Passage 2`, solo con dirección y salto normal.
+3. Volver a bajar desde las pasarelas por el este y recorrer el circuito en sentido contrario. Subir por el oeste a la terraza a 6.8, caminar hacia el descanso común y volver al camino de `Passage 1`. Comprobar que se reconocen lugares ya visitados.
+4. Fallar saltos de ambos ascensos, aterrizar en apoyos inferiores/suelo y volver a intentarlos. Revisar especialmente techos, bordes y la terraza oriental junto al bloque de descenso, sin dash ni doble salto.
+5. Evaluar si ambas aberturas se descubren sin instrucciones, cómo sigue la cámara al bajar/subir y la legibilidad en la relación de aspecto habitual. Visitar ruina y mirador, probar la llama con E/mando, curación, muerte/R, combate y acceso al arco final.
+6. Repetir `Fangbound/Validate Arboleda Prototype in Play Mode` y la validación de enemigo en MovementTest si se editan superficies después de esta entrega.
+
+- Las pruebas sintéticas no sustituyen una evaluación humana de exploración, orientación y dificultad. No se generó build standalone. Sigue pendiente la medición manual exacta de los **0.8 s** de i-frames. Sin commits, push ni cambios de rama.
+
+## T16 — Plano regional de Arboleda Verdescente
+
+### Inspección y alcance
+
+- Tarea de planificación. Se leyeron AGENTS, GDD, Region1Plan y el registro; se revisaron la escena guardada, herramientas T14/T15, capacidades del personaje y la captura general existente `Logs/Task15Preview-Overview.png`. El prototipo conserva sus alternativas dentro de un eje común de 150 unidades. Se mantiene como laboratorio técnico; no se construyó una región ni se crearon escenas.
+- Git tenía cambios pendientes de T15 en la escena, ambos scripts de Editor y este registro. Se conservaron. Para T16 solo se modifican **Docs/Region1Plan.md, Docs/GDD.md y Docs/DevelopmentLog.md**, sin archivos nuevos. Se tomó una referencia de los otros 203 archivos rastreados para comprobar conservación, incluidos los archivos técnicos ya modificados antes de empezar.
+- Capacidades inspeccionadas: movimiento 7.5, salto 13, gravedad 3, dash 3.2/18/0.18 y doble salto 12. La altura normal de aproximadamente 2.74 procede de las pruebas anteriores, no de una medición nueva. Las banderas existentes de PlayerAbilities no deciden dónde se adquieren las habilidades.
+
+### Propuesta y contradicciones resueltas
+
+- `Region1Plan.md` contiene siete áreas propuestas: A Claro del Despertar, B Claro de las Sendas, C Raíces Profundas, D Ruinas del Colmillo, E Copas del Vigía, F Gruta del Retorno y G Umbral de Savia. Reagrupa las 16 salas anteriores conservando todos sus nombres; siete áreas no sustituyen el alcance de 15–18 salas por siete salas. Área, sala y escena son unidades distintas.
+- Plano con ocho enlaces base bidireccionales y dos circuitos independientes: **B–C–D–E–B** y **B–C–F–B**. Se superponen copas, claro y raíces/gruta en altura. Progresión sugerida A–B–C–F–G; también son válidas una alternativa superior y la ruta corta A–B–F–G. L7 F–B es un camino siempre abierto que se descubre, no un mecanismo nuevo ni una cerradura implícita.
+- La red base usa movimiento y salto normal. P1 D–F por posible dash, P2 F–E por posible doble salto y P3 B–E como posible pasarela directa quedan como propuestas opcionales pendientes. Quitarlas no bloquea ninguna área base. No se decide lugar ni región de adquisición y no se implementan desbloqueos.
+- El GDD previo asignaba dash/doble salto a región 1 y el plan a salas 6/11; T16 exige dejar su ubicación pendiente. Se marca la asignación anterior como referencia histórica y se corrige la afirmación categórica del apartado de movimiento. Se aclaran las referencias antiguas a 4–6 salas y un checkpoint, conservando el alcance vigente de Arboleda y dejando el número final de Llamas a pruebas de recorrido/retorno. Las tablas de historia, nombres regionales y reglas de combate se conservan.
+- GDD sección 8.1 incorpora áreas interconectadas, exploración horizontal/vertical, circuitos, atajos, descubrimientos, progresión por habilidades, dificultad y checkpoints estratégicos. En Region1Plan se distinguen principios confirmados de topología, nombres, descansos y bloqueos propuestos. Memoria opcional, pistas del Velo, Guardián Raíz y salida a Abismo se mantienen sin lore nuevo.
+- Descansos conceptuales central y previo al jefe, con justificación de retorno tras morir; una posible Llama inferior depende de pruebas. No se fijan conteos definitivos de enemigos o checkpoints ni se implementa ninguno. Se alternan navegación tranquila, plataformas, descubrimientos, encuentros y descanso.
+
+### Comprobaciones y siguientes pasos
+
+- Revisión programática del Mermaid: **7 áreas, 8 enlaces, 2 ciclos independientes**, conectividad completa desde A, tres recorridos iniciales válidos y ambos circuitos con conexiones bidireccionales. A–B–C–F–G sigue disponible al excluir las áreas opcionales D/E; P1–P3 no forman parte de la red base. Los 16 identificadores y nombres de salas originales aparecen exactamente una vez en la tabla de reagrupación.
+- Historia principal, reglas de combate, sección de bosses y filas narrativas regionales conservadas mediante comparación de texto; los apartados anteriores de este registro se mantienen. Se comprueban los hashes de los **203 archivos protegidos** y `git diff --check`. Estas verificaciones documentales no prueban geometría, orientación humana, duración o transitabilidad de una región aún no construida. No se ejecutó Unity ni se atribuyen pruebas nuevas de compilación/física a T16.
+- Próxima tarea pequeña propuesta, después de aprobar el plano: graybox de **tres salas de muestra**, una de B/C/F, cerrando el circuito inferior. Reutilizar jugador/cámara, probar ambos sentidos y caídas con salto normal y evaluar reconocimiento humano del retorno antes de completar áreas o añadir encuentros. La escena de muestra se autorizará y creará en esa tarea futura; ArboledaPrototype permanece intacta.
+- Pendiente del desarrollador: aprobar o ajustar agrupación/topología y ruta corta, nombres, reparto de salas, adquisiciones y atajos, descansos, ritmo de encuentros y alcance de producción. La planificación no cambia fechas del cronograma ni resuelve carga/transiciones de escenas. Sigue pendiente la medición manual exacta de los **0.8 s** de i-frames. Sin commits, push ni cambios de rama.
+
+## T17 — Salas independientes, transiciones y checkpoints entre escenas
+
+### Auditoría al continuar la implementación
+
+- Se conservaron todos los cambios anteriores de T15/T16. Al retomar T17 ya existían CheckpointLocation, RoomDefinition, RoomEntrance, RoomExit, RoomScene, RoomSession, SpawnSafety2D y un generador, junto con modificaciones iniciales de PlayerHealth, PlayerCheckpoint, PlayerController y MemoryFlame. El código compilaba y había generado tres escenas, datos y prefab en la copia aislada; esos assets aún no estaban entregados al proyecto principal ni validados en Play. No se reconstruyeron los sistemas ni la geometría ya creada.
+- La auditoría y la validación de assets detectaron definiciones de sala y destinos nulos tras guardar/reabrir. Se corrigió el generador para resolver de nuevo los ScriptableObjects después de abrir cada escena, registrar overrides de prefab y comprobar referencias tras el guardado. Se repararon únicamente las referencias de las escenas existentes y los overrides de inicio/límites de C. El auxiliar puntual de reparación quedó en `.utmp`, fuera del producto.
+- Se completó el uso de la posición/rotación registradas al activar la Llama; no se depende de una referencia a su instancia descargada. Se añadieron las validaciones de física/entrada, sesiones nuevas, regresiones y herramientas de prueba del Editor. Las escenas y assets validados se entregaron conservando GUID y referencias.
+
+### Arquitectura y persistencia
+
+- Tres escenas de carga **Single**, sin carga aditiva. Cada una contiene exactamente una instancia del nuevo prefab `RoomPlayerRig`: jugador con sus componentes existentes, CameraFollow2D, AudioListener, HUD y CombatHitstop. Solo el pequeño **RoomSession** permanece mediante DontDestroyOnLoad; no persisten ni se duplican jugadores, cámaras o HUD.
+- RoomSession toma una copia de transferencia desde los componentes al cargar: vida actual y máxima configurada, banderas de dash/doble salto y CheckpointLocation. La vida y las habilidades siguen siendo responsabilidad de PlayerHealth/PlayerAbilities, y la selección del checkpoint sigue en PlayerCheckpoint. La copia se vuelve a tomar antes de cada carga; no hay inventario, guardado en disco ni otra lógica de daño/curación.
+- RoomDefinition es un ScriptableObject por sala con ID, ruta de escena, entrada inicial y referencia a la sala de recuperación B. RoomEntrance identifica un punto y su orientación; RoomExit inicia una carga automática al entrar su trigger con un jugador vivo. El bloqueo IsLoading rechaza cargas simultáneas y una protección de 0.25 s tras aparecer complementa la separación física entre entrada y salida. Se validaron las seis entradas fuera de todos los triggers de retorno.
+- PlayerHealth reutiliza su limpieza de respawn para la llegada: detiene velocidad/dash, ataques, pogo, parry y estados de daño/knockback; restaura simulación, gravedad y control. En viaje normal recibe la vida capturada, **sin TryHeal ni curación automática**. Solo muerte/R utiliza vida máxima. El valor máximo procede del mismo PlayerHealthData; se exige configuración coherente entre rigs.
+- CheckpointLocation guarda escena, ID de Llama, posición/rotación y la definición de sala como asset; no guarda objetos de una escena descargada. PlayerCheckpoint restaura el registro y, cuando corresponde a la escena actual, localiza la nueva instancia de MemoryFlame por escena/ID y marca su apariencia activa sin curar. Fuera de B, CurrentCheckpoint es nulo y el registro estable sigue válido.
+- La Llama única del circuito está en B, raíz `(6.6, 0)`, respawn `(6, 0.58)`, ID **B.memory-flame**. Reutiliza el prefab y datos oficiales sin modificarlos. E y norte del mando activan/curan mediante T11. La posición guardada se valida con la misma comprobación de suelo/despeje compartida por Llamas y entradas.
+- Al morir en C/F, PlayerHealth ejecuta su muerte normal. R delega la carga al destino de PlayerCheckpoint; al entrar en B se restaura vida máxima, pose segura, control y cámara. Sin checkpoint se usa la entrada `start` de B, `(4, 0.58)`, conservando desbloqueos de la sesión. La instancia recreada de la Llama recupera su estado activo cuando existe checkpoint.
+- Cada escena se puede iniciar directamente. B y F empiezan en `(4, 0.58)`; C en `(4, 8.58)`. Una partida iniciada desde C/F no hereda checkpoint ni desbloqueos de otro Play y recupera en B si muere sin activar una Llama. Los datos temporales se reinician en SubsystemRegistration; dos entradas en Play dentro del mismo proceso comprobaron el aislamiento con las opciones actuales del proyecto (Domain Reload desactivado y Scene Reload activo). Entrar explícitamente en una escena antigua termina el ámbito de RoomSession.
+
+### Escenas, geometría y conexiones
+
+Carpeta de escenas: `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/`.
+
+| Escena | Función y recorrido |
+| --- | --- |
+| Arboleda_B_ClaroSendas.unity | Claro central verde, inicio y Llama. Salida a C en el suelo occidental y a F sobre la terraza oriental a 4.6; apoyos intermedios a 1.5 y 3. |
+| Arboleda_C_RaicesProfundas.unity | Raíces ocres, conexión B arriba y F abajo. Descenso/ascenso en zigzag por alturas 8, 6, 4 y 2, con suelo a 0. |
+| Arboleda_F_GrutaRetorno.unity | Gruta gris/lila apagada, C por el suelo occidental y B por el extremo oriental elevado. Apoyos a 0.8, 2 y 3.8. |
+
+Las salas tienen 24 unidades de anchura, suelo seguro continuo, plataformas sólidas y marcos de paso provisionales. No contienen enemigos, daño ambiental, nuevas interacciones ni objetos turquesas decorativos. Los ascensos nuevos no exceden 2 unidades; se recorrieron sin necesitar habilidades adicionales. CameraFollow2D conserva código y parámetros; B/F usan límites `x=0..24, y=-4..12`, C `x=0..24, y=-4..17`, con tamaño ortográfico 5.5 y sincronización al aparecer.
+
+| Salida estable | Destino / entrada | Posición de entrada (centro del jugador) | Orientación |
+| --- | --- | --- | --- |
+| B-to-C | C / from-B | (4, 8.58) | Derecha |
+| C-to-B | B / from-C | (4, 0.58) | Derecha |
+| C-to-F | F / from-C | (4, 0.58) | Derecha |
+| F-to-C | C / from-F | (20, 0.58) | Izquierda |
+| F-to-B | B / from-F | (19.5, 5.18) | Izquierda |
+| B-to-F | F / from-B | (20, 4.38) | Izquierda |
+
+### Archivos de producto
+
+- **Runtime nuevos:** `Scripts/Player/CheckpointLocation.cs`; `Scripts/World/RoomDefinition.cs`, `RoomEntrance.cs`, `RoomExit.cs`, `RoomScene.cs`, `RoomSession.cs`, `SpawnSafety2D.cs`, todos bajo `Assets/_Project/`.
+- **Editor nuevos:** `Scripts/Editor/RoomCircuitSceneSetup.cs` y `RoomCircuitValidation.cs`. El configurador rechaza assets existentes y escenas con cambios pendientes; no se ejecuta para jugar las escenas guardadas. El validador incluye fixtures del Editor para daño, muerte, desbloqueos temporales y borrado del checkpoint, sin añadir controles de pruebas al juego compilado.
+- **Assets nuevos:** las tres escenas anteriores; `Assets/_Project/Prefabs/Player/RoomPlayerRig.prefab`; tres RoomDefinition en `Assets/_Project/Data/World/Rooms/`, con los mismos nombres que las escenas. Se incluyen los `.meta` de assets, scripts y cuatro carpetas nuevas para conservar sus GUID.
+- **PlayerHealth.cs:** delegación opcional de R a la sesión y reutilización de la limpieza existente con vida explícita al llegar. Las escenas antiguas conservan respawn local.
+- **PlayerCheckpoint.cs:** registro estable, restauración de instancia/visual y pose registrada, además de su comportamiento local anterior.
+- **PlayerController.cs:** se expone la orientación existente para las entradas; se reutiliza desde el movimiento sin modificar aceleración, velocidad, salto, gravedad ni dash.
+- **MemoryFlame.cs:** ID estable, búsqueda por escena/ID y extracción de su comprobación de aparición a SpawnSafety2D, manteniendo sus parámetros oficiales.
+- **ProjectSettings/EditorBuildSettings.asset:** únicamente se añaden las tres escenas habilitadas; escena previa y configuración de Input System conservadas. **Docs/DevelopmentLog.md:** este registro. GDD y Region1Plan no recibieron cambios T17.
+
+### Validaciones ejecutadas
+
+- Unity **6000.5.5f1**, copia aislada. `Logs/Task17Validation.log`: **TASK17_PLAYMODE_PASS**. Tres escenas reabiertas, dependencias/prefab y seis enlaces comprobados; todas las entradas seguras y fuera de triggers. Un jugador, cámara, HUD, hitstop y sesión por sala; SceneManager.sceneCount igual a 1.
+- `TASK17_FORWARD_PASS` y `TASK17_REVERSE_PASS`: circuitos **B→C→F→B** y **B→F→C→B** con entrada sintética y física real. Vida **3/5** conservada en el primer circuito, sin curación al cargar; orientación, desbloqueos, bloqueo de carga simultánea y reposo tras cada llegada sin bucles. Retorno con dash/doble salto bloqueados y recuperación de una caída al suelo de C. No se teletransporta al jugador durante esos circuitos.
+- `TASK17_FLAME_INPUT_PASS`, `TASK17_DEATH_C_PASS`, `TASK17_DEATH_F_PASS`, `TASK17_NO_CHECKPOINT_PASS`: E/norte, curación, registro de escena/ID/posición, muertes por el contrato existente y R hacia B con vida máxima, control y cámara. Se comprobaron además color del renderer y alfa del brillo activo de la Llama recreada.
+- `TASK17_ATTACK_TRANSFER_PASS` y `TASK17_KNOCKBACK_TRANSFER_PASS`: fixture separado con ataque/parry/hitstop y llamada a la API real de transición; hitstop restaurado y registro del checkpoint sin referencia a la Llama descargada. Otro fixture sitúa al actor junto al trigger C→F y lo cruza con knockback real; daño conservado y control recuperado. El circuito principal ya comprueba dash físico a través de B→C. Estos fixtures se distinguen de las travesías completas.
+- `TASK17_NEW_SESSION_PASS`: salir de Play con daño, checkpoint y ambas habilidades activos, volver a entrar directamente en F y comprobar vida inicial, ausencia de checkpoint/desbloqueos heredados y recuperación en B. `Logs/Task17DirectC.log` y `Task17DirectF.log`: inicios independientes y muerte/R sin checkpoint aprobados, salida 0.
+- `Logs/Task17Regression.log`: `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS` y `TASK11_CHECKPOINT_PASS`, salida 0. MovementTest conserva caminar/dash sin empuje, IA/recuperación, pogo vivo/vulnerable/letal, entrenador, parry/postura, daño/muerte, hitstop, HUD y sus checkpoints.
+- `Logs/Task17Arboleda.log`: `TASK12_PLAYMODE_PASS`, `TASK13_PLAYMODE_PASS`, `TASK14_PLAYMODE_PASS` y `TASK15_PLAYMODE_PASS`, salida 0. Las tres rutas, circuito inferior, recuperaciones, cámara, curación/respawn, combate y arco del prototipo anterior siguen pasando.
+- `Logs/Task17Render.log`: `TASK17_RENDER_PASS`, salida 0. Capturas reales del Game View; se revisaron `Task17Preview-COverview.png`, `Task17Preview-FOverview.png` y `Task17Preview-BFlameActive.png` en Logs. Las vistas Overview cambian solo el encuadre del fixture para inspeccionar geometría completa; no cambian la cámara entregada ni sustituyen pruebas humanas.
+- `Logs/Task17FinalCheck.log`: compilación final e inicio directo de C aprobados después de añadir los comandos de pruebas del Editor, con `TASK17_PLAYMODE_PASS`. Sin errores/avisos C# ni excepciones en las ejecuciones finales anteriores. Las primeras comprobaciones fallidas de referencias y una ruta de descenso del bot se corrigieron; el descenso de C usa gravedad natural por los bordes, sin saltar de vuelta a un apoyo superior.
+- Entrega: 41 archivos de código/assets/configuración coinciden por hash con la copia validada; solo se normalizaron espacios finales del YAML. Los 199 archivos protegidos conservan sus hashes, incluidos escenas antiguas con cambios previos, datos y prefabs oficiales, Input Actions, cámara, HUD, herramientas anteriores y GDD. `git diff --check` correcto. Los auxiliares, manifiesto y registros/capturas permanecen en `.utmp`/Logs, fuera del producto.
+
+### Pruebas manuales en Unity y límites
+
+1. Abrir B directamente desde TechnicalCircuit, sin ejecutar configuradores, y entrar en Play. Caminar hasta la Llama y pulsar E; repetir con botón norte del mando. Revisar brillo, cinco indicadores de vida y control. El inicio está en `(4, 0.58)` y el respawn de Llama en `(6, 0.58)`.
+2. **B→C→F→B:** en B tomar el paso occidental del suelo. En C bajar por los bordes alternando derecha/izquierda por 6, 4 y 2; caminar al paso oriental inferior. En F subir por sus apoyos hasta el paso oriental elevado. Al regresar a B, aparecer en la terraza oriental, mirando hacia dentro de la sala.
+3. **B→F→C→B:** desde el suelo de B subir por 1.5, 3 y 4.6 hacia el paso oriental. En F bajar hacia el paso occidental. En C subir por 2, 4, 6 y 8 y salir por el paso occidental superior. Llegar al suelo occidental de B. Probar ambas rutas solo con dirección y salto normal.
+4. Para probar vida sin añadir enemigos, usar en Play `Fangbound/Room Circuit/Damage 1 HP (Play Mode)`; esperar a que termine el parpadeo antes de repetir. Verificar que cambiar de sala no cura y descansar sí. `Unlock Dash and Double Jump (session)` permite probar sus estados entre cargas sin crear un desbloqueo de juego. Volver a enfocar Game View para usar controles después de un menú.
+5. Activar la Llama, viajar a C y usar `Defeat Player (Play Mode)`, después R con Game View enfocado. Repetir desde F. Si la invulnerabilidad de un daño anterior impide la petición, esperar a que termine el parpadeo y repetir el comando. Comprobar muerte normal, B junto a la Llama, vida completa, apariencia activa, control y cámara.
+6. Usar `Clear Checkpoint (session)`, viajar a C/F, morir y pulsar R: volver al inicio de B, sin activar automáticamente la Llama. Salir de Play y abrir directamente C y luego F en sesiones distintas; probar movimiento, cámara y recuperación B sin depender de una visita previa.
+7. Fallar saltos, caminar bajo plataformas, regresar por las otras entradas y observar techos, alturas, orientación y encuadre. Los recorridos automáticos cubren muestras y circuitos completos, no todas las posiciones posibles ni la comprensión humana del espacio.
+8. Repetir `Fangbound/Validate Three Room Circuit in Play Mode` para la batería completa; los validadores anteriores siguen disponibles para MovementTest y ArboledaPrototype. Las tres salas deben permanecer registradas en Build Settings; al mover/renombrar una escena, actualizar su RoomDefinition y validar de nuevo IDs/destinos.
+
+- Progreso solo durante la sesión: salir de Play inicia una partida nueva; no hay guardado permanente. Es un circuito técnico de tres salas, no las áreas completas ni la región final. No se generó build standalone ni se atribuyen pruebas humanas a las entradas sintéticas. Sigue pendiente la medición manual exacta de los **0.8 s** de i-frames de PlayerHealth. Sin commits, push ni cambios de rama.
+
+## T17 — Diagnóstico de habilidades y herramientas de pruebas
+
+**Estado: pendiente de aprobación manual del desarrollador.** El usuario confirmó el funcionamiento manual de las transiciones; todavía faltan sus comprobaciones de habilidades, curación, vida entre salas y muerte/reaparición. Los resultados automatizados siguientes no sustituyen esa aprobación.
+
+### Causas comprobadas
+
+- `MovementTest` serializa `dashUnlocked: 1` y `doubleJumpUnlocked: 1`. El prefab `RoomPlayerRig` serializa ambas banderas a **0**, sin overrides de desbloqueo en B/C/F. El configurador las inicializa así intencionalmente para comprobar que el circuito es transitable con salto normal. No existe todavía una adquisición de habilidades implementada en estas salas; T16 deja su ubicación pendiente.
+- Ambos jugadores referencian el mismo PlayerMovementData y el mismo asset de Input Actions. PlayerController impide el dash con su bandera bloqueada y solo reserva el salto aéreo cuando la bandera de doble salto está activa al despegar del suelo. No se encontró un defecto de referencias, controles o restauración de RoomSession que requiriera cambiar runtime.
+- Iniciar B/C/F directamente crea una sesión con los valores del prefab. Llegar mediante una transición restaura los desbloqueos de la sesión; no vuelve a bloquearlos. El menú existente `Fangbound/Room Circuit/Unlock Dash and Double Jump (session)` habilita las dos banderas del jugador vivo de esa sala y se conservan al viajar. Salir de Play empieza otra sesión con los valores originales del prefab.
+- Para probar doble salto se debe desbloquear antes del despegue, aterrizar si se habilitó en el aire, pulsar/sostener Espacio, soltarlo y pulsarlo otra vez durante el salto. Dash usa Shift y respeta cooldown, disponibilidad aérea, colisiones y bloqueo temporal de control por daño. Las pruebas requieren Game View enfocado y espacio libre sobre/delante del personaje.
+- `Damage 1 HP` y `Defeat Player` ya delegaban en PlayerHealth.TryTakeDamage: daño, knockback, muerte e i-frames eran los oficiales. Una petición durante invulnerabilidad o con el jugador muerto se rechazaba sin informar al usuario. Se conserva ese comportamiento de combate y se mejora la respuesta de las herramientas del Editor.
+
+### Cambios limitados a Editor y documentación
+
+- **Assets/_Project/Scripts/Editor/RoomCircuitValidation.cs:** los dos comandos de daño comparten una pequeña función que informa la vida antes/después, avisa si la petición fue rechazada por invulnerabilidad o si ya se está muerto y recuerda enfocar Game View para R. El desbloqueo informa que es temporal y cómo probarlo; borrar checkpoint confirma el cambio. No se fuerza daño durante i-frames ni se curan actores para facilitar una prueba.
+- Se amplió el validador existente: invoca los menús reales mediante ExecuteMenuItem, prueba físicamente Shift y pulsaciones separadas de Espacio con habilidades bloqueadas/desbloqueadas, verifica que no haya tercer salto y comprueba configuraciones mixtas y persistencia entre salas. Los fixtures de habilidades usan posiciones despejadas y restituyen pose, orientación y vida; se distinguen de los circuitos completos de navegación.
+- Los escenarios de vida usan ahora los comandos reales de daño y muerte del Editor. Se comprueba expresamente que una petición de muerte inmediatamente después de daño sea rechazada por i-frames sin alterar el estado. No se añadieron enemigos, peligros, controles de pruebas al juego compilado ni nuevas mecánicas.
+- **Docs/DevelopmentLog.md:** este diagnóstico y guía manual. Ningún otro archivo se modifica por este ajuste: se conservan las escenas B/C/F, RoomPlayerRig, RoomSession, controlador, salud/checkpoint, cámaras, HUD, Input Actions, datos, GDD, Region1Plan y prototipos antiguos, incluidos los cambios previos sin commit.
+
+### Validaciones del diagnóstico
+
+- Unity **6000.5.5f1**, copia aislada del estado actual, sin regenerar escenas. `Logs/Task17DiagnosisValidation.log`: `TASK17_PLAYMODE_PASS`, con `TASK17_ABILITY_INPUT_PASS` en B/C/F. Se comprobaron B bloqueada/desbloqueada; C con dash activo/doble bloqueado y después ambos activos; F con ambos activos heredados de C. Una segunda sesión iniciada directamente en F comprobó bloqueo inicial y funcionamiento después del menú.
+- `TASK17_DEBUG_IFRAMES_PASS`: el menú Defeat rechazó el daño durante invulnerabilidad, conservando 4/5 y sin muerte. Su advertencia de Console es esperada. Dos usos válidos de Damage dejaron 3/5; `TASK17_FORWARD_PASS` confirmó que esa vida y los desbloqueos se conservan por B→C→F→B sin curación automática.
+- `TASK17_FLAME_INPUT_PASS`: E y norte del mando curan, registran escena/ID/posición y restauran aspecto activo. `TASK17_DEATH_C_PASS`, `TASK17_DEATH_F_PASS` y `TASK17_NO_CHECKPOINT_PASS` usan Defeat y R reales: regreso a la Llama de B o al inicio seguro según el registro, 5/5, control y cámara restaurados. Se conservan las pruebas de estados temporales, carga simultánea rechazada y ausencia de duplicados/bucles al aparecer.
+- `TASK17_REVERSE_PASS`: B→F→C→B con dash/doble salto bloqueados y recuperación de caída en C. `TASK17_NEW_SESSION_PASS` confirma que dos Play no comparten checkpoint/desbloqueos de la sesión anterior. Son entradas sintéticas con física real, no pruebas humanas.
+- `Logs/Task17DiagnosisDirectC.log` y `Task17DiagnosisDirectF.log`: `TASK17_PLAYMODE_PASS`, salida 0. Ambas escenas se iniciaron directamente; habilidades bloqueadas/desbloqueadas comprobadas físicamente y recuperación en B sin checkpoint, conservando los desbloqueos aplicados por el menú.
+- `Logs/Task17DiagnosisRegression.log`: `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`, salida 0; se conservan colisiones sin empuje, enemigo/entrenador, pogo, parry/postura, daño/muerte, hitstop, HUD y checkpoints de MovementTest.
+- `Logs/Task17DiagnosisArboleda.log`: `TASK12_PLAYMODE_PASS`, `TASK13_PLAYMODE_PASS`, `TASK14_PLAYMODE_PASS`, `TASK15_PLAYMODE_PASS`, salida 0. Tres recorridos anteriores, conexiones/recuperaciones, cámara, combate, curación, muerte/R y arco conservados. Las ejecuciones finales no presentan errores ni avisos C# ni excepciones; la advertencia del menú al rechazar daño durante i-frames es intencional y está cubierta por el test.
+- Los **236 archivos protegidos** conservan sus hashes iniciales, incluidos escenas, prefab del jugador, componentes de ejecución, datos y configuración. El validador entregado coincide por hash con la copia probada y `git diff --check` pasó. Esta corrección solo cambia el validador de Editor y este registro; no hay archivos nuevos de producto. T17 permanece pendiente de aprobación manual.
+
+### Comprobaciones manuales pendientes del usuario
+
+1. Abrir B y entrar en Play sin pausa. En la instancia Salamander de Hierarchy, PlayerAbilities empieza con ambas casillas desmarcadas. Ejecutar `Fangbound/Room Circuit/Unlock Dash and Double Jump (session)` y comprobar el mensaje de Console y ambas casillas activas.
+2. Enfocar Game View y aterrizar. En el tramo despejado inicial de B, orientar con A/D y pulsar Shift. Para doble salto, pulsar Espacio, soltarlo y pulsarlo otra vez en el aire. Probar luego en C y F con espacio libre; al viajar, las casillas deben seguir activas. Al iniciar otro Play se espera que vuelvan a estar bloqueadas.
+3. Ejecutar `Damage 1 HP (Play Mode)`: comprobar mensaje 5/5→4/5, HUD y knockback. Esperar a que termine el parpadeo, volver junto al altar de B y pulsar E: comprobar 5/5 y activación de la Llama. Repetir con norte del mando si se desea contrastar la entrada.
+4. Recibir daño de nuevo con el menú y viajar a C/F sin descansar: comprobar que se mantiene la vida reducida. La proximidad a una Llama por sí sola no cura.
+5. Con la Llama de B activada, en F ejecutar `Defeat Player (Play Mode)`. Si avisa de invulnerabilidad, esperar al fin del parpadeo y repetir. Enfocar Game View, pulsar R y comprobar aparición junto al altar de B en `(6, 0.58)`, 5/5, Llama activa y control/cámara normales. Repetir desde C.
+6. Con `Clear Checkpoint (session)`, repetir muerte/R desde C/F: aparecer en el inicio de B `(4, 0.58)`, 5/5 y sin activar automáticamente la Llama. Se conservan los desbloqueos de esa sesión.
+7. Repetir ambos circuitos y fallar algunos saltos; revisar orientación y HUD. El validador automático sigue disponible en `Fangbound/Validate Three Room Circuit in Play Mode`.
+
+- El bloqueo inicial es intencional y permanece. No se encontró un fallo de habilidades que justificara alterar el prefab, progresión o parámetros del jugador. La validación humana sigue pendiente y T17 no se declara aprobada. Se mantiene pendiente la medición manual exacta de los **0.8 s** de i-frames. Sin commits, push ni cambios de rama.

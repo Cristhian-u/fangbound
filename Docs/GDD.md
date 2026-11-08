@@ -4,6 +4,8 @@
 
 > **Actualización de alcance (5 de noviembre de 2026):** Arboleda Verdescente se planificará con **15–18 salas (objetivo inicial: 16)**. Esta decisión reemplaza únicamente el tamaño anterior de la región 1. El cronograma y las referencias a regiones de 4–6 salas que aparecen más abajo pertenecen al GDD original y deberán revisarse antes de comprometer fechas.
 
+> **Dirección de exploración T16:** las regiones se diseñan como áreas interconectadas con capas horizontales y verticales, circuitos y retornos. Las siete áreas propuestas para Arboleda en [Region1Plan.md](Region1Plan.md) agrupan el objetivo de 16 salas; no lo sustituyen por siete salas ni están construidas. La ubicación de los desbloqueos de habilidades requiere aprobación: las asignaciones regionales de las tablas originales se conservan como referencia de planificación, no como autorización para fijar adquisiciones. En particular, dash y doble salto no son requisitos del recorrido inicial de Arboleda. Ver sección 8.1.
+
 ---
 
 ## 1. Resumen en 30 segundos
@@ -90,7 +92,7 @@ La idea final: no es que la paz sea mala; es que una paz impuesta a costa de la 
 
 Cada región enseña una skill, revela una parte de la historia y muestra un pedazo del sistema del Velo. Así el final no introduce nada nuevo.
 
-| # | Región | Función narrativa | Recuerdo / qué ve el jugador | Pista del Velo | Skill |
+| # | Región | Función narrativa | Recuerdo / qué ve el jugador | Pista del Velo | Skill (propuesta original) |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Arboleda Verdescente | Presentar a la salamandra y un pasado desconocido | Una enseñanza del maestro, sin decir quién es; criaturas huidizas y marcas de fuerza descomunal | Cristales lila apagados en el suelo; criaturas raramente calmadas | Dash, doble salto |
 | 2 | Abismo Lagrimal | Primeras consecuencias de la bestia | La bestia defendiendo a un indefenso; algunos la recuerdan como protectora, otros solo conocen el miedo | Habitantes que perdieron las ganas de irse | Cañón de agua, daga de hielo, flash |
@@ -107,7 +109,7 @@ Cómo cierra la demo (regiones 1 a 3): el último boss es un duelo dentro de un 
 
 ### Movimiento
 
-Correr, salto, dash con invulnerabilidad breve y doble salto (se desbloquean en la región 1). Ataque descendente con rebote (pogo): al golpear hacia abajo suelo, pinchos o enemigos, la salamandra sale impulsada hacia arriba.
+Correr, salto, dash con invulnerabilidad breve y doble salto (ubicación de sus desbloqueos pendiente de aprobación; ver sección 8.1). Ataque descendente con rebote (pogo): al golpear hacia abajo suelo, pinchos o enemigos, la salamandra sale impulsada hacia arriba.
 
 ### Barra de postura (aturdimiento)
 
@@ -157,7 +159,7 @@ Narrativamente están relacionadas con los recuerdos y el pasado: representan re
 
 ## 6. Habilidades y combos
 
-| Skill | Efecto | Combo | Región | Prioridad |
+| Skill | Efecto | Combo | Región (propuesta original) | Prioridad |
 | --- | --- | --- | --- | --- |
 | Dash | Desplazamiento rápido, invulnerabilidad breve | Base de movimiento | 1 | Núcleo |
 | Doble salto | Segundo salto en el aire | Base de movimiento | 1 | Núcleo |
@@ -203,7 +205,19 @@ Plantilla compartida: todos los bosses usan la misma máquina de estados (espera
 | Ampliación | Capataz de Magma, daga de hielo, flash, aceite, música extra | Solo si el cronograma va a tiempo |
 | Visión | Regiones 4 a 8, bosses 4 a 8, Escudo de cristal, dagas venenosas, arena de bosses | Documentado + arte conceptual |
 
-Cada región del núcleo debe ser corta: 4 a 6 salas, un tramo de exploración, un checkpoint, un boss. Un buen combate en 3 zonas vale más que un mundo largo con errores.
+La referencia original para cada región del núcleo era de 4 a 6 salas, un tramo de exploración, un checkpoint y un boss. En Arboleda, el objetivo de salas se sustituyó por 15–18; la distribución final de Llamas se evaluará según exploración y retorno al jefe, sin fijar una cifra en T16. No se reestiman aquí las demás regiones ni el cronograma. Un buen combate en 3 zonas vale más que un mundo largo con errores.
+
+### 8.1 Diseño de regiones y exploración — dirección T16
+
+- **Áreas interconectadas:** una región agrupa espacios con identidad ambiental y función distintas. Las áreas pueden contener varias salas y superponerse en altura; no se limita cada una a un tramo más de un corredor horizontal. Área, sala y escena Unity no son unidades equivalentes.
+- **Exploración horizontal y vertical:** descensos, travesías y ascensos deben reconectar con lugares reconocibles. La composición, los apoyos visibles y las diferencias ambientales ayudan a orientarse sin imponer textos o un mapa como requisito de navegación.
+- **Circuitos y alternativas:** diseñar retornos por otro acceso y opciones superiores/inferiores. Arboleda tendrá al menos dos circuitos que conecten varias áreas; la topología concreta de siete áreas de Region1Plan es una propuesta pendiente de aprobación.
+- **Atajos y descubrimientos:** mostrar destinos antes de alcanzarlos y permitir reconocerlos desde otra perspectiva. Un atajo puede ser un camino siempre abierto que se descubre; una conexión que requiera habilidad o mecanismo debe especificarse y aprobarse por separado.
+- **Progresión mediante habilidades:** las habilidades futuras pueden abrir atajos, secretos y nuevas formas de recorrer espacios anteriores. No fijar su región o punto de adquisición a partir de las asignaciones históricas de las secciones 4/6. Para el graybox inicial de Arboleda, toda la red base debe navegarse con movimiento y salto normal; los bloqueos candidatos son opcionales y quedan pendientes de aprobación. Esto no modifica las reglas de combate.
+- **Dificultad progresiva:** alternar exploración tranquila, plataformas, encuentros, descubrimientos y descansos. Los caminos opcionales pueden exigir más dominio del salto; se deben mantener márgenes, recuperación de caídas y una alternativa inicial accesible, sin modificar el controlador para compensar geometría.
+- **Checkpoints estratégicos:** ubicar las Llamas para sostener la exploración y evitar repetir plataformas o encuentros obligatorios antes de reintentar un jefe. Se mantiene una Llama visible antes de cada boss. Cantidad y emplazamientos concretos se comprobarán mediante recorridos, muerte y regreso; los candidatos de Arboleda no son una cifra definitiva.
+
+El alcance de 15–18 salas de Arboleda sigue vigente. La propuesta T16 reagrupa las 16 salas anteriores en siete áreas; ajusta sus conexiones y deja pendientes las adquisiciones de dash/doble salto que el plan previo daba por ubicadas. Conserva despertar, memoria opcional, pistas del Velo, Guardián Raíz y transición a Abismo Lagrimal. No introduce lore ni modifica historia o combate; tampoco autoriza construir la región completa. `ArboledaPrototype` se conserva como prototipo técnico; el siguiente paso propuesto es validar un pequeño circuito de tres salas antes de expandirlo.
 
 ## 9. Arte, audio y herramientas (presupuesto cero)
 

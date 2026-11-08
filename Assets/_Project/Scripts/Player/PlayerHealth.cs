@@ -1,4 +1,5 @@
 using System;
+using Fangbound.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -181,6 +182,7 @@ namespace Fangbound.Player
 
         public void RestartForTesting()
         {
+            if (RoomSession.Instance != null && RoomSession.Instance.TryRestart(this)) return;
             Vector3 restartPosition = spawnPosition;
             Quaternion restartRotation = spawnRotation;
             if (checkpoint != null && checkpoint.TryGetRespawnPose(out Vector3 checkpointPosition, out Quaternion checkpointRotation))
@@ -188,13 +190,31 @@ namespace Fangbound.Player
                 restartPosition = checkpointPosition;
                 restartRotation = checkpointRotation;
             }
+            RestoreAfterSceneLoad(restartPosition, restartRotation, MaximumHealth, true);
+        }
+
+        public void SuspendForSceneLoad()
+        {
+            playerController.enabled = false;
+            playerCombat.enabled = false;
+            playerPogo.enabled = false;
+            playerParry.enabled = false;
+            impactReceiver.enabled = false;
+            body.linearVelocity = Vector2.zero;
+            body.simulated = false;
+        }
+
+        // Reuses the same reset as local respawn, with health explicitly supplied
+        // by the room transfer. Entering another room never calls TryHeal.
+        public void RestoreAfterSceneLoad(Vector3 restartPosition, Quaternion restartRotation, int health, bool respawn)
+        {
             // Also clear an in-progress attack/parry if this API is called while alive.
             playerCombat.enabled = false;
             playerPogo.enabled = false;
             playerParry.enabled = false;
             playerController.enabled = false;
             IsDead = false;
-            CurrentHealth = MaximumHealth;
+            CurrentHealth = Mathf.Clamp(health, 1, MaximumHealth);
             invulnerabilityRemaining = 0f;
             knockbackControlRemaining = 0f;
             blinkElapsed = 0f;
@@ -205,6 +225,7 @@ namespace Fangbound.Player
             body.linearVelocity = Vector2.zero;
             body.angularVelocity = 0f;
             body.gravityScale = originalGravityScale;
+            body.simulated = true;
             playerRenderer.enabled = originalRendererEnabled;
             playerRenderer.color = originalColor;
 
@@ -217,7 +238,7 @@ namespace Fangbound.Player
             playerPogo.ResetForRespawn();
 
             HealthChanged?.Invoke(CurrentHealth, MaximumHealth);
-            Respawned?.Invoke();
+            if (respawn) Respawned?.Invoke();
         }
 
         private void EnterDeathState()

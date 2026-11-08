@@ -18,6 +18,7 @@ namespace Fangbound.Player
 
         public MemoryFlame CurrentCheckpoint { get; private set; }
         public MemoryFlame NearbyFlame { get; private set; }
+        public CheckpointLocation Location { get; private set; }
         public event Action<MemoryFlame> CheckpointChanged;
         public event Action<MemoryFlame> Rested;
 
@@ -58,7 +59,11 @@ namespace Fangbound.Player
         public bool TryRest(MemoryFlame flame)
         {
             if (!CanRest || flame == null || !flame.IsInRange(transform.position) ||
-                !flame.TryGetSafePose(health, out _, out _)) return false;
+                !flame.TryGetSafePose(health, out Vector3 position, out Quaternion rotation)) return false;
+            RoomSession session = RoomSession.Instance;
+            RoomDefinition room = session != null && session.CurrentRoom != null && session.CurrentRoom.Player == health
+                ? session.CurrentRoom.Definition : null;
+            Location = new CheckpointLocation(flame.gameObject.scene.path, flame.CheckpointId, position, rotation, room);
             if (CurrentCheckpoint != flame)
             {
                 if (CurrentCheckpoint != null) CurrentCheckpoint.SetCurrent(false);
@@ -76,6 +81,13 @@ namespace Fangbound.Player
         {
             position = default;
             rotation = Quaternion.identity;
+            if (CurrentCheckpoint != null && Location.IsValid && Location.ScenePath == gameObject.scene.path &&
+                CurrentCheckpoint.CheckpointId == Location.FlameId)
+            {
+                position = Location.Position;
+                rotation = Location.Rotation;
+                return CurrentCheckpoint.IsSafePosition(health, position);
+            }
             return CurrentCheckpoint != null && CurrentCheckpoint.TryGetSafePose(health, out position, out rotation);
         }
 
@@ -83,7 +95,18 @@ namespace Fangbound.Player
         {
             if (CurrentCheckpoint != null) CurrentCheckpoint.SetCurrent(false);
             CurrentCheckpoint = null;
+            Location = default;
             CheckpointChanged?.Invoke(null);
+        }
+
+        public void RestoreLocation(CheckpointLocation location)
+        {
+            if (CurrentCheckpoint != null) CurrentCheckpoint.SetCurrent(false);
+            Location = location;
+            CurrentCheckpoint = location.IsValid && location.ScenePath == gameObject.scene.path
+                ? MemoryFlame.FindById(location.ScenePath, location.FlameId) : null;
+            if (CurrentCheckpoint != null) CurrentCheckpoint.SetCurrent(true);
+            NearbyFlame = null;
         }
 
         private void HandleRespawn()

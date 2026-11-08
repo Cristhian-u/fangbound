@@ -277,6 +277,78 @@ namespace Fangbound.EditorTools
             Debug.Log($"TASK14_SETUP_PASS: red local sin ampliar 150 m; {retained.Count} objetos originales conservados; tres rutas y conexión inferior-central, reconexión en x=83..92.");
         }
 
+        [MenuItem("Fangbound/Add Arboleda Underpass for T15 (once)")]
+        public static void AddUnderpass()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || !File.Exists(ScenePath))
+                throw new InvalidOperationException("Editar la escena existente desde Edit Mode.");
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Guardar los cambios abiertos antes de añadir la zona inferior.");
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (GameObject.Find("T14 Interconnected Routes") == null || GameObject.Find("T15 Root Underpass") != null)
+                throw new InvalidOperationException("Se requiere T14 sin T15 aplicada; no se sobrescribe la zona inferior.");
+            ExpectSurface("Passage Recovery Terrace", new Vector2(100f, 3.4f), new Vector2(16f, 6.8f));
+            ExpectSurface("Passage Catch", new Vector2(102.5f, 8.55f), new Vector2(1.7f, 0.3f));
+            ExpectSurface("Passage 1", new Vector2(94f, 4.3f), new Vector2(4f, 8.6f));
+            ExpectSurface("Passage 2", new Vector2(99.75f, 10.25f), new Vector2(3.5f, 0.3f));
+            ExpectSurface("Passage Upper Rest", new Vector2(105.5f, 11.75f), new Vector2(4f, 0.3f));
+            ExpectPosition("Memory Flame - Arboleda", new Vector2(117f, 2.4f));
+            ExpectPosition("Ground Enemy - Arena", new Vector2(127.5f, 2.92f));
+            if (GameObject.Find("Faint Crystal") != null || GameObject.Find("Crystal Glow") != null)
+                throw new InvalidOperationException("Revisar decoración retirada antes de editar.");
+            foreach (string name in new[] { "Underpass Roof Center", "Underpass Roof East", "Underpass West Upper",
+                "Underpass West Lower", "Underpass West Base", "Underpass Center Stone", "Underpass East Lower", "Underpass East Upper" })
+                if (GameObject.Find(name) != null) throw new InvalidOperationException("Nombre ya utilizado: " + name);
+            square = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Placeholder/MovementTestSquare.asset");
+            if (square == null) throw new InvalidOperationException("Falta sprite provisional existente.");
+            var retained = new System.Collections.Generic.Dictionary<GameObject, GlobalObjectId>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                foreach (Transform item in root.GetComponentsInChildren<Transform>(true))
+                    retained.Add(item.gameObject, GlobalObjectId.GetGlobalObjectIdSlow(item.gameObject));
+
+            Transform underpass = Group("T15 Root Underpass", GameObject.Find("Level Geometry").transform);
+            Transform roof = Group("Roof and Openings", underpass);
+            Transform west = Group("West Switchback", underpass);
+            Transform east = Group("East Ascent", underpass);
+            // Retain the original terrace and collider; open two shafts in its
+            // former volume. T14 routes, the floor and camera bounds stay intact.
+            ResizeSurface("Passage Recovery Terrace", 94f, 4f, 6.8f, 0.3f, roof);
+            // Its original filled support occupied the western staircase.
+            // Keep exactly the approved top surface, but hollow the space below.
+            ResizeSurface("Passage 1", 94f, 4f, 8.6f, 0.3f);
+            Platform("Underpass Roof Center", roof, 100.5f, 5f, 6.8f);
+            Platform("Underpass Roof East", roof, 107f, 2f, 6.8f);
+            Platform("Underpass West Upper", west, 97.3f, 2.4f, 4.8f);
+            Platform("Underpass West Lower", west, 94.4f, 2.8f, 2.8f);
+            Block("Underpass West Base", west, 97.5f, 2.6f, 1f);
+            Block("Underpass Center Stone", underpass, 99.7f, 2.2f, 0.9f);
+            Platform("Underpass East Lower", east, 102.1f, 2.4f, 2.8f);
+            Platform("Underpass East Upper", east, 105f, 2f, 4.8f);
+            // Widen only the existing recovery support to provide the eastern
+            // return to Passage 2. Its height and previous landing area remain.
+            ResizeSurface("Passage Catch", 102.95f, 2.6f, 8.7f, 0.3f);
+
+            Color rootStone = new Color(.35f, .33f, .28f);
+            Color rootCap = new Color(.53f, .48f, .32f);
+            foreach (SpriteRenderer sprite in underpass.GetComponentsInChildren<SpriteRenderer>())
+                sprite.color = sprite.name.EndsWith(" Moss", StringComparison.Ordinal) ? rootCap : rootStone;
+            Transform decor = Group("T15 Root Hollow Decoration", GameObject.Find("Provisional Decoration").transform);
+            Visual("Root Hollow Backdrop", decor, 99.75f, 3f, 15.5f, 6f, new Color(.12f, .12f, .095f), -7);
+            for (int i = 0; i < 4; i++)
+            {
+                float x = 93f + i * 4.3f;
+                Visual("Hanging Root", decor, x, 5.7f, .12f, 1.5f - i * .15f,
+                    new Color(.25f, .24f, .16f), -6).transform.rotation = Quaternion.Euler(0, 0, i % 2 == 0 ? 15f : -15f);
+            }
+            foreach (var pair in retained)
+                if (pair.Key == null || !GlobalObjectId.GetGlobalObjectIdSlow(pair.Key).Equals(pair.Value))
+                    throw new InvalidOperationException("Se perdió un objeto original al abrir la zona inferior.");
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("No se pudo guardar T15.");
+            Debug.Log($"TASK15_SETUP_PASS: dos conexiones en x=96..98 y 103..106; {retained.Count} objetos conservados, suelo y rutas T14 intactos.");
+        }
+
         private static void ExpectSurface(string name, Vector2 center, Vector2 size)
         {
             ExpectPosition(name, center);

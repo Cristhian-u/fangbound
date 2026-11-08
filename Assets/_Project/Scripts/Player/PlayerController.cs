@@ -362,20 +362,21 @@ namespace Fangbound.Player
             return false;
         }
 
+        public void SetFacingDirection(int direction)
+        {
+            facingDirection = direction < 0 ? -1 : 1;
+            playerRenderer.flipX = facingDirection < 0;
+            if (facingIndicator != null)
+            {
+                Vector3 indicatorPosition = facingIndicator.localPosition;
+                indicatorPosition.x = Mathf.Abs(indicatorPosition.x) * facingDirection;
+                facingIndicator.localPosition = indicatorPosition;
+            }
+        }
+
         private void ApplyHorizontalMovement(ref Vector2 velocity, float fixedDeltaTime)
         {
-            if (Mathf.Abs(horizontalInput) > 0.01f)
-            {
-                facingDirection = horizontalInput > 0f ? 1 : -1;
-                playerRenderer.flipX = facingDirection < 0;
-
-                if (facingIndicator != null)
-                {
-                    Vector3 indicatorPosition = facingIndicator.localPosition;
-                    indicatorPosition.x = Mathf.Abs(indicatorPosition.x) * facingDirection;
-                    facingIndicator.localPosition = indicatorPosition;
-                }
-            }
+            if (Mathf.Abs(horizontalInput) > 0.01f) SetFacingDirection(horizontalInput > 0f ? 1 : -1);
 
             float targetSpeed = horizontalInput * movementData.MoveSpeed;
             float accelerationRate;

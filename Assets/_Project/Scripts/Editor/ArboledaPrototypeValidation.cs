@@ -62,6 +62,7 @@ namespace Fangbound.EditorTools
         {
             Require(GameObject.Find("T13 Expansion") != null, "Falta la ampliación T13 guardada.");
             Require(GameObject.Find("T14 Interconnected Routes") != null, "Falta la red de rutas T14 guardada.");
+            Require(GameObject.Find("T15 Root Underpass") != null, "Falta la zona inferior T15 guardada.");
             Require(GameObject.Find("Faint Crystal") == null && GameObject.Find("Crystal Glow") == null, "Reapareció decoración retirada.");
             Require(Object.FindObjectsByType<PlayerHealth>().Length == 1, "Debe existir un jugador.");
             Require(Object.FindObjectsByType<GroundEnemyController>().Length == 1, "Debe existir un enemigo.");
@@ -132,6 +133,7 @@ namespace Fangbound.EditorTools
             Debug.Log(success ? "TASK12_PLAYMODE_PASS" : "TASK12_PLAYMODE_FAIL");
             Debug.Log(success ? "TASK13_PLAYMODE_PASS" : "TASK13_PLAYMODE_FAIL");
             Debug.Log(success ? "TASK14_PLAYMODE_PASS" : "TASK14_PLAYMODE_FAIL");
+            Debug.Log(success ? "TASK15_PLAYMODE_PASS" : "TASK15_PLAYMODE_FAIL");
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             else EditorApplication.ExitPlaymode();
         }
@@ -205,6 +207,7 @@ namespace Fangbound.EditorTools
                 }
                 else yield return JumpTo(route[i - 1], route[i]);
                 if (route[i] == "Grove Upper Rest") yield return CheckForkVisibility();
+                if (variant == 0 && route[i] == "Passage 1") yield return TraverseUnderpass();
                 if (variant == 0 && route[i] == "Grove Crossing")
                 {
                     yield return DropTo("Grove Crossing", "Network Lower Entry");
@@ -249,6 +252,38 @@ namespace Fangbound.EditorTools
             CheckCameraAndSafety();
             Require(player.CurrentHealth == player.MaximumHealth, "Hubo daño fuera del encuentro.");
             Debug.Log($"TASK12_ROUTE_PASS / TASK13_ROUTE_PASS / TASK14_ROUTE_PASS: {new[] { "central con cambios de ruta", "inferior y ruina", "superior y mirador" }[variant]}, solo A/D+Espacio; E en llama; final x={body.position.x:F2}; bot={Time.realtimeSinceStartupAsDouble - began:F1}s (no cronometraje humano).");
+        }
+
+        private static IEnumerator TraverseUnderpass()
+        {
+            // One continuous circuit from the route just traversed. No fixtures
+            // or respawns between the west entrance, east exit and reverse trip.
+            yield return DropTo("Passage 1", "Underpass West Upper");
+            yield return DropTo("Underpass West Upper", "Underpass West Lower", -1);
+            yield return DropTo("Underpass West Lower", "Underpass West Base");
+            yield return JumpTo("Underpass West Base", "Underpass Center Stone");
+            yield return JumpTo("Underpass Center Stone", "Underpass East Lower");
+            yield return JumpTo("Underpass East Lower", "Underpass East Upper");
+            yield return JumpTo("Underpass East Upper", "Underpass Roof East");
+            yield return JumpTo("Underpass Roof East", "Passage Catch");
+            yield return JumpTo("Passage Catch", "Passage 2");
+            Debug.Log("TASK15_FORWARD_PASS: descenso oeste, zona inferior y salida este hacia Passage 2, solo salto normal.");
+
+            yield return DropTo("Passage 2", "Passage Catch");
+            yield return DropTo("Passage Catch", "Underpass Roof East");
+            yield return DropTo("Underpass Roof East", "Underpass East Upper", -1);
+            yield return DropTo("Underpass East Upper", "Underpass East Lower", -1);
+            yield return DropTo("Underpass East Lower", "Underpass Center Stone", -1);
+            yield return DropTo("Underpass Center Stone", "Safety Floor", 1, 101.6f);
+            yield return JumpTo("Safety Floor", "Underpass Center Stone");
+            Debug.Log("TASK15_FLOOR_RECOVERY_PASS: caída al suelo inferior y retorno sin teleport, daño ni habilidades adicionales.");
+            yield return JumpTo("Underpass Center Stone", "Underpass West Base");
+            yield return JumpTo("Underpass West Base", "Underpass West Lower");
+            yield return JumpTo("Underpass West Lower", "Underpass West Upper");
+            yield return JumpTo("Underpass West Upper", "Passage Recovery Terrace");
+            yield return WalkTo(91f);
+            yield return JumpTo("Passage Low Rest", "Passage 1");
+            Debug.Log("TASK15_REVERSE_PASS: entrada este y ascenso oeste, circuito bidireccional sin reiniciar el recorrido.");
         }
 
         private static IEnumerator CheckForkVisibility()
@@ -324,23 +359,25 @@ namespace Fangbound.EditorTools
             yield return Wait(0.16f);
         }
 
-        private static IEnumerator DropTo(string from, string to)
+        private static IEnumerator DropTo(string from, string to, int direction = 1, float? landingX = null)
         {
             Bounds source = PlatformBounds(from), target = PlatformBounds(to);
-            float landing = target.min.x < source.max.x
-                ? Mathf.Min(source.max.x + 0.7f, target.max.x - 0.4f)
-                : Mathf.Min(target.min.x + 1.1f, target.center.x);
-            yield return WalkTo(source.max.x - 0.6f);
+            float landing = landingX ?? (direction > 0
+                ? (target.min.x < source.max.x ? Mathf.Min(source.max.x + 0.7f, target.max.x - 0.4f)
+                    : Mathf.Min(target.min.x + 1.1f, target.center.x))
+                : (target.max.x > source.min.x ? Mathf.Max(source.min.x - 0.7f, target.min.x + 0.4f)
+                    : Mathf.Max(target.max.x - 1.1f, target.center.x)));
+            yield return WalkTo(direction > 0 ? source.max.x - 0.6f : source.min.x + 0.6f);
             bool airborne = false, stopped = false;
             double end = Time.realtimeSinceStartupAsDouble + 4d;
-            Keys(Key.D);
+            Keys(direction > 0 ? Key.D : Key.A);
             do
             {
                 yield return null;
                 CheckCameraAndSafety();
                 airborne |= !controller.IsGrounded;
                 float brake = body.linearVelocity.x * body.linearVelocity.x / (2f * movement.Deceleration) + 0.03f;
-                if (!stopped && body.position.x >= landing - brake) { Keys(); stopped = true; }
+                if (!stopped && direction * (body.position.x - landing) >= -brake) { Keys(); stopped = true; }
                 Require(Time.realtimeSinceStartupAsDouble < end, $"Descenso {from}->{to} bloqueado: {body.position}.");
             } while (!airborne || !controller.IsGrounded);
             Keys();
