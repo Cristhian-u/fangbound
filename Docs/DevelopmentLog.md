@@ -1318,3 +1318,41 @@ Unity **6000.5.5f1**, copia aislada. Las entradas sintéticas y fixtures se dist
 5. Probar los mismos ataques en MovementTest y ArboledaPrototype y evaluar legibilidad a velocidad normal. Las capturas de un fotograma no aprueban la duración percibida. El aspecto es provisional; no hay animación ni equipamiento definitivo.
 
 T20 continúa pendiente de aprobación visual del usuario. Se conserva pendiente la medición manual exacta de los **0.8 s de i-frames**. Sin commits, push ni cambios de rama.
+
+## T21 — Rediseño geográfico y planificación espacial de Arboleda
+
+**Estado:** propuesta documental pendiente de revisión; no se implementa geometría. El contexto recibido para T21 confirma T01–T20 aprobadas, con **8/8 pruebas funcionales y 6/6 de feedback visual de T20**. Esa confirmación actualiza el estado pendiente del registro anterior; no se repiten ni se atribuyen a T21 aquellas pruebas. Base inspeccionada: rama `main`, HEAD `76510b6`, árbol inicialmente limpio.
+
+### Inspección y causa identificada
+
+Se revisaron AGENTS, GDD, Region1Plan completo, los registros T16–T20, las seis escenas guardadas A–F, sus RoomDefinitions y overrides de RoomPlayerRig/cámara, las plataformas y puertos, y RoomEntrance/RoomExit/RoomScene/RoomSession junto a configuradores y validadores existentes. El inventario de dimensiones, cotas, 12 salidas dirigidas y llegadas se entrega en [Region1SpatialMap.md](Region1SpatialMap.md).
+
+Las transiciones actuales están aprobadas funcionalmente, pero no definen una geografía global: B–C conecta oeste con oeste y F–B este con este. Alinear sus suelos exigiría simultáneamente Y_F=Y_B−8 y Y_F=Y_B+0.8: **8.8 unidades de incompatibilidad**. C–D y D–E admiten offsets individuales coherentes, con el ascenso existente de D, pero todavía no tienen huella regional fijada. Los recintos mantienen suelos continuos y paredes cerradas; los marcos funcionales no equivalen a pozos o rutas de retorno físicas. No se identifica un defecto de persistencia ni se modifica RoomSession.
+
+### Propuesta entregada
+
+- Plano a escala de **16 salas de planificación en siete áreas**, dentro del objetivo previo de 15–18. A queda al oeste de B; C bajo el claro; las ruinas ascienden por su borde occidental hasta E sobre el bosque; F ocupa la capa inferior oriental y conduce al futuro G. No son 16 escenas construidas ni un nuevo alcance aprobado.
+- Se recomienda conservar las seis relaciones actuales y adaptar sus emplazamientos en tareas posteriores. B–C pasa a una abertura vertical; F–B se convierte en raíces y ascenso interior por **B3, Tronco Partido**, hasta B2/B1. C2, D1/D2 y F2 justifican los otros cambios de posición/altura dentro del presupuesto existente.
+- Se documentan anclas globales, envolventes locales, 17 parejas de puertos, una salida externa reservada y grafos separados del estado actual y la propuesta. Recorrido principal candidato A–B–C–F–G, excursión opcional C–D–E y alternativa libre B–F, sin nuevas puertas por habilidades.
+- **E3–B3/P17 sigue sin aprobarse ni existir**. Se recomienda reservarlo por su retorno físico a través del mismo tronco, sujeto a utilidad y pruebas. La base solo cierra un circuito independiente; el objetivo de dos circuitos entre áreas requiere aprobar ese retorno u otra alternativa útil. G no existe, y la adquisición de dash/doble salto sigue sin ubicación decidida.
+- Se incluyen candidatos de encuentros, descanso, secretos y memoria opcional, riesgos de cámara/ascensos/migración y orden de adaptación. No se aprueban objetos, cantidades, recompensas ni decisiones narrativas nuevas.
+
+**Archivos:** creados `Docs/Region1SpatialMap.md` y `Docs/Region1SpatialMap.svg`; actualizados `Docs/Region1Plan.md` para referenciar la propuesta y recoger la aprobación comunicada de T20, y este registro. No se modifica GDD ni ningún archivo de producto.
+
+### Validaciones documentales realizadas
+
+- Auditoría estática de los YAML guardados de A–F y sus datos, sin abrir ni regenerar escenas.
+- Modelo documental comprobado con Python: **16 rectángulos sin solapes**, 17 pares de puertos sobre bordes opuestos compartidos y fuera de las esquinas; G=O+L coincide a ambos lados. Conectividad desde A1 de las 16 salas; un ciclo independiente sin P17 y dos con él. Rutas ilustrativas muestreadas dentro de las envolventes; no se confunden con saltos probados.
+- Tablas de las 16 salas y 17 pares contrastadas automáticamente con el modelo usado para el SVG. XML, etiquetas y enlaces locales verificados. SVG renderizado e inspeccionado visualmente; dimensiones, puertos y leyenda legibles. Marcadores `SPATIAL_CHECK_PASS` y `TASK21_DOC_PASS`. Los auxiliares de análisis quedan en `.utmp`, ignorado por Git, fuera de Assets.
+- **260 archivos protegidos conservan sus hashes**, incluidos GDD, escenas, scripts, prefabs, datos, física, input y Build Settings. `git diff --check` pasa; los nuevos documentos se revisan también fuera del diff de archivos ya rastreados. Se mantienen rama `main` y HEAD `76510b6`.
+
+No se ejecutan Unity, compilación ni validadores de Play Mode en esta tarea exclusivamente documental. No hay geometría nueva que probar: saltos, cámaras, seguridad de entradas y duración humana del recorrido propuesto **no están validados físicamente**. Las pruebas anteriores aprobadas no validan esta planta. No hay commits, push ni cambios de rama.
+
+### Revisión pendiente y cómo comprobar esta entrega
+
+1. Abrir la vista previa de [Region1SpatialMap.md](Region1SpatialMap.md) y el [SVG ampliable](Region1SpatialMap.svg). Comparar cada puerto con su tabla y distinguir las seis escenas actuales de las reservas futuras.
+2. Seguir A1→B1→C1→F1→F2→G1→G2→G3 y el regreso F1→B3→B2→B1; revisar si el tronco comunica visualmente ambas alturas. Revisar también C2→D1→D2→E1/E2/E3 y el posible descenso P17, sin darlo por aprobado.
+3. Resolver las preguntas de la sección 16 del mapa: distribución/alturas, libertad B–F, función de P17 y prioridad del circuito inferior. Las salas de 12/16 unidades frente a una vista aproximada de 19.56 y los ascensos extensos D/F requieren graybox posterior, antes de comprometer contenido.
+4. Solo tras aprobar geografía, autorizar tareas acotadas de adaptación y repetir física real, ambos sentidos de transición, orientación, vida/arma/desbloqueos, checkpoint, muerte/R y regresiones de MovementTest/ArboledaPrototype. No ejecutar configuradores para reemplazar contenido aprobado durante esta revisión.
+
+La medición manual exacta de los **0.8 s de i-frames de PlayerHealth** continúa pendiente y fuera del alcance de T21. T21 no declara aprobada la nueva distribución.

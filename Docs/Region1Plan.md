@@ -4,7 +4,9 @@
 
 **Documento de propuesta, pendiente de aprobación del desarrollador.** T16 planifica la región; no construye salas ni modifica `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
-**Estado técnico posterior:** T17–T19 están aprobadas y con commits, según el contexto recibido para T20. B–C–F y C ↔ D ↔ E están implementadas. T20 añade A, su enlace A ↔ B y la recogida inicial del Colmillo, pendientes de aprobación manual. E ↔ B y G siguen sin implementar. Las secciones 11–14 distinguen las muestras jugables de la propuesta regional completa.
+**Estado técnico actualizado en T21:** el usuario confirma T01–T20 aprobadas, incluidas las 8/8 pruebas funcionales y 6/6 de feedback visual de T20. Están implementadas A ↔ B, B ↔ C, C ↔ D, D ↔ E, C ↔ F y F ↔ B. E ↔ B y G siguen sin implementar. Las secciones 11–14 distinguen las muestras jugables de la propuesta regional completa.
+
+**Referencia espacial para revisión:** [Region1SpatialMap.md](Region1SpatialMap.md) y su [plano de bloques](Region1SpatialMap.svg) concretan la propuesta T21 con dimensiones, anclas y puertos. No están aprobados ni implementados. Las franjas, conexiones y atajos de T16/T20 se conservan aquí como antecedentes; no son una planta global ya validada. La sección 15 resume la revisión T21, que debe aprobarse antes de modificar escenas.
 
 | Estado | Decisión |
 | --- | --- |
@@ -237,7 +239,7 @@ Para estudiar después L5, el extremo oriental del mirador ofrece un candidato d
 
 ## 13. Estado técnico T20 — Claro del Despertar y Colmillo
 
-`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_A_ClaroDespertar.unity` introduce el inicio narrativo previsto. T20 permanece pendiente de aprobación manual. El claro tiene 20 unidades de anchura, suelo continuo a 0, una raíz baja de 0.4 en `x=12..14.5`, árboles/vegetación de fondo y ningún enemigo, peligro o Llama. Se inicia en `(4, 0.58)` mirando a la derecha y se encuentra el Colmillo cerca de `(8.2, 0.55)`. El recorrido solo exige caminar y un salto normal sobre la raíz.
+`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_A_ClaroDespertar.unity` introduce el inicio narrativo previsto. El usuario confirma la aprobación funcional y visual de T20 al iniciar T21. El claro tiene 20 unidades de anchura, suelo continuo a 0, una raíz baja de 0.4 en `x=12..14.5`, árboles/vegetación de fondo y ningún enemigo, peligro o Llama. Se inicia en `(4, 0.58)` mirando a la derecha y se encuentra el Colmillo cerca de `(8.2, 0.55)`. El recorrido solo exige caminar y un salto normal sobre la raíz.
 
 La pieza de hueso con empuñadura es geometría provisional, sin aspecto de Llama. Al acercarse se indica la acción Interact existente (E/norte del mando). Una pulsación recoge el arma, oculta su presentación y registra su posesión en la sesión, sin inventario ni guardado permanente. No hay puerta que obligue a recogerla: si se omite y se visita B, se conserva el estado desarmado y se puede regresar por ella.
 
@@ -269,3 +271,15 @@ La posesión es una bandera pequeña en PlayerAbilities y se transfiere mediante
 Antes de dar por definitiva la red, dibujar una planta con referencias de altura comunes: A en el borde occidental medio, B alrededor del tronco, C bajo sus raíces, F bajo el lado oriental, D sobre los cimientos de C y E en las copas. Las transiciones actuales usan coordenadas locales y no prueban por sí solas esas relaciones globales. Mantener reconocibles troncos, columnas y bocas de retorno a ambos lados de cada paso; revisar especialmente la coincidencia de A/C en el oeste de B y el futuro descenso E–B.
 
 La siguiente evaluación humana debe separar: entender dónde se está, tener una razón para explorar, reconocer el regreso y disfrutar el desplazamiento. Revisar geometría y función de los recorridos antes de aumentar enemigos o cerrar rutas; su colocación y la justificación narrativa pertenecen a tareas posteriores. Se mantienen el objetivo de 15–18 salas, las adquisiciones futuras pendientes y todas las conexiones técnicas actuales.
+
+## 15. Revisión espacial T21 — propuesta pendiente
+
+[Region1SpatialMap.md](Region1SpatialMap.md) documenta las mediciones de A–F y sustituye la distribución abstracta por una hipótesis de 16 salas dentro de las siete áreas existentes. Las escenas siguen intactas. El inventario distingue coordenadas reales locales de anclas y puertos futuros; G todavía no existe.
+
+El circuito actual no puede resolverse solo trasladando escenas: B–C enfrenta dos lados oeste, F–B dos lados este, y el cierre de sus cotas de suelo acumula 8.8 unidades de incompatibilidad. Se recomienda conservar las seis relaciones entre áreas, recolocando sus pasos al adaptar geometría; C–F es la más reutilizable. El acceso alto A–B no se convierte en una condición definitiva del comienzo.
+
+La nueva planta propone A al oeste de B y a nivel del sendero; C bajo A/B; D ascendiendo por el borde occidental hasta E, situada sobre el bosque; F bajo el lado oriental; y G sobre la salida de la gruta. El retorno F–B se construye físicamente con raíces hasta la base de **Tronco Partido (B3)** y un ascenso interior al claro. C2, D1/D2, B3 y F2 desempeñan las funciones de conexión dentro del presupuesto previo de 16, sin añadir una cadena de salas extra.
+
+El eje candidato A–B–C–F–G admite la alternativa libre B–F y la excursión opcional C–D–E. **P17 E3–B3 se recomienda solo como reserva por revisar**, aprovechando el mismo tronco; no aprueba E–B. Sin ese retorno u otra alternativa útil, la base tiene un circuito independiente, por lo que el objetivo regional de dos circuitos entre áreas sigue pendiente. Los atajos por habilidades T16 se reevaluaron y no autorizan adquisiciones ni puertas nuevas.
+
+Consultar el documento espacial para tablas, SVG a escala, grafo separado, candidatos de contenido y orden de adaptación. Requieren revisión las alturas y ritmo de ascenso, las salas más estrechas que la vista de cámara y la utilidad del retorno superior. Primero se propone probar el circuito inferior en una tarea futura autorizada; T21 termina en documentación, sin alterar GDD, escenas, código, Build Settings ni sistemas aprobados.
