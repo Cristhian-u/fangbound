@@ -25,6 +25,7 @@ namespace Fangbound.EditorTools
         const string Running = "Fangbound.Task17.Running", Fresh = "Fangbound.Task17.Fresh", Next = "Fangbound.Task17.Next", Index = "Fangbound.Task17.Index";
         const string Ruins = "Fangbound.Task18.Ruins";
         const string Canopy = "Fangbound.Task19.Canopy";
+        const string Awakening = "Fangbound.Task20.Awakening", AwakeningFresh = "Fangbound.Task20.Fresh", AwakeningNext = "Fangbound.Task20.Next";
         static readonly Stack<IEnumerator> routines = new Stack<IEnumerator>();
         static Keyboard keyboard;
         static Gamepad gamepad;
@@ -53,9 +54,12 @@ namespace Fangbound.EditorTools
         public static void RunRuins() => StartValidation(0, ruins: true);
         [MenuItem("Fangbound/Validate Canopy E Circuit in Play Mode")]
         public static void RunCanopy() => StartValidation(0, canopy: true);
+        [MenuItem("Fangbound/Validate Awakening A and Fang in Play Mode")]
+        public static void RunAwakening() => StartValidation(5, awakening: true);
 
-        static void StartValidation(int index, bool ruins = false, bool canopy = false)
+        static void StartValidation(int index, bool ruins = false, bool canopy = false, bool awakening = false)
         {
+            SessionState.SetBool(Awakening, awakening); SessionState.SetBool(AwakeningFresh, false);
             SessionState.SetBool(Canopy, canopy); SessionState.SetBool(Ruins, ruins);
             SessionState.SetBool(Fresh, false); Begin(index);
         }
@@ -99,7 +103,7 @@ namespace Fangbound.EditorTools
             return player != null;
         }
 
-        static string PathFor(int i) => i == 4 ? CanopyRoomSceneSetup.ScenePath : i == 3 ? RuinsRoomSceneSetup.ScenePath :
+        static string PathFor(int i) => i == 5 ? AwakeningRoomSceneSetup.ScenePath : i == 4 ? CanopyRoomSceneSetup.ScenePath : i == 3 ? RuinsRoomSceneSetup.ScenePath :
             RoomCircuitSceneSetup.SceneFolder + "/" + RoomCircuitSceneSetup.RoomNames[i] + ".unity";
         static void Begin(int index)
         {
@@ -118,24 +122,28 @@ namespace Fangbound.EditorTools
             var exits = new List<(string scene, string entry)>();
             bool hasRuins = File.Exists(RuinsRoomSceneSetup.ScenePath);
             bool hasCanopy = File.Exists(CanopyRoomSceneSetup.ScenePath);
-            for (int i = 0; i < (hasCanopy ? 5 : hasRuins ? 4 : 3); i++)
+            bool hasAwakening = File.Exists(AwakeningRoomSceneSetup.ScenePath);
+            if (hasAwakening) Require(EditorBuildSettings.scenes.First(s => s.enabled).path == PathFor(5), "A debe iniciar el juego compilado.");
+            for (int i = 0; i < (hasAwakening ? 6 : hasCanopy ? 5 : hasRuins ? 4 : 3); i++)
             {
                 var scene = EditorSceneManager.OpenScene(PathFor(i));
                 Require(EditorBuildSettings.scenes.Any(s => s.enabled && s.path == scene.path), "Sala fuera de Build Settings.");
                 RoomScene room = Object.FindAnyObjectByType<RoomScene>();
                 Require(room != null && room.Definition != null && room.Definition.RecoveryRoom != null &&
-                    room.Definition.ScenePath == scene.path && room.Definition.RecoveryRoom.ScenePath == PathFor(0), "Definición de sala inválida.");
+                    room.Definition.ScenePath == scene.path && room.Definition.RecoveryRoom.ScenePath == PathFor(i == 5 ? 5 : 0) &&
+                    room.Definition.StartWithoutFang == (i == 5), "Definición de sala inválida.");
                 Require(Object.FindObjectsByType<PlayerHealth>().Length == 1 && Object.FindObjectsByType<Camera>().Length == 1 &&
                     Object.FindObjectsByType<PlayerHealthUI>().Length == 1 && Object.FindObjectsByType<CombatHitstop>().Length == 1, "Rig duplicado o incompleto.");
                 Require(Object.FindObjectsByType<MemoryFlame>().Length == (i == 0 ? 1 : 0) &&
-                    Object.FindObjectsByType<GroundEnemyController>().Length == 0, "Llamas/enemigos inesperados.");
+                    Object.FindObjectsByType<GroundEnemyController>().Length == 0 &&
+                    Object.FindObjectsByType<FangPickup>().Length == (i == 5 ? 1 : 0), "Llamas/enemigos/Colmillos inesperados.");
                 RoomEntrance[] points = room.GetComponentsInChildren<RoomEntrance>();
                 entries[scene.path] = new HashSet<string>(points.Select(p => p.EntranceId));
-                int pointCount = i == 4 ? 2 : i == 3 ? (hasCanopy ? 3 : 2) : i == 1 && hasRuins ? 4 : 3;
+                int pointCount = i == 5 || i == 4 ? 2 : i == 0 && hasAwakening ? 4 : i == 3 ? (hasCanopy ? 3 : 2) : i == 1 && hasRuins ? 4 : 3;
                 Require(points.Length == pointCount && entries[scene.path].Count == pointCount && entries[scene.path].Contains("start"), "IDs de entradas inválidos.");
                 foreach (RoomEntrance point in points) Require(point.IsSafe(room.Player), "Entrada insegura: " + point.name);
                 RoomExit[] connections = room.GetComponentsInChildren<RoomExit>();
-                int exitCount = i == 4 ? 1 : i == 3 ? (hasCanopy ? 2 : 1) : i == 1 && hasRuins ? 3 : 2;
+                int exitCount = i == 5 || i == 4 ? 1 : i == 0 && hasAwakening ? 3 : i == 3 ? (hasCanopy ? 2 : 1) : i == 1 && hasRuins ? 3 : 2;
                 Require(connections.Length == exitCount && connections.Select(e => e.ConnectionId).Distinct().Count() == exitCount, "Salidas duplicadas.");
                 foreach (RoomExit exit in connections)
                 {
@@ -150,11 +158,13 @@ namespace Fangbound.EditorTools
                         Require(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(child.gameObject) == 0, "Script ausente.");
             }
             foreach (var exit in exits) Require(entries.ContainsKey(exit.scene) && entries[exit.scene].Contains(exit.entry), "Destino sin entrada correspondiente.");
-            Debug.Log("TASK17_ASSETS_PASS: salas independientes, entradas seguras, referencias y registro de carga válidos; incluye D=" + hasRuins + ", E=" + hasCanopy);
+            Debug.Log("TASK17_ASSETS_PASS: salas independientes, entradas seguras, referencias y registro de carga válidos; incluye A=" + hasAwakening + ", D=" + hasRuins + ", E=" + hasCanopy);
         }
 
         static void Tick()
         {
+            if (SessionState.GetBool(AwakeningNext, false) && !EditorApplication.isPlayingOrWillChangePlaymode)
+            { SessionState.SetBool(AwakeningNext, false); SessionState.SetBool(AwakeningFresh, true); Begin(5); return; }
             if (SessionState.GetBool(Next, false) && !EditorApplication.isPlayingOrWillChangePlaymode)
             { SessionState.SetBool(Next, false); SessionState.SetBool(Fresh, true); Begin(2); return; }
             if (!SessionState.GetBool(Running, false) || !EditorApplication.isPlaying || EditorApplication.isPaused) return;
@@ -178,10 +188,13 @@ namespace Fangbound.EditorTools
                 InputSystem.settings.backgroundBehavior = background;
                 InputSystem.settings.editorInputBehaviorInPlayMode = editorInput;
             }
-            if (success && SessionState.GetInt(Index, 0) == 0 && !SessionState.GetBool(Fresh, false) &&
+            if (success && SessionState.GetBool(Awakening, false) && !SessionState.GetBool(AwakeningFresh, false))
+            { SessionState.SetBool(AwakeningNext, true); EditorApplication.ExitPlaymode(); return; }
+            if (success && SessionState.GetInt(Index, 0) == 0 && !SessionState.GetBool(Fresh, false) && !SessionState.GetBool(Awakening, false) &&
                 !SessionState.GetBool(Ruins, false) && !SessionState.GetBool(Canopy, false))
             { SessionState.SetBool(Next, true); EditorApplication.ExitPlaymode(); return; }
-            Debug.Log(SessionState.GetBool(Canopy, false) ? (success ? "TASK19_PLAYMODE_PASS" : "TASK19_PLAYMODE_FAIL") :
+            Debug.Log(SessionState.GetBool(Awakening, false) ? (success ? "TASK20_PLAYMODE_PASS" : "TASK20_PLAYMODE_FAIL") :
+                SessionState.GetBool(Canopy, false) ? (success ? "TASK19_PLAYMODE_PASS" : "TASK19_PLAYMODE_FAIL") :
                 SessionState.GetBool(Ruins, false) ? (success ? "TASK18_PLAYMODE_PASS" : "TASK18_PLAYMODE_FAIL") :
                 (success ? "TASK17_PLAYMODE_PASS" : "TASK17_PLAYMODE_FAIL"));
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
@@ -202,7 +215,9 @@ namespace Fangbound.EditorTools
                 !Player.GetComponent<PlayerAbilities>().DashUnlocked && !Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked,
                 "Una sesión nueva heredó vida, checkpoint o desbloqueos.");
             string initial = RoomSession.Instance.CurrentRoom.Definition.RoomId;
+            Require(Player.GetComponent<PlayerAbilities>().FangOwned == (initial != "A"), "Posesión inicial del Colmillo incorrecta.");
             Debug.Log("TASK17_DIRECT_START_PASS: " + initial);
+            if (SessionState.GetBool(Awakening, false)) { yield return ValidateAwakening(); yield break; }
             if (SessionState.GetBool(Canopy, false)) { yield return ValidateCanopyCircuit(); yield break; }
             if (SessionState.GetBool(Ruins, false)) { yield return ValidateRuinsCircuit(); yield break; }
             if (SessionState.GetBool(Fresh, false) || SessionState.GetInt(Index, 0) != 0)
@@ -510,6 +525,189 @@ namespace Fangbound.EditorTools
             Debug.Log("TASK19_CHECKPOINT_PASS: muerte en E, R hacia Llama B activa con 5/5 y desbloqueos conservados.");
         }
 
+        static IEnumerator AcrossAwakening()
+        {
+            yield return Jump("Safety Floor", "A Root Rise");
+            yield return Drop("A Root Rise", "Safety Floor", 1, 15.6f);
+            yield return Cross("A-to-B");
+        }
+
+        static IEnumerator AwakeningLandingToFlame()
+        {
+            yield return Drop("B Awakening Landing", "B Awakening Approach", 1, 6.1f);
+            yield return Drop("B Awakening Approach", "B Step 1", 1, 9.1f);
+            yield return Drop("B Step 1", "Safety Floor", -1, 7.1f);
+            yield return Walk(6.1f);
+        }
+
+        static IEnumerator FromFlameToAwakening()
+        {
+            yield return Jump("Safety Floor", "B Step 1");
+            yield return Jump("B Step 1", "B Awakening Approach");
+            yield return Jump("B Awakening Approach", "B Awakening Landing", stopX: 3.1f);
+            yield return Cross("B-to-A");
+        }
+
+        static IEnumerator ValidateAwakening()
+        {
+            FangPickup pickup = Object.FindAnyObjectByType<FangPickup>();
+            Require(pickup != null && pickup.IsVisible && !pickup.IsCollected, "El Colmillo no aparece en A nueva.");
+            if (SessionState.GetBool(AwakeningFresh, false))
+            {
+                yield return Walk(7.3f);
+                InputSystem.QueueStateEvent(gamepad, new GamepadState().WithButton(GamepadButton.North));
+                yield return Wait(.04f);
+                Require(Player.GetComponent<CombatVisualFeedback>().IsFangPickupFeedbackVisible &&
+                    Player.GetComponent<CombatVisualFeedback>().FangPickupFeedbackCount == 1, "Norte no produjo una única señal de recogida.");
+                InputSystem.QueueStateEvent(gamepad, new GamepadState()); yield return Wait(.15f);
+                Require(pickup.IsCollected && !pickup.IsVisible, "Norte del mando no recogió el Colmillo.");
+                yield return DieAndRestart(false, "A");
+                Require(Player.GetComponent<PlayerAbilities>().FangOwned && !Object.FindAnyObjectByType<FangPickup>().IsVisible,
+                    "El arma reapareció tras morir sin checkpoint.");
+                Debug.Log("TASK20_NEW_SESSION_GAMEPAD_PASS: segundo Play desarmado/sin estado heredado, norte recoge, muerte/R conserva arma en A.");
+                yield break;
+            }
+            yield return DieAndRestart(false, "A");
+            pickup = Object.FindAnyObjectByType<FangPickup>();
+            Require(!Player.GetComponent<PlayerAbilities>().FangOwned && pickup.IsVisible, "Morir desarmado concedió el Colmillo.");
+            yield return AcrossAwakening(); yield return Cross("B-to-A");
+            yield return Jump("Safety Floor", "A Root Rise");
+            yield return Drop("A Root Rise", "Safety Floor", -1, 10.9f); yield return Walk(4);
+            pickup = Object.FindAnyObjectByType<FangPickup>();
+            Require(!Player.GetComponent<PlayerAbilities>().FangOwned && pickup.IsVisible,
+                "Viajar desarmado A-B-A concedió el arma o escondió el objeto.");
+            Debug.Log("TASK20_UNARMED_TRAVEL_PASS: A-B-A sin arma ni habilidades, sin concesión automática.");
+            yield return CheckFangActions(false);
+            yield return Press(Key.E);
+            Require(!pickup.IsCollected, "Recogida fuera de rango.");
+            Keys(Key.E, Key.D);
+            yield return Until(() => Body.position.x >= 7.0f, 3);
+            Keys(Key.E); yield return Wait(.2f);
+            Require(!pickup.IsCollected, "Mantener E desde fuera del rango recogió automáticamente.");
+            Keys(); yield return Wait(.06f); yield return Press(Key.E);
+            Require(Player.GetComponent<PlayerAbilities>().FangOwned && pickup.IsCollected && !pickup.IsVisible && !pickup.TryCollect(Player),
+                "E no recogió una sola vez o dejó la presentación visible.");
+            Require(Player.GetComponent<CombatVisualFeedback>().IsFangPickupFeedbackVisible &&
+                Player.GetComponent<CombatVisualFeedback>().FangPickupFeedbackCount == 1, "E no produjo una única señal de recogida.");
+            Debug.Log("TASK20_KEYBOARD_PICKUP_PASS: distancia, pulsación nueva, E recoge una vez sin alterar vida.");
+            yield return CheckFangActions(true);
+            ExecuteDebugMenu("Damage 1 HP (Play Mode)"); yield return Until(() => !Player.IsInvulnerable, 2);
+            yield return AcrossAwakening();
+            Require(Player.CurrentHealth == 4 && Player.GetComponent<PlayerAbilities>().FangOwned, "A-B curó o perdió arma.");
+            yield return Cross("B-to-A");
+            Require(!Object.FindAnyObjectByType<FangPickup>().IsVisible, "Colmillo reapareció al regresar a A.");
+            yield return Jump("Safety Floor", "A Root Rise");
+            yield return Drop("A Root Rise", "Safety Floor", -1, 10.9f); yield return Walk(7.3f);
+            yield return Press(Key.E);
+            Require(Player.CurrentHealth == 4 && Player.GetComponent<PlayerAbilities>().FangOwned, "Recogida repetida curó o alteró posesión.");
+            ExecuteDebugMenu("Unlock Dash and Double Jump (session)");
+            yield return AcrossAwakening(); yield return AwakeningLandingToFlame(); yield return Press(Key.E);
+            Require(Player.CurrentHealth == 5 && Player.GetComponent<PlayerCheckpoint>().CurrentCheckpoint != null,
+                "La recogida rompió Interact/curación en Llama B.");
+            ExecuteDebugMenu("Damage 1 HP (Play Mode)"); yield return Until(() => !Player.IsInvulnerable, 2);
+            yield return Cross("B-to-C");
+            yield return DieAndRestart(true);
+            Require(Player.GetComponent<PlayerAbilities>().FangOwned && Player.GetComponent<PlayerAbilities>().DashUnlocked &&
+                Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked, "Muerte con checkpoint perdió progreso de sesión.");
+            yield return FromFlameToAwakening();
+            Require(!Object.FindAnyObjectByType<FangPickup>().IsVisible && Player.GetComponent<PlayerCheckpoint>().Location.IsValid &&
+                Player.CurrentHealth == 5, "El regreso tras respawn perdió checkpoint o recreó arma.");
+            Debug.Log("TASK20_SESSION_PASS: A-B-A, vida reducida, desbloqueos, E en Llama, muerte C-B y retorno A sin regenerar Colmillo.");
+        }
+
+        static TrainingTarget FangTarget(Vector2 position, bool pogo)
+        {
+            var fixture = new GameObject("Fang Validation Target", typeof(SpriteRenderer), typeof(BoxCollider2D));
+            fixture.transform.position = position;
+            fixture.GetComponent<BoxCollider2D>().size = new Vector2(.3f, .3f);
+            fixture.GetComponent<BoxCollider2D>().isTrigger = true;
+            if (pogo) fixture.AddComponent<PogoTarget>();
+            Physics2D.SyncTransforms();
+            return fixture.AddComponent<TrainingTarget>();
+        }
+
+        static IEnumerator CheckFangActions(bool owned)
+        {
+            Vector3 original = Player.transform.position;
+            Quaternion rotation = Player.transform.rotation;
+            int health = Player.CurrentHealth;
+            TrainingTarget target = null;
+            var combat = new SerializedObject(Player.GetComponent<PlayerCombat>());
+            var combatData = (PlayerCombatData)combat.FindProperty("combatData").objectReferenceValue;
+            var pogo = new SerializedObject(Player.GetComponent<PlayerPogo>());
+            var pogoData = (PlayerPogoData)pogo.FindProperty("pogoData").objectReferenceValue;
+            try
+            {
+                Player.RestoreAfterSceneLoad(new Vector3(4, .58f), Quaternion.identity, health, false);
+                Controller.SetFacingDirection(1); RoomSession.Instance.CurrentRoom.SynchronizeCamera(); yield return Wait(.12f);
+                Bounds body = Player.GetComponent<Collider2D>().bounds;
+                target = FangTarget((Vector2)body.center + combatData.HorizontalHitboxOffset, false);
+                Keys(Key.J); yield return Wait(.03f); CheckFangCue(owned, Vector2.right);
+                Keys(); yield return Wait(.35f); CheckFangCue(false, Vector2.zero);
+                Require(target.CurrentHealth == 3 - (owned ? combatData.Damage : 0), "Ataque horizontal no respeta posesión.");
+                Object.Destroy(target.gameObject); target = null; yield return Wait(.04f);
+                Controller.SetFacingDirection(-1);
+                Vector2 leftOffset = combatData.HorizontalHitboxOffset; leftOffset.x *= -1;
+                target = FangTarget((Vector2)body.center + leftOffset, false);
+                Keys(Key.J); yield return Wait(.03f); CheckFangCue(owned, Vector2.left);
+                Keys(); yield return Wait(.35f); CheckFangCue(false, Vector2.zero);
+                Require(target.CurrentHealth == 3 - (owned ? combatData.Damage : 0), "Ataque izquierdo alterado por el feedback.");
+                Object.Destroy(target.gameObject); target = null; yield return Wait(.04f);
+                Controller.SetFacingDirection(1);
+                target = FangTarget((Vector2)body.center + combatData.UpwardHitboxOffset, false);
+                Keys(Key.W, Key.J); yield return Wait(.03f); CheckFangCue(owned, Vector2.up);
+                Keys(); yield return Wait(.35f); CheckFangCue(false, Vector2.zero);
+                Require(target.CurrentHealth == 3 - (owned ? combatData.Damage : 0), "Ataque ascendente no respeta posesión.");
+                Object.Destroy(target.gameObject); target = null; yield return Wait(.04f);
+                Player.RestoreAfterSceneLoad(new Vector3(4, 3.4f), Quaternion.identity, health, false);
+                RoomSession.Instance.CurrentRoom.SynchronizeCamera(); yield return Wait(.04f);
+                int pauses = Object.FindAnyObjectByType<CombatHitstop>().PauseCount;
+                float startVelocity = Body.linearVelocity.y, startFixed = Time.fixedTime;
+                Keys(Key.S, Key.J); yield return Wait(.035f); CheckFangCue(owned, Vector2.down);
+                Keys(); yield return Wait(pogoData.AttackWindow + .08f); CheckFangCue(false, Vector2.zero);
+                float naturalVelocity = startVelocity + Physics2D.gravity.y * Body.gravityScale * (Time.fixedTime - startFixed);
+                Require(Mathf.Abs(Body.linearVelocity.y - naturalVelocity) < .35f && Object.FindAnyObjectByType<CombatHitstop>().PauseCount == pauses,
+                    "El efecto de pogo fallido alteró gravedad o hitstop.");
+                Player.RestoreAfterSceneLoad(new Vector3(4, 3.4f), Quaternion.identity, health, false);
+                RoomSession.Instance.CurrentRoom.SynchronizeCamera(); yield return Wait(.04f);
+                body = Player.GetComponent<Collider2D>().bounds;
+                target = FangTarget(new Vector2(body.center.x + pogoData.HitboxOffset.x, body.min.y + pogoData.HitboxOffset.y), true);
+                float peak = float.NegativeInfinity;
+                double end = Time.realtimeSinceStartupAsDouble + .14;
+                Keys(Key.S, Key.J);
+                while (Time.realtimeSinceStartupAsDouble < end) { peak = Mathf.Max(peak, Body.linearVelocity.y); yield return null; }
+                Keys();
+                Require(target.CurrentHealth == 3 - (owned ? pogoData.Damage : 0) && (owned ? peak > pogoData.BounceSpeed * .5f : peak <= 0),
+                    "Pogo no respeta posesión o modificó la gravedad antes de recoger.");
+                Object.Destroy(target.gameObject); target = null;
+                Object.FindAnyObjectByType<CombatHitstop>().Cancel();
+                Player.RestoreAfterSceneLoad(new Vector3(4, .58f), Quaternion.identity, health, false); yield return Wait(.1f);
+                Keys(Key.K); yield return Wait(.025f);
+                Require(Player.GetComponent<PlayerParry>().IsWindowOpen, "Se bloqueó parry con el estado del arma.");
+                CheckFangCue(false, Vector2.zero);
+                Keys(); yield return Wait(.6f);
+                Require(Player.GetComponent<PlayerAbilities>().FangOwned == owned && Player.CurrentHealth == health,
+                    "Las acciones alteraron posesión/vida.");
+                Debug.Log("TASK20_FANG_ACTIONS_PASS: owned=" + owned + ", horizontal/ascendente/pogo con daño real, parry independiente.");
+                Debug.Log("TASK20_FANG_VISUAL_PASS: owned=" + owned + ", arcos derecha/izquierda/arriba/abajo, cierre de ventana y gravedad conservados.");
+            }
+            finally
+            {
+                Keys(); if (target != null) Object.Destroy(target.gameObject);
+                Object.FindAnyObjectByType<CombatHitstop>().Cancel();
+                Player.RestoreAfterSceneLoad(original, rotation, health, false);
+                RoomSession.Instance.CurrentRoom.SynchronizeCamera();
+            }
+            yield return Wait(.15f);
+        }
+
+        static void CheckFangCue(bool expected, Vector2 direction)
+        {
+            CombatVisualFeedback visual = Player.GetComponent<CombatVisualFeedback>();
+            Require(visual.IsAttackCueVisible == expected, "Efecto de ataque fuera de su ejecución/ventana.");
+            if (expected) Require(Vector2.Distance(visual.AttackCueDirection, direction) < .01f, "Dirección visual incorrecta.");
+        }
+
         static void ExecuteDebugMenu(string command)
         {
             Require(EditorApplication.ExecuteMenuItem("Fangbound/Room Circuit/" + command), "Menú de pruebas no disponible: " + command);
@@ -588,19 +786,21 @@ namespace Fangbound.EditorTools
         static IEnumerator FUp()
         { yield return Jump("Safety Floor", "F Low"); yield return Jump("F Low", "F Middle"); yield return Jump("F Middle", "F High"); yield return Jump("F High", "F East"); }
 
-        static IEnumerator DieAndRestart(bool checkpoint)
+        static IEnumerator DieAndRestart(bool checkpoint, string fallbackRoom = "B")
         {
+            bool fang = Player.GetComponent<PlayerAbilities>().FangOwned;
             yield return Wait(.9f);
             ExecuteDebugMenu("Defeat Player (Play Mode)");
             Require(Player.IsDead, "Muerte por menú/contrato rechazada.");
             yield return Press(Key.R);
             yield return Until(() => RoomSession.Instance != null && !RoomSession.Instance.IsLoading &&
-                RoomSession.Instance.CurrentRoom != null && RoomSession.Instance.CurrentRoom.Definition.RoomId == "B", 12);
+                RoomSession.Instance.CurrentRoom != null && RoomSession.Instance.CurrentRoom.Definition.RoomId == (checkpoint ? "B" : fallbackRoom), 12);
             Vector3 expected = checkpoint ? Player.GetComponent<PlayerCheckpoint>().Location.Position :
                 RoomSession.Instance.CurrentRoom.FindEntrance("start").transform.position;
             Require(!Player.IsDead && Player.CurrentHealth == Player.MaximumHealth && Vector3.Distance(Player.transform.position, expected) < .15f,
                 "R no restauró vida/posición.");
             Require((Player.GetComponent<PlayerCheckpoint>().CurrentCheckpoint != null) == checkpoint, "Referencia/estado de Llama no restaurados.");
+            Require(Player.GetComponent<PlayerAbilities>().FangOwned == fang, "La muerte alteró la posesión del Colmillo.");
             if (checkpoint) CheckFlameVisual();
             AssertRoom(); yield return Wait(.3f); yield return Walk(Player.transform.position.x + .3f);
         }
@@ -653,6 +853,7 @@ namespace Fangbound.EditorTools
             RoomScene sourceRoom = RoomSession.Instance.CurrentRoom;
             int hp = source.CurrentHealth;
             bool dashUnlocked = source.GetComponent<PlayerAbilities>().DashUnlocked, doubleUnlocked = source.GetComponent<PlayerAbilities>().DoubleJumpUnlocked;
+            bool fang = source.GetComponent<PlayerAbilities>().FangOwned;
             bool dashed = false;
             int dir = exit.transform.position.x > Player.transform.position.x ? 1 : -1;
             double end = Time.realtimeSinceStartupAsDouble + 8;
@@ -673,7 +874,8 @@ namespace Fangbound.EditorTools
             Require(Vector3.Distance(Player.transform.position, entry.transform.position) < .15f && entry.IsSafe(Player), "Entrada equivocada/insegura.");
             Require(Player.GetComponent<SpriteRenderer>().flipX == (entry.FacingDirection < 0), "Orientación de entrada incorrecta.");
             Require(Player.CurrentHealth == hp && Player.GetComponent<PlayerAbilities>().DashUnlocked == dashUnlocked &&
-                Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked == doubleUnlocked, "La carga curó o cambió habilidades.");
+                Player.GetComponent<PlayerAbilities>().DoubleJumpUnlocked == doubleUnlocked && Player.GetComponent<PlayerAbilities>().FangOwned == fang,
+                "La carga curó o cambió habilidades/Colmillo.");
             if (dash) Require(dashed && !Controller.IsDashing, "Dash no se limpió durante transición.");
             AssertRoom(); yield return Wait(.4f);
             Require(!RoomSession.Instance.IsLoading && RoomSession.Instance.CurrentRoom.Definition.ScenePath == scene, "Bucle de cargas tras entrar.");
@@ -686,6 +888,13 @@ namespace Fangbound.EditorTools
                 Object.FindObjectsByType<PlayerHealth>().Length == 1 && Object.FindObjectsByType<Camera>().Length == 1 &&
                 Object.FindObjectsByType<PlayerHealthUI>().Length == 1 && Object.FindObjectsByType<CombatHitstop>().Length == 1,
                 "Carga aditiva o instancias duplicadas.");
+            Transform fangVisuals = Player.transform.Find("Fang Visuals");
+            CombatVisualFeedback visual = Player.GetComponent<CombatVisualFeedback>();
+            Require(fangVisuals != null && Player.transform.Cast<Transform>().Count(t => t.name == "Fang Visuals") == 1 &&
+                fangVisuals.GetComponentsInChildren<SpriteRenderer>(true).Length == 9 &&
+                fangVisuals.GetComponentsInChildren<Collider2D>(true).Length == 0 &&
+                fangVisuals.GetComponentsInChildren<Rigidbody2D>(true).Length == 0 && !visual.IsAttackCueVisible &&
+                !visual.IsFangPickupFeedbackVisible && visual.FangPickupFeedbackCount == 0, "Efectos duplicados, físicos o heredados al entrar.");
             Require(!Player.IsDead && Controller.enabled && !Controller.IsControlLocked && !Controller.IsDashing &&
                 Player.GetComponent<PlayerCombat>().enabled && Player.GetComponent<PlayerParry>().enabled && Body.simulated &&
                 Mathf.Approximately(Body.gravityScale, 3), "Estados temporales/control inválidos.");
@@ -713,13 +922,13 @@ namespace Fangbound.EditorTools
             }
             Keys(); yield return Wait(.16f);
         }
-        static IEnumerator Jump(string from, string to)
+        static IEnumerator Jump(string from, string to, float? stopX = null)
         {
             Bounds a = Surface(from), b = Surface(to);
             int dir = b.center.x >= Body.position.x ? 1 : -1;
             yield return Walk(dir > 0 ? Mathf.Min(a.max.x - .65f, b.min.x - .9f) : Mathf.Max(a.min.x + .65f, b.max.x + .9f));
             Require(Controller.IsGrounded, "Despegue no apoyado: " + from);
-            float target = dir > 0 ? Mathf.Min(b.min.x + 1.1f, b.center.x) : Mathf.Max(b.max.x - 1.1f, b.center.x);
+            float target = stopX ?? (dir > 0 ? Mathf.Min(b.min.x + 1.1f, b.center.x) : Mathf.Max(b.max.x - 1.1f, b.center.x));
             Keys(dir > 0 ? Key.D : Key.A, Key.Space);
             bool air = false, stop = false;
             double end = Time.realtimeSinceStartupAsDouble + 4;

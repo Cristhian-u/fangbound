@@ -4,7 +4,7 @@
 
 **Documento de propuesta, pendiente de aprobación del desarrollador.** T16 planifica la región; no construye salas ni modifica `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
-**Estado técnico posterior:** T17 y T18 están aprobadas mediante pruebas automatizadas y manuales, según el contexto recibido para T19. B–C–F y C ↔ D están implementadas. T19 añade una primera escena de E y D ↔ E, pendiente de aprobación manual; E ↔ B sigue aplazada. Las secciones 11–12 distinguen las muestras jugables de la propuesta regional completa.
+**Estado técnico posterior:** T17–T19 están aprobadas y con commits, según el contexto recibido para T20. B–C–F y C ↔ D ↔ E están implementadas. T20 añade A, su enlace A ↔ B y la recogida inicial del Colmillo, pendientes de aprobación manual. E ↔ B y G siguen sin implementar. Las secciones 11–14 distinguen las muestras jugables de la propuesta regional completa.
 
 | Estado | Decisión |
 | --- | --- |
@@ -202,7 +202,7 @@ CameraFollow2D mantiene su comportamiento y tamaño ortográfico 5.5; solo D amp
 
 ## 12. Estado técnico T19 — primera sala de Copas del Vigía
 
-`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_E_CopasVigia.unity` es una primera muestra jugable de E, pendiente de aprobación manual. No equivale a completar las tres salas conceptuales asignadas a E ni incorpora adquisiciones. Se continúa el ascenso de D desde su cámara superior: no se coloca un acceso nuevo arbitrario en el suelo de las ruinas.
+`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_E_CopasVigia.unity` es una primera muestra jugable de E, aprobada manualmente en T19. No equivale a completar las tres salas conceptuales asignadas a E ni incorpora adquisiciones. Se continúa el ascenso de D desde su cámara superior: no se coloca un acceso nuevo arbitrario en el suelo de las ruinas.
 
 | Conexión implementada L4 | Destino / entrada | Aparición del jugador | Orientación |
 | --- | --- | --- | --- |
@@ -234,3 +234,38 @@ E mide 32 unidades de anchura y tiene suelo de recuperación continuo a 0. Ramas
 Se vuelve por los apoyos principales o por los orientales. Una caída por el extremo derecho aterriza en el suelo y permite subir por el apoyo de 0.9 y la rama baja. Al bajar por la izquierda de esa rama baja, el suelo entre ambas rutas permite saltar a la bifurcación y volver a la entrada. No se necesita dash ni doble salto para subir o regresar. CameraFollow2D conserva comportamiento y tamaño 5.5, con límites locales de E `x=0..32, y=-4..23`.
 
 Para estudiar después L5, el extremo oriental del mirador ofrece un candidato de descenso hacia el tronco de B, pendiente de diseño y pruebas propias. Actualmente termina en el límite sólido de la sala: no hay marco de salida, trigger ni entrada falsa hacia B. T19 no obliga a conservar esa ubicación si la evaluación humana aconseja otro retorno. Tampoco añade checkpoints, enemigos, recompensas ni habilidades; sigue vigente la Llama de B. Las validaciones y limitaciones se detallan en `DevelopmentLog.md` bajo T19.
+
+## 13. Estado técnico T20 — Claro del Despertar y Colmillo
+
+`Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_A_ClaroDespertar.unity` introduce el inicio narrativo previsto. T20 permanece pendiente de aprobación manual. El claro tiene 20 unidades de anchura, suelo continuo a 0, una raíz baja de 0.4 en `x=12..14.5`, árboles/vegetación de fondo y ningún enemigo, peligro o Llama. Se inicia en `(4, 0.58)` mirando a la derecha y se encuentra el Colmillo cerca de `(8.2, 0.55)`. El recorrido solo exige caminar y un salto normal sobre la raíz.
+
+La pieza de hueso con empuñadura es geometría provisional, sin aspecto de Llama. Al acercarse se indica la acción Interact existente (E/norte del mando). Una pulsación recoge el arma, oculta su presentación y registra su posesión en la sesión, sin inventario ni guardado permanente. No hay puerta que obligue a recogerla: si se omite y se visita B, se conserva el estado desarmado y se puede regresar por ella.
+
+| Conexión L1 | Destino / entrada | Aparición | Orientación |
+| --- | --- | --- | --- |
+| A-to-B, `(18.8, 1)`, suelo 0 | B / from-A | `(2.65, 5.88)` | Derecha |
+| B-to-A, `(1.2, 6.3)`, suelo 5.3 | A / from-B | `(16.5, 0.58)` | Izquierda |
+
+El oeste inferior de B ya alberga C. Para mantener A al oeste y las raíces debajo sin mover esa salida, se añade un acceso occidental elevado: `B Awakening Landing`, `x=0..3.2`, altura 5.3, y `B Awakening Approach`, `x=5..7.5`, altura 3.6. Se llega desde `B Step 1` a 1.5 con salto normal; se desciende por los mismos apoyos para llegar al claro y su Llama. Los objetos y conexiones originales no se reubican. Las coordenadas son locales, no alturas mundiales definitivas.
+
+A es la primera escena habilitada en Build Settings. En el Editor se abre A para iniciar la apertura; abrir B/C/D/E/F directamente conserva sus condiciones técnicas, con Colmillo disponible. Solo una sesión nueva comenzada en A empieza desarmada. Su recuperación sin checkpoint vuelve al inicio A; una Llama B activada reemplaza ese destino según las reglas existentes. La muerte conserva el arma si se recogió y no la concede si no se recogió; una sesión nueva reinicia la adquisición.
+
+La posesión es una bandera pequeña en PlayerAbilities y se transfiere mediante RoomSession junto a vida/desbloqueos/checkpoint. Antes de recoger se bloquean los ataques horizontal, ascendente y descendente/pogo porque usan el Colmillo; parry conserva su ventana independiente y movimiento no cambia. Después se ejecutan los mismos sistemas, daño y rebote existentes. Este alcance de la adquisición es provisional para el inicio jugable, sin asignar dash ni doble salto a lugares concretos. El avatar y el arma siguen siendo representaciones técnicas, sin arte final de capa/cicatriz.
+
+## 14. Organización regional propuesta después de T20
+
+**Esta revisión es documental, no un rediseño aprobado de las salas.** La red actual es A ↔ B, B ↔ C, C ↔ F, F ↔ B, C ↔ D y D ↔ E. No se elimina ningún enlace ni se añade E ↔ B/G. La suma de circuitos técnicos no demuestra todavía interés, coherencia física o variedad de objetivos.
+
+| Papel previsto | Organización y propósito por validar |
+| --- | --- |
+| Inicio y objetivo inmediato | A presenta el despertar y el Colmillo cercano; un único sendero legible conduce a B. No convertir A en un nuevo circuito o distribuidor. |
+| Referencia central | B debe reconocerse por el tronco y la Llama, con entrada occidental alta desde A, descenso occidental hacia C y enlace oriental a F. La llegada inicial y la revisión del entorno deben orientar hacia lugares concretos, no obligar a recorrer un círculo. |
+| Camino principal candidato | A → B → C → F → G: objetivo inicial, descenso a raíces, travesía por gruta y futuro refugio/arena/salida. G y sus contenidos requieren tarea propia; este camino no es todavía una misión implementada ni la única ruta autorizada. |
+| Exploración opcional | C → D → E: cimientos → ruinas → copas y mirador, como excursión con identidad y vistas reconocibles. La memoria opcional de D sigue siendo una propuesta futura, no una recompensa añadida por T20. La ruta no bloquea el avance a G. |
+| Atajo actual | F ↔ B sirve para volver a la Llama y reconocer el claro desde otra altura; también permite B → F como alternativa libre. Su valor debe medirse en tiempo de regreso y orientación, no en completar una vuelta obligatoria. No se introduce una llave para forzar C. |
+| Posible cierre superior | E ↔ B solo tendría sentido si un descenso por el mismo tronco reconocible ofrece un retorno útil después de explorar D/E. Estudiar primero posición, vistas cruzadas y longitud del regreso; si es redundante, puede aplazarse o replantearse. No está aprobado ni construido. |
+| Salida regional | G debe ser un destino claro desde F con descanso/arena y posterior salida según GDD. No necesita otro circuito por simetría; no se implementa ni se fija un checkpoint nuevo en T20. |
+
+Antes de dar por definitiva la red, dibujar una planta con referencias de altura comunes: A en el borde occidental medio, B alrededor del tronco, C bajo sus raíces, F bajo el lado oriental, D sobre los cimientos de C y E en las copas. Las transiciones actuales usan coordenadas locales y no prueban por sí solas esas relaciones globales. Mantener reconocibles troncos, columnas y bocas de retorno a ambos lados de cada paso; revisar especialmente la coincidencia de A/C en el oeste de B y el futuro descenso E–B.
+
+La siguiente evaluación humana debe separar: entender dónde se está, tener una razón para explorar, reconocer el regreso y disfrutar el desplazamiento. Revisar geometría y función de los recorridos antes de aumentar enemigos o cerrar rutas; su colocación y la justificación narrativa pertenecen a tareas posteriores. Se mantienen el objetivo de 15–18 salas, las adquisiciones futuras pendientes y todas las conexiones técnicas actuales.

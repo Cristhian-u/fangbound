@@ -1207,3 +1207,114 @@ Unity **6000.5.5f1**, copia aislada sincronizada con el commit aprobado de T18 y
 7. Revisar composición, contraste, cámara al subir/caer/regresar y conservación de B/C/D/F, MovementTest y ArboledaPrototype. La diversión, orientación y dificultad siguen pendientes de evaluación humana; la prueba sintética no las aprueba.
 
 No se añaden enemigos, Llamas, habilidades, adquisiciones, recompensas, cinemáticas ni guardado permanente. Se mantiene pendiente la medición manual exacta de los **0.8 s de i-frames de PlayerHealth**. T19 no se declara aprobada. Sin commits, push ni cambios de rama.
+
+## T20 — Claro del Despertar y adquisición inicial del Colmillo
+
+**Estado:** implementada para evaluación, pendiente de aprobación manual. El encargo confirma T01–T19 aprobadas y con commits; se partió de Git limpio en `9fb9650`, rama `main`. Las anotaciones anteriores de aprobación pendiente son históricas.
+
+### Inspección y decisiones
+
+Se revisaron AGENTS, GDD, Region1Plan, este registro, salas/definiciones B–F, RoomSession/RoomScene, RoomPlayerRig, controles, PlayerAbilities, PlayerCombat, PlayerPogo, PlayerParry, PlayerCheckpoint/MemoryFlame y herramientas de autoría/prueba. Interact ya contiene E y botón norte, con metadata Hold; las interacciones existentes usan WasPressedThisFrame. Se conserva ese contrato de pulsación, sin editar Input Actions. La nueva indicación omite la palabra Hold para describir correctamente la recogida.
+
+Los ataques horizontal/ascendente y el descendente/pogo consumen Attack y aplican los contratos existentes de daño. Parry tiene su acción/ventana independiente. Por tanto es viable añadir una condición pequeña de posesión, sin desactivar componentes ni refactorizar movimiento: se bloquea el comienzo de ataques con el Colmillo mientras no se posea; se mantienen las mismas ventanas, hitboxes, daño, hitstop y rebote una vez recogido. Parry permanece disponible antes y después. PlayerController y PlayerHealth no reciben cambios.
+
+El resumen del GDD decía que despertaba con la espada; el encargo confirma que despierta desarmada y la encuentra cerca. Se actualizan solo ese resumen y el punto del despertar en 3.3, sin revelar intenciones del mentor en el juego ni inventar por qué el arma está separada, nuevos diálogos o lore.
+
+### Sala y conexiones
+
+- **A nueva:** `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_A_ClaroDespertar.unity`, con definición homónima en `Assets/_Project/Data/World/Rooms/`. Inicio `(4, 0.58)` mirando a la derecha, Colmillo en `(8.2, 0.55)`, salida oriental hacia B. Anchura 20, suelo seguro continuo a 0, raíz baja en `x=12..14.5` a 0.4; no hay plataformas complejas, enemigos, peligros ni Llamas.
+- **Presentación provisional:** árboles altos, vegetación de fondo y hoja de hueso clara con guarda/empuñadura marrón, realizada con recursos geométricos existentes. El avatar sigue siendo el placeholder actual; no se produce arte final de capa o cicatriz. El objeto no usa turquesa ni pedestal de checkpoint. La indicación aparece solo cerca, en estado vivo/controlable; al recoger se oculta la presentación, sin destruir el componente ni deshabilitar Interact compartido.
+- **Acceso B:** el oeste inferior existente ya lleva a C. Se añaden `B Awakening Approach`, `x=5..7.5`, altura 3.6, y `B Awakening Landing`, `x=0..3.2`, altura 5.3, sobre esa salida sin moverla. El retorno se realiza desde B Step 1 a 1.5 mediante salto normal; se puede bajar por los mismos apoyos. El corredor vertical de la fixture inicial B en x=4 queda libre.
+
+| Conexión | Destino / entrada | Centro del jugador al aparecer | Orientación |
+| --- | --- | --- | --- |
+| A-to-B, `(18.8, 1)`, suelo 0 | B / from-A | `(2.65, 5.88)` | Derecha |
+| B-to-A, `(1.2, 6.3)`, suelo 5.3 | A / from-B | `(16.5, 0.58)` | Izquierda |
+
+Se conservan B↔C, C↔D, D↔E, C↔F y F↔B. No hay G ni enlace E↔B. CameraFollow2D conserva comportamiento/tamaño 5.5; solo A define sus límites locales `x=0..20, y=-4..12`. B conserva cámara y objetos originales.
+
+### Posesión, sesiones y compatibilidad
+
+- `PlayerAbilities.FangOwned` es la única bandera nueva de posesión; no hay inventario, registro estático adicional ni PlayerPrefs. Su valor predeterminado true mantiene las escenas antiguas. `RoomDefinition.StartWithoutFang` vale false por defecto; solo A lo activa y solo se aplica al comenzar una sesión, sin sobrescribir el progreso al regresar.
+- RoomSession incorpora esa bandera al snapshot ya existente para viajes y muerte/R. La recuperación sin checkpoint de una sesión iniciada en A vuelve a A, conservando el estado armado/desarmado; al activar la Llama B se vuelve allí con 5/5 según las reglas aprobadas. Una sesión nueva no hereda arma, checkpoint ni desbloqueos de la anterior.
+- Abrir B/C/D/E/F directamente sigue siendo un inicio técnico con Colmillo disponible, habilidades inicialmente bloqueadas y recuperación sin checkpoint en B. MovementTest y ArboledaPrototype no necesitan una recogida nueva. RoomPlayerRig y los datos aprobados no se modifican.
+- A se inserta como primera escena habilitada de Build Settings, conservando en su orden todas las escenas/configuraciones anteriores. En el Editor se abre A para probar la apertura; no se añade un bootstrap ni se fuerza el inicio de Play desde otra escena. No se genera un ejecutable en T20.
+- La recogida no cura, no desbloquea dash/doble salto y no condiciona salidas: se puede omitir, viajar desarmado y volver a recogerla. Dash/doble salto conservan sus reglas y herramientas de prueba. En A no existen blancos de pogo; el rebote requiere un objetivo válido como antes y se comprueba con fixtures o en MovementTest.
+
+### Archivos
+
+- **Nuevos, con `.meta`:** escena A, RoomDefinition A, `Assets/_Project/Scripts/World/FangPickup.cs`, `Assets/_Project/Scripts/Editor/AwakeningRoomSceneSetup.cs`.
+- **Runtime modificado:** `PlayerAbilities.cs` (bandera), `PlayerCombat.cs` y `PlayerPogo.cs` (condición de posesión), `RoomDefinition.cs` (política inicial) y `RoomSession.cs` (transferencia de bandera). No cambian estadísticas, física, acción de parry ni estados internos de ataque/rebote al poseer el arma.
+- **Otros modificados:** escena B, `RoomCircuitValidation.cs`, `ProjectSettings/EditorBuildSettings.asset`, `Docs/GDD.md`, `Docs/Region1Plan.md` y este documento.
+- **Autoría:** `Fangbound/Add Awakening Room A for T20 (once)`, que rechaza Play, escenas sucias, A existente, conexión ya aplicada o B Step 1 incompatible; añade contenido y conserva IDs, sin regenerar B–F. No ejecutar para jugar las escenas guardadas.
+- **Prueba:** `Fangbound/Validate Awakening A and Fang in Play Mode`. Se amplía la validación de assets a seis salas y se comprueba la posesión en cada viaje/muerte. Los menús T17–T19 mantienen sus entradas y parámetros por defecto. El salto de prueba al acceso de B frena antes del trigger para comprobar aterrizaje y cruce por separado.
+
+### Validaciones T20
+
+Unity **6000.5.5f1**, copia aislada sincronizada con T19. Entrada sintética y física real, diferenciadas de la evaluación humana. Las travesías completas no teletransportan al jugador; los fixtures separados de ataques se colocan y restauran explícitamente y no se guardan en la escena.
+
+- `Logs/Task20Setup.log`: `TASK20_SETUP_PASS`, salida 0. A/B guardadas y reabiertas con referencias válidas; **38 GameObjects originales de B** conservados. Comparación YAML sin documentos originales eliminados: solo cambian la lista de hijos de Level Geometry y los objetos añadidos a la instancia de RoomPlayerRig. Colliders, plataformas, Llama, entradas y salidas originales permanecen iguales.
+- `Logs/Task20Validation.log`: `TASK20_PLAYMODE_PASS`, salida 0. Inicio A seguro, muerte desarmado/R hacia A sin concesión de arma, A→B→A desarmado sin habilidades y sin adquisición automática; E fuera de rango y mantenida desde fuera no recogen, una pulsación nueva dentro de rango recoge una sola vez y oculta la presentación.
+- `TASK20_FANG_ACTIONS_PASS` en ambos estados: ataques horizontal/ascendente y pogo contra TrainingTarget/PogoTarget temporales, daño/rebote real al poseer el arma y ausencia de daño/rebote/impulso descendente antes de recogerla; parry abre su ventana en ambos casos. No se añaden enemigos al nivel para esas comprobaciones.
+- `TASK20_SESSION_PASS`: A↔B conserva arma y 4/5 sin curación; recogida repetida no cambia vida; E sigue activando/curando en Llama B después de recoger; daño y B→C, muerte/R hacia B con 5/5 y desbloqueos conservados; retorno normal al acceso A y presentación todavía oculta. En cada viaje se comprueban orientación, aparición, control, cámara, una sola instancia y ausencia de bucles/cargas simultáneas.
+- `TASK20_NEW_SESSION_GAMEPAD_PASS`: segundo Play en A sin arma, checkpoint o desbloqueos heredados; botón norte recoge, muerte/R sin checkpoint conserva el Colmillo y vuelve a A sin regenerarlo. El primer log `Task20Validation-InitialLanding.log` conserva una expectativa de aterrizaje fallida porque el bot cruzaba ya el portal; la ejecución final separa ambos pasos y pasa.
+- `Logs/Task20CircuitRegression.log`: `TASK17_PLAYMODE_PASS`, salida 0. Circuitos previos en ambos sentidos, vida/desbloqueos, Llama, muertes C/F, recuperación sin checkpoint, transferencias con estados temporales y nueva sesión sin estado heredado.
+- `Logs/Task20RuinsRegression.log` y `Logs/Task20CanopyRegression.log`: `TASK18_PLAYMODE_PASS` y `TASK19_PLAYMODE_PASS`, salidas 0. Se conservan recorridos, miradores, alternativas y recuperaciones, conexiones C↔D↔E, vida reducida, desbloqueos y muertes con retorno a la Llama B.
+- `Logs/Task20DirectC.log`, `Task20DirectD.log` y `Task20DirectE.log`: `TASK17_PLAYMODE_PASS`, salidas 0. Inicio técnico con Colmillo, habilidades bloqueadas/desbloqueadas físicamente y muerte/R sin checkpoint hacia B. Los inicios B y F también se comprueban dentro de la regresión T17, incluido el segundo Play.
+- `Logs/Task20MovementRegression.log`: `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`, salida 0. Las escenas antiguas conservan ataques, pogo vivo/vulnerable/letal y objetivos anteriores, colisiones sin empuje, entrenador, parry/postura, daño/muerte, hitstop, HUD, Llama y respawn; no requieren recoger el Colmillo.
+- `Logs/Task20ArboledaRegression.log`: `TASK12_PLAYMODE_PASS`, `TASK13_PLAYMODE_PASS`, `TASK14_PLAYMODE_PASS`, `TASK15_PLAYMODE_PASS`, salida 0. Se conservan recorridos del prototipo, ruina/mirador, circuito inferior, conexiones, recuperaciones, combate, curación/muerte/R, cámara y arco final.
+- `Logs/Task20Render.log`: `TASK20_RENDER_PASS`, salida 0. Cinco capturas nativas inspeccionadas: inicio desarmado, arma e indicación cercana, objeto recogido, llegada a B y conjunto del acceso occidental. Archivos `Logs/Task20Preview-*.png`; se corrige únicamente la orientación de lectura de RenderTexture. Solo BOverview utiliza un fixture de cámara más abierto; las otras cuatro conservan el seguimiento/tamaño 5.5. El capturador es temporal y no se entrega dentro de Assets.
+- La revisión visual detectó la palabra Hold heredada en la etiqueta; se omiten únicamente las descripciones de interacción al mostrar los bindings del Colmillo. También se conserva el último estado visual mientras la sala se descarga, en lugar de mostrar de nuevo el arma al quedar temporalmente sin jugador consultable. Tras esos cambios exclusivos del nuevo pickup se recompila y repite T20 completa y las capturas, ambas con salida 0; la indicación final muestra E/Y, sin exigir mantener pulsado.
+- Compilación sin errores ni avisos C#; las once ejecuciones finales no presentan excepciones ni marcadores FAIL. Los **243 archivos protegidos** conservan sus hashes, incluidos C/D/E/F, MovementTest, ArboledaPrototype, RoomPlayerRig, PlayerController, PlayerHealth, PlayerParry, cámara, Input Actions, física y datos aprobados. Los ocho scripts entregados coinciden por hash con la copia compilada; escenas/datos/metadatos/configuración coinciden con los assets probados salvo limpieza de espacios finales. Build Settings solo añade A como primera escena y conserva exactamente el resto. `git diff --check` y revisión de espacios de los ocho archivos nuevos pasan. Rama `main` y HEAD `9fb9650` conservados.
+
+### Coherencia regional y límites
+
+Region1Plan distingue la red técnica real de una propuesta pendiente: A como inicio/primer objetivo, B como referencia/Llama, A–B–C–F–G como camino principal candidato, C–D–E como exploración opcional y F–B como regreso útil. E–B solo debe construirse si aporta un retorno legible y útil, no para completar un círculo por simetría; G sigue siendo el destino regional futuro. Se propone revisar planta, alturas y vistas comunes antes de dar por definitivas las conexiones. No se elimina ninguna ni se añaden objetivos/enemigos futuros como si estuvieran implementados.
+
+La adquisición y el mapa son provisionales y T20 requiere pruebas manuales. Las representaciones son técnicas; no se evalúan como arte definitivo. La medición manual exacta de los **0.8 s de i-frames de PlayerHealth** sigue pendiente. Sin commits, push ni cambios de rama.
+
+### Pruebas manuales pendientes
+
+1. Abrir A y entrar en un Play nuevo. Comprobar 5/5, Colmillo visible cerca de `(8.2, 0.55)`, dash/doble salto bloqueados y Fang Owned desmarcado en PlayerAbilities. Caminar/saltar; J, arriba+J y abajo+J en el aire no deben atacar, mientras K conserva parry.
+2. Acercarse al Colmillo y pulsar E: desaparece el objeto/indicación y Fang Owned queda marcado, sin curación. Probar ataques horizontal/ascendente; el descendente conserva gravedad natural y solo rebota sobre objetivos válidos. Para comprobar rebote en objetivos anteriores, abrir MovementTest por separado.
+3. Aplicar `Fangbound/Room Circuit/Damage 1 HP (Play Mode)`, esperar al fin de la invulnerabilidad, saltar la raíz de 0.4 y salir por la derecha. En B debe aparecer en el acceso occidental alto con 4/5 y arma conservada. Volver por su marco izquierdo a A; el Colmillo no reaparece. Probar también omitir la recogida en un Play nuevo y hacer A↔B: se sigue desarmado.
+4. Desde la llegada alta a B, bajar al apoyo 3.6, al escalón 1.5 y al suelo; junto a la Llama pulsar E para activar/curar. Viajar, usar Defeat Player y R: regresar al altar B con 5/5 y posesión conservada. Para volver a A, saltar desde el suelo al escalón 1.5, girar a la izquierda al apoyo 3.6 y al acceso 5.3; cruzar su marco occidental. La salida inferior C sigue separada.
+5. En otro Play nuevo de A, recoger con el botón norte del mando. Usar Defeat Player antes de activar una Llama y pulsar R: volver al inicio A con 5/5 y objeto recogido. Repetir muerte sin haberlo recogido: debe continuar visible y el jugador desarmado.
+6. Usar el menú Unlock Dash and Double Jump (session) y comprobar que salud, arma y desbloqueos persisten al viajar/morir. Salir de Play y comenzar A de nuevo: todo el progreso temporal se reinicia. Abrir B/C/D/E/F directamente conserva su combate técnico anterior.
+7. Evaluar claridad del primer objetivo, indicación E/norte, tamaño/identidad del objeto, brevedad del recorrido y lectura del acceso a B. Repetir los circuitos anteriores y los prototipos. No ejecutar configuradores para regenerar contenido aprobado.
+
+## T20 — Ajuste provisional de feedback del Colmillo
+
+**Estado:** el usuario confirma ocho pruebas funcionales manuales superadas; T20 sigue pendiente de aprobar el feedback visual y no está autorizada para commit. Se conserva todo el trabajo pendiente de T20.
+
+Se revisaron AGENTS, PlayerCombat, PlayerPogo, FangPickup y el feedback T10 existente. Se amplía **CombatVisualFeedback**, usando el mismo sprite provisional de su señal, sin crear un sistema de animación ni modificar escenas/prefabs. Cada jugador crea una sola raíz visual hija: dos arcos de cuatro segmentos, para permitir ataques normal/pogo simultáneos si las ventanas existentes coinciden, y un pulso independiente de recogida. Ninguno contiene colliders o rigidbodies, ni sobrevive al jugador o a la carga Single.
+
+- Ataque horizontal: arco claro delante del personaje, según la dirección fijada por el ataque real. Ascendente: arco sobre el personaje. Pogo: arco dirigido hacia abajo, durante su ventana real. Antes de recoger no se ejecutan ni muestran los ataques bloqueados; K/parry conserva su comportamiento.
+- PlayerCombat y PlayerPogo exponen consultas de presentación de solo lectura, con los mismos centros/tamaños usados para sus hitboxes. Se extrae ese cálculo común sin cambiar offsets, consultas, daño o temporizadores. El pogo que impacta y consume su ventana en el primer tick conserva únicamente una muestra visual de ese fotograma; no se prolonga la ventana física. Los efectos se ocultan al terminar/cancelarse, morir o desactivar el feedback.
+- Una recogida válida llama a CombatVisualFeedback y produce un pulso dorado breve detrás del cuerpo. Es independiente de la señal de parry y no cambia el color del jugador. Repetir E, regresar a A o reaparecer no vuelve a emitirlo. La indicación y recogida E/norte siguen iguales; no hay equipo visible permanente.
+- CombatFeedbackData recibe solo campos nuevos de color/grosor y color/duración/escala del pulso. La señal dura 0.24 s y su escala final es 1, reducida tras inspeccionar la primera captura. No cambia ningún parámetro anterior; hitstop sigue habilitado, normal **0.10**, pogo **0.04** y parry **0.07**.
+
+**Archivos de este ajuste:** `Scripts/Combat/CombatVisualFeedback.cs`, `CombatFeedbackData.cs`; `Data/Combat/CombatFeedbackData.asset`; `Scripts/Player/PlayerCombat.cs`, `PlayerPogo.cs`; `Scripts/World/FangPickup.cs`; `Scripts/Editor/RoomCircuitValidation.cs`, todos bajo `Assets/_Project/`, y este documento. No se crean archivos de producto. Se conservan escenas, RoomPlayerRig, movimiento, salud, desbloqueos, arquitectura regional y los demás cambios previos de T20.
+
+### Validaciones del ajuste
+
+Unity **6000.5.5f1**, copia aislada. Las entradas sintéticas y fixtures se distinguen de las pruebas manuales del usuario.
+
+- `Logs/Task20FeedbackValidation.log`: `TASK20_PLAYMODE_PASS`, salida 0. Antes/después de recoger se verifican ausencia/presencia y dirección de arcos a derecha, izquierda, arriba y abajo; cierre de ventana; daños reales y rebote existentes; pogo fallido con gravedad natural y sin hitstop; parry independiente. E y norte producen una única señal de recogida. Se conservan posesión, vida, desbloqueos, muerte/R y reinicio de sesión de T20.
+- El validador comprueba una sola raíz con nueve SpriteRenderers, cero colliders/rigidbodies, sin efectos ni pulso heredados al entrar en cada sala. Los nuevos controles están integrados en los validadores de salas existentes.
+- `Logs/Task20FeedbackCircuitRegression.log`: `TASK17_PLAYMODE_PASS`, salida 0. Circuito original en ambos sentidos, transiciones durante ataque/parry/hitstop/knockback, Llama, salud/desbloqueos, muerte y nueva sesión conservados.
+- `Logs/Task20FeedbackCanopyRegression.log`: `TASK19_PLAYMODE_PASS`, salida 0. B→C→D→E→D→C→F→B a 3/5, ambas rutas de E, recuperaciones, desbloqueos y respawn; cada sala comprueba que no recibe señales anteriores ni raíces visuales duplicadas.
+- `Logs/Task20FeedbackMovementRegression.log`: `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`, salida 0. Colisiones sin empuje, enemigo/entrenador, parry/postura, pogo y daño/muerte, feedback de impacto/hitstop y Llamas/HUD/respawn conservados en MovementTest.
+- `Logs/Task20FeedbackArboledaRegression.log`: `TASK12_PLAYMODE_PASS`, `TASK13_PLAYMODE_PASS`, `TASK14_PLAYMODE_PASS`, `TASK15_PLAYMODE_PASS`, salida 0. Rutas, recuperaciones, cámara, combate, Llama/respawn y arco final de ArboledaPrototype conservados.
+- `Logs/Task20FeedbackRender.log`: `TASK20_FEEDBACK_RENDER_PASS`, salida 0. Se inspeccionaron seis capturas nativas: J desarmado, recogida, horizontal derecha/izquierda, ascendente y pogo. `Logs/Task20FeedbackPreview-*.png` corrige solo la orientación de lectura de RenderTexture. El fixture pausa una ventana realmente aceptada para inspeccionar el fotograma, sin modificar escenas ni parámetros del producto; las pruebas funcionales anteriores corren con su física normal. Tras reducir únicamente la escala del pulso se recompiló y recapturó la presentación final. El capturador solo existe en la copia aislada.
+- Compilación sin errores ni avisos C#, sin excepciones/FAIL en las seis ejecuciones finales. Los **254 archivos protegidos del estado previo al ajuste**, incluidos los cambios pendientes de T20 fuera de estos ocho archivos, conservan sus hashes. No cambian escenas, prefabs, GDD, Region1Plan, movimiento, salud, parry, posesión/desbloqueos ni los datos anteriores del feedback. Los seis scripts y el asset entregados coinciden por hash con la copia compilada/capturada; al quitar las cinco claves visuales nuevas del asset queda exactamente su contenido anterior, normalizando saltos de línea. `git diff --check` pasa; rama `main` y HEAD `9fb9650` conservados.
+
+### Pruebas manuales del feedback pendientes
+
+1. Abrir A en un Play nuevo. Probar J, arriba+J y abajo+J en el aire antes de recoger: no debe aparecer ningún arco. K mantiene su parry.
+2. Recoger con E: comprobar desaparición del arma y pulso dorado breve. Repetir en otro Play nuevo con norte del mando. No debe quedar un efecto permanente al acabar el pulso.
+3. Después, pulsar J mirando a cada lado y arriba+J: comprobar un arco claro en la dirección correspondiente. Saltar y pulsar abajo+J: comprobar arco inferior, sin impulso nuevo hacia abajo. En A no hay blancos de pogo; para evaluar el impacto/rebote se mantienen los objetivos de MovementTest.
+4. Cambiar de sala, morir/reaparecer y volver a A: ningún efecto debe quedarse activo, duplicarse o simular otra recogida. Revisar también ataque durante dash/knockback y el parry existente.
+5. Probar los mismos ataques en MovementTest y ArboledaPrototype y evaluar legibilidad a velocidad normal. Las capturas de un fotograma no aprueban la duración percibida. El aspecto es provisional; no hay animación ni equipamiento definitivo.
+
+T20 continúa pendiente de aprobación visual del usuario. Se conserva pendiente la medición manual exacta de los **0.8 s de i-frames**. Sin commits, push ni cambios de rama.

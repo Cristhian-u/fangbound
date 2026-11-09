@@ -23,6 +23,7 @@ namespace Fangbound.Player
         private readonly HashSet<IDamageable> hitTargets = new HashSet<IDamageable>();
 
         private PlayerController playerController;
+        private PlayerAbilities abilities;
         private Collider2D bodyCollider;
         private SpriteRenderer playerRenderer;
         private InputActionMap playerMap;
@@ -37,6 +38,7 @@ namespace Fangbound.Player
         private void Awake()
         {
             playerController = GetComponent<PlayerController>();
+            abilities = GetComponent<PlayerAbilities>();
             bodyCollider = GetComponent<Collider2D>();
             playerRenderer = GetComponent<SpriteRenderer>();
 
@@ -78,7 +80,7 @@ namespace Fangbound.Player
 
         private void Update()
         {
-            if (attackAction == null || moveAction == null || !attackAction.WasPressedThisFrame() ||
+            if ((abilities != null && !abilities.FangOwned) || attackAction == null || moveAction == null || !attackAction.WasPressedThisFrame() ||
                 playerController.IsDashing || playerController.IsControlLocked)
             {
                 return;
@@ -121,7 +123,7 @@ namespace Fangbound.Player
                 return;
             }
 
-            if (playerController.IsDashing || playerController.IsControlLocked)
+            if ((abilities != null && !abilities.FangOwned) || playerController.IsDashing || playerController.IsControlLocked)
             {
                 EndAttack();
                 return;
@@ -137,22 +139,7 @@ namespace Fangbound.Player
 
         private void ApplyHitbox()
         {
-            Bounds bounds = bodyCollider.bounds;
-            Vector2 center;
-            Vector2 size;
-
-            if (currentAttack == AttackDirection.Upward)
-            {
-                center = (Vector2)bounds.center + combatData.UpwardHitboxOffset;
-                size = combatData.UpwardHitboxSize;
-            }
-            else
-            {
-                Vector2 offset = combatData.HorizontalHitboxOffset;
-                offset.x *= facingDirection;
-                center = (Vector2)bounds.center + offset;
-                size = combatData.HorizontalHitboxSize;
-            }
+            GetHitbox(out Vector2 center, out Vector2 size);
 
             int hitCount = Physics2D.OverlapBox(center, size, 0f, hitFilter, hitResults);
             for (int index = 0; index < hitCount; index++)
@@ -176,6 +163,36 @@ namespace Fangbound.Player
                     CombatHitstop.Request(CombatHitstopKind.Normal);
                 }
             }
+        }
+
+        // Read-only presentation of the accepted attack, never an input or hit query.
+        public bool TryGetAttackVisual(out Vector2 center, out Vector2 size, out Vector2 direction)
+        {
+            center = size = direction = default;
+            if (!isActiveAndEnabled || currentAttack == AttackDirection.None || attackTimeRemaining <= 0f ||
+                (abilities != null && !abilities.FangOwned) || playerController.IsDashing || playerController.IsControlLocked) return false;
+            GetHitbox(out center, out size);
+            direction = currentAttack == AttackDirection.Upward ? Vector2.up : Vector2.right * facingDirection;
+            return true;
+        }
+
+        private void GetHitbox(out Vector2 center, out Vector2 size)
+        {
+            Bounds bounds = bodyCollider.bounds;
+
+            if (currentAttack == AttackDirection.Upward)
+            {
+                center = (Vector2)bounds.center + combatData.UpwardHitboxOffset;
+                size = combatData.UpwardHitboxSize;
+            }
+            else
+            {
+                Vector2 offset = combatData.HorizontalHitboxOffset;
+                offset.x *= facingDirection;
+                center = (Vector2)bounds.center + offset;
+                size = combatData.HorizontalHitboxSize;
+            }
+
         }
 
         private void EndAttack()

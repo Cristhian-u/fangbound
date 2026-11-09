@@ -15,6 +15,7 @@ namespace Fangbound.Player
         private readonly Collider2D[] hitResults = new Collider2D[16];
         private readonly HashSet<PogoTarget> hitTargets = new HashSet<PogoTarget>();
         private PlayerController controller;
+        private PlayerAbilities abilities;
         private Collider2D bodyCollider;
         private InputAction moveAction;
         private InputAction attackAction;
@@ -22,10 +23,12 @@ namespace Fangbound.Player
         private bool attackRequested;
         private bool attackAvailable = true;
         private float attackTimeRemaining;
+        private int visualStartFrame = -1;
 
         private void Awake()
         {
             controller = GetComponent<PlayerController>();
+            abilities = GetComponent<PlayerAbilities>();
             bodyCollider = GetComponent<Collider2D>();
 
             if (pogoData == null || inputActions == null)
@@ -44,13 +47,14 @@ namespace Fangbound.Player
 
         private void OnDisable()
         {
+            visualStartFrame = -1;
             attackRequested = false;
             attackTimeRemaining = 0f;
         }
 
         private void Update()
         {
-            if (attackAction != null && !controller.IsControlLocked && attackAction.WasPressedThisFrame() &&
+            if ((abilities == null || abilities.FangOwned) && attackAction != null && !controller.IsControlLocked && attackAction.WasPressedThisFrame() &&
                 moveAction.ReadValue<Vector2>().y < -0.5f)
             {
                 attackRequested = true;
@@ -59,6 +63,7 @@ namespace Fangbound.Player
 
         public void ResetForRespawn()
         {
+            visualStartFrame = -1;
             attackRequested = false;
             attackAvailable = true;
             attackTimeRemaining = 0f;
@@ -67,7 +72,7 @@ namespace Fangbound.Player
 
         private void FixedUpdate()
         {
-            if (controller.IsControlLocked)
+            if ((abilities != null && !abilities.FangOwned) || controller.IsControlLocked)
             {
                 attackRequested = false;
                 attackTimeRemaining = 0f;
@@ -87,6 +92,7 @@ namespace Fangbound.Player
                 {
                     attackAvailable = false;
                     attackTimeRemaining = pogoData.AttackWindow;
+                    visualStartFrame = Time.frameCount;
                     hitTargets.Clear();
                 }
             }
@@ -97,9 +103,7 @@ namespace Fangbound.Player
                 return;
             }
 
-            Bounds bounds = bodyCollider.bounds;
-            Vector2 center = new Vector2(bounds.center.x + pogoData.HitboxOffset.x,
-                bounds.min.y + pogoData.HitboxOffset.y);
+            Vector2 center = GetHitboxCenter();
             int hitCount = Physics2D.OverlapBox(center, pogoData.HitboxSize, 0f, hitFilter, hitResults);
 
             for (int index = 0; index < hitCount; index++)
@@ -132,6 +136,23 @@ namespace Fangbound.Player
             }
 
             attackTimeRemaining -= Time.fixedDeltaTime;
+        }
+
+        public bool TryGetAttackVisual(out Vector2 center, out Vector2 size)
+        {
+            center = size = default;
+            // An immediate hit can consume the window within its first physics tick.
+            // Sample that executed attack for this render frame only; no combat timer is extended.
+            if (!isActiveAndEnabled || (attackTimeRemaining <= 0f && visualStartFrame != Time.frameCount) ||
+                (abilities != null && !abilities.FangOwned) || controller.IsControlLocked || controller.IsDashing || controller.IsGrounded) return false;
+            center = GetHitboxCenter(); size = pogoData.HitboxSize;
+            return true;
+        }
+
+        private Vector2 GetHitboxCenter()
+        {
+            Bounds bounds = bodyCollider.bounds;
+            return new Vector2(bounds.center.x + pogoData.HitboxOffset.x, bounds.min.y + pogoData.HitboxOffset.y);
         }
 
         private void OnDrawGizmosSelected()

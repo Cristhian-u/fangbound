@@ -24,7 +24,7 @@ namespace Fangbound.World
         private struct Snapshot
         {
             public int Health, MaximumHealth;
-            public bool Dash, DoubleJump;
+            public bool Dash, DoubleJump, Fang;
             public CheckpointLocation Checkpoint;
         }
 
@@ -66,7 +66,11 @@ namespace Fangbound.World
                 throw new InvalidOperationException("La sala cargada no corresponde a la transición pendiente.");
             CurrentRoom = room;
             PlayerHealth player = room.Player;
-            if (!arriving) recoveryRoom = room.Definition.RecoveryRoom;
+            if (!arriving)
+            {
+                recoveryRoom = room.Definition.RecoveryRoom;
+                player.GetComponent<PlayerAbilities>().SetFangOwned(!room.Definition.StartWithoutFang);
+            }
             else
             {
                 if (player.MaximumHealth != snapshot.MaximumHealth)
@@ -74,6 +78,7 @@ namespace Fangbound.World
                 PlayerAbilities abilities = player.GetComponent<PlayerAbilities>();
                 abilities.SetDashUnlocked(snapshot.Dash);
                 abilities.SetDoubleJumpUnlocked(snapshot.DoubleJump);
+                abilities.SetFangOwned(snapshot.Fang);
                 player.GetComponent<PlayerCheckpoint>().RestoreLocation(snapshot.Checkpoint);
             }
             RoomEntrance entrance = room.FindEntrance(arriving ? pendingEntrance : room.Definition.InitialEntranceId);
@@ -125,7 +130,7 @@ namespace Fangbound.World
             { Debug.LogWarning("Destino no disponible; revisar RoomDefinition y Build Settings.", this); return false; }
             PlayerAbilities abilities = player.GetComponent<PlayerAbilities>();
             snapshot = new Snapshot { Health = player.CurrentHealth, MaximumHealth = player.MaximumHealth,
-                Dash = abilities.DashUnlocked, DoubleJump = abilities.DoubleJumpUnlocked,
+                Dash = abilities.DashUnlocked, DoubleJump = abilities.DoubleJumpUnlocked, Fang = abilities.FangOwned,
                 Checkpoint = player.GetComponent<PlayerCheckpoint>().Location };
             pendingRoom = target;
             pendingEntrance = entrance;

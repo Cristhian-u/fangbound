@@ -20,6 +20,13 @@ namespace Fangbound.Combat
         [SerializeField, Range(0f, 1f)] private float vulnerableBodyTint = 0.6f;
         [SerializeField, Range(0f, 0.5f)] private float vulnerableDamageFlash = 0.4f;
 
+        [Header("Provisional Fang Visuals")]
+        [SerializeField] private Color fangAttackColor = new Color(.98f, .94f, .76f, .95f);
+        [SerializeField, Min(.01f)] private float fangAttackWidth = .08f;
+        [SerializeField] private Color fangPickupColor = new Color(1f, .85f, .4f, .9f);
+        [SerializeField, Min(.01f)] private float fangPickupDuration = .24f;
+        [SerializeField, Min(.1f)] private float fangPickupScale = 1f;
+
         public bool HitstopEnabled => hitstopEnabled;
         public float NormalHitstop => Mathf.Clamp(normalHitstop, 0f, 0.2f);
         public float PogoHitstop => Mathf.Clamp(pogoHitstop, 0f, 0.2f);
@@ -34,5 +41,10 @@ namespace Fangbound.Combat
         public float PostureBreakScale => postureBreakScale;
         public float VulnerableBodyTint => vulnerableBodyTint;
         public float VulnerableDamageFlash => vulnerableDamageFlash;
+        public Color FangAttackColor => fangAttackColor;
+        public float FangAttackWidth => fangAttackWidth;
+        public Color FangPickupColor => fangPickupColor;
+        public float FangPickupDuration => fangPickupDuration;
+        public float FangPickupScale => fangPickupScale;
     }
 }

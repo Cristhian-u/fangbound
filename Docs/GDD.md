@@ -10,7 +10,7 @@
 
 ## 1. Resumen en 30 segundos
 
-Una salamandra despierta herida en una arboleda, con una espada corta hecha del colmillo de una bestia ancestral. Esa bestia fue su maestro: le enseñó que la fuerza sirve para proteger a quien no puede defenderse. Ahora, convencido de que la libertad es la causa del dolor, el maestro quiere activar un mecanismo antiguo, el Velo del Silencio, que apagaría el sufrimiento del mundo a costa de la voluntad de todos.
+Una salamandra despierta herida y desarmada en una arboleda. Su primer objetivo jugable es recoger, cerca del punto inicial, su espada corta hecha del colmillo de una bestia ancestral. Esa bestia fue su maestro: le enseñó que la fuerza sirve para proteger a quien no puede defenderse. Ahora, convencido de que la libertad es la causa del dolor, el maestro quiere activar un mecanismo antiguo, el Velo del Silencio, que apagaría el sufrimiento del mundo a costa de la voluntad de todos.
 
 Tema: proteger a alguien no significa decidir por esa persona. Frase conceptual: «Atado a un pasado del que no puede escapar.»
 
@@ -52,7 +52,7 @@ Su caída es gradual: primero decidió por otros para evitarles peligros, luego 
 1. Maestro y aprendiz tuvieron una relación real: respeto, confianza y afecto, no solo obediencia.
 2. En unas ruinas, el maestro descubrió la filosofía de una civilización desaparecida que prometía un mundo sin sufrimiento, y empezó a aplicarla de forma absoluta.
 3. La salamandra intentó detenerlo. En la pelea le arrancó un colmillo, pero no pudo frenarlo y quedó gravemente herida (la cicatriz).
-4. El juego empieza cuando despierta. No perdió todos sus recuerdos: recuerda enseñanzas y sensaciones, pero no los detalles de la pelea ni por qué fracasó. El misterio es qué pasó y hasta dónde llegará el maestro, no quién es ella.
+4. El juego empieza cuando despierta desarmada en el Claro del Despertar; recoger el Colmillo cercano es su primer objetivo jugable (apertura confirmada en T20). No perdió todos sus recuerdos: recuerda enseñanzas y sensaciones, pero no los detalles de la pelea ni por qué fracasó. El misterio es qué pasó y hasta dónde llegará el maestro, no quién es ella.
 Tres símbolos visuales: el colmillo (el vínculo), la cicatriz (el precio de enfrentarlo) y la capa (oculta el pasado y simplifica la silueta).
 
 ### 3.4 El plan: el Velo del Silencio
