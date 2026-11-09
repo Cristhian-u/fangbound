@@ -2,11 +2,11 @@
 
 ## 1. Estado y decisiones
 
-**Documento de propuesta, pendiente de aprobación del desarrollador.** T16 planifica la región; no construye salas ni modifica `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
+**Documento histórico de propuesta T16, con actualizaciones hasta T22.** T16 planificó la región sin construir salas ni modificar `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
-**Estado técnico actualizado en T21:** el usuario confirma T01–T20 aprobadas, incluidas las 8/8 pruebas funcionales y 6/6 de feedback visual de T20. Están implementadas A ↔ B, B ↔ C, C ↔ D, D ↔ E, C ↔ F y F ↔ B. E ↔ B y G siguen sin implementar. Las secciones 11–14 distinguen las muestras jugables de la propuesta regional completa.
+**Estado técnico actualizado en T22:** el usuario confirma T01–T21 aprobadas. T22 adapta la geografía inicial de A↔B↔C; se mantienen los seis enlaces bidireccionales del circuito. E↔B y G siguen sin implementar. Las secciones 11–15 conservan el historial de propuestas T16–T21; la sección 16 registra lo construido en T22.
 
-**Referencia espacial para revisión:** [Region1SpatialMap.md](Region1SpatialMap.md) y su [plano de bloques](Region1SpatialMap.svg) concretan la propuesta T21 con dimensiones, anclas y puertos. No están aprobados ni implementados. Las franjas, conexiones y atajos de T16/T20 se conservan aquí como antecedentes; no son una planta global ya validada. La sección 15 resume la revisión T21, que debe aprobarse antes de modificar escenas.
+**Referencia espacial:** [Region1SpatialMap.md](Region1SpatialMap.md) y su [plano de bloques](Region1SpatialMap.svg) concretan la planta T21 aprobada como base provisional. Solo P01 y P04 recibieron adaptación física parcial en T22. Las franjas, conexiones y atajos de T16/T20 se conservan aquí como antecedentes; el SVG no representa todavía todas las escenas construidas.
 
 | Estado | Decisión |
 | --- | --- |
@@ -272,7 +272,7 @@ Antes de dar por definitiva la red, dibujar una planta con referencias de altura
 
 La siguiente evaluación humana debe separar: entender dónde se está, tener una razón para explorar, reconocer el regreso y disfrutar el desplazamiento. Revisar geometría y función de los recorridos antes de aumentar enemigos o cerrar rutas; su colocación y la justificación narrativa pertenecen a tareas posteriores. Se mantienen el objetivo de 15–18 salas, las adquisiciones futuras pendientes y todas las conexiones técnicas actuales.
 
-## 15. Revisión espacial T21 — propuesta pendiente
+## 15. Revisión espacial T21 — estado al redactarse
 
 [Region1SpatialMap.md](Region1SpatialMap.md) documenta las mediciones de A–F y sustituye la distribución abstracta por una hipótesis de 16 salas dentro de las siete áreas existentes. Las escenas siguen intactas. El inventario distingue coordenadas reales locales de anclas y puertos futuros; G todavía no existe.
 
@@ -283,3 +283,11 @@ La nueva planta propone A al oeste de B y a nivel del sendero; C bajo A/B; D asc
 El eje candidato A–B–C–F–G admite la alternativa libre B–F y la excursión opcional C–D–E. **P17 E3–B3 se recomienda solo como reserva por revisar**, aprovechando el mismo tronco; no aprueba E–B. Sin ese retorno u otra alternativa útil, la base tiene un circuito independiente, por lo que el objetivo regional de dos circuitos entre áreas sigue pendiente. Los atajos por habilidades T16 se reevaluaron y no autorizan adquisiciones ni puertas nuevas.
 
 Consultar el documento espacial para tablas, SVG a escala, grafo separado, candidatos de contenido y orden de adaptación. Requieren revisión las alturas y ritmo de ascenso, las salas más estrechas que la vista de cámara y la utilidad del retorno superior. Primero se propone probar el circuito inferior en una tarea futura autorizada; T21 termina en documentación, sin alterar GDD, escenas, código, Build Settings ni sistemas aprobados.
+
+## 16. Estado técnico T22 — primer tramo geográfico A/B/C
+
+T21 fue aprobado como base provisional según la instrucción de T22. El comienzo conserva la escena A sin cambios: Colmillo, suelo y salida derecha. B ya recibe a nivel del mismo sendero y devuelve a A por el oeste. Se retiraron sus apoyos altos de acceso desde A y se abrió un pozo central con dos repisas de retorno. C ya recibe desde arriba en una repisa segura y ofrece un ascenso de vuelta por la misma abertura, con salto normal. Se mantuvieron Llama, persistencia y las demás rutas técnicas.
+
+La escena B actual abarca la parte inicial de B1 y una continuación oriental provisional; no materializa B2/B3. C representa el arranque de C1 y conserva una extensión oriental técnica que deberá revisarse cuando se separe F1. No se crearon escenas ni RoomDefinitions. P01 sigue la cota y dirección previstas; P04 conserva la relación vertical y el plano global y=−4, con eje x=11 en vez del x=8 propuesto para evitar la Llama y el escalón existente. Las coordenadas, apoyos y límites de cámara implementados figuran en la sección 17 de [Region1SpatialMap.md](Region1SpatialMap.md).
+
+C↔D, C↔F y F↔B siguen operativos como enlaces del circuito anterior, sin coherencia global T21 aún. La siguiente tarea geográfica deberá separar los sectores futuros y adaptar F↔B a través de B3/P12, además de revisar la extensión oriental de C y los pasos hacia D/F. P17, G, nuevos enemigos y adquisiciones siguen pendientes. Las pruebas automatizadas de T22 no reemplazan la evaluación manual del recorrido, la lectura del pozo ni los prototipos completos.

@@ -1,8 +1,10 @@
 # Arboleda Verdescente — Plano espacial T21
 
-**Propuesta para revisión; no implementada ni aprobada.** Inspección sobre `76510b6` (T20). El usuario confirma T01–T20 aprobadas, incluidas 8/8 pruebas funcionales y 6/6 de feedback de T20. Esta entrega solo modifica documentación. Las seis escenas actuales y sus seis enlaces bidireccionales permanecen iguales.
+**Estado actualizado en T22:** el usuario confirma T01–T21 aprobadas. La planta T21 sigue siendo la referencia de diseño; T22 construye solo el primer tramo A↔B↔C. Las tablas de inspección y el SVG de este documento registran la propuesta y el estado anterior a T22, no la geometría completa que ahora existe en Unity. Las posiciones implementadas y las diferencias se detallan en la sección 17.
 
-Este documento concreta la geografía que [Region1Plan](Region1Plan.md) dejaba abierta. Su SVG y tablas describen **una posible adaptación futura**, no posiciones que ya existan en Unity. Se conserva el alcance de 15–18 salas, objetivo 16; no se convierten las siete áreas en siete únicas habitaciones ni se autoriza construir las 16 ahora.
+**Contexto histórico de T21:** inspección sobre `76510b6` (T20). El usuario confirmó entonces T01–T20 aprobadas, incluidas 8/8 pruebas funcionales y 6/6 de feedback de T20. T21 solo modificó documentación; en ese momento las seis escenas y sus seis enlaces bidireccionales permanecían iguales.
+
+Este documento concreta la geografía que [Region1Plan](Region1Plan.md) dejaba abierta. Su SVG y tablas describen la **planta objetivo de T21**, no posiciones que existan íntegramente en Unity. Se conserva el alcance de 15–18 salas, objetivo 16; no se convierten las siete áreas en siete únicas habitaciones ni se construyen las 16 en T22.
 
 ## 1. Diagnóstico de las seis muestras actuales
 
@@ -287,7 +289,7 @@ La división de una escena B en B1/B2/B3 exige decidir assets/IDs y conservar o 
 
 No están probados saltos, apoyos, cámara, orientación o duración humana de esta geometría futura. No hay salas nuevas en el juego. La medición manual exacta de los 0.8 s de i-frames sigue pendiente y fuera de T21.
 
-## 16. Decisiones que requieren revisión del usuario
+## 16. Decisiones planteadas para revisión en T21
 
 1. ¿Aprobar esta distribución de 16 salas como objetivo de trabajo, con ruinas rodeando el oeste del claro y copas por encima, o reducir/redistribuir sus alturas antes del primer graybox?
 2. ¿Mantener como eje candidato A–B–C–F–G y el camino corto B–F libre, con D/E opcionales, en vez de forzar un orden mediante puertas?
@@ -295,3 +297,21 @@ No están probados saltos, apoyos, cámara, orientación o duración humana de e
 4. ¿Aceptar el tronco B3 como recorrido físico del retorno F–B y priorizar la adaptación del circuito inferior antes de añadir contenido a G/copas?
 
 Los candidatos de enemigos, secretos, descanso G y adquisiciones futuras necesitan sus propias decisiones; no se consideran aprobados al aceptar solo la planta. T21 termina en esta propuesta y espera revisión antes de modificar escenas.
+
+## 17. Adaptación parcial T22 — A, B y C
+
+La escena A existente sirve de muestra A1 sin cambios de asset: inicio `(4,0.58)`, Colmillo `(8.2,0.55)`, suelo 0, raíz baja y salida derecha `(18.8,1)`. B sigue siendo **una escena técnica** de 24 unidades: su zona occidental x=0..16 representa el arranque de B1; x=16..24 continúa provisionalmente hacia el este y **no equivale a construir B2**. C sigue siendo una escena de 24 unidades: x=0..16 representa el arranque de C1 y x=16..24 conserva la extensión técnica hacia D/F; **no equivale a construir C2 o F1**. No se crean RoomDefinitions, IDs ni escenas nuevas.
+
+| Paso | Estado T22 en coordenadas locales | Relación con T21 |
+| --- | --- | --- |
+| P01, A↔B | Salida A `(18.8,1)` → llegada B `(3,0.58)`; salida B `(1.2,1)` → llegada A `(16.5,0.58)`. Suelos de ambos lados a 0. | Sendero horizontal A1 este ↔ B1 oeste, cota global 0. El trigger queda dentro de la pared lateral técnica, como en el sistema existente. |
+| P04, B→C | B abre un pozo x=9..15, fondo a −4, salida `(11,−3)`; C recibe en `(13,10.58)` sobre una repisa a 10. | B1 sur ↔ C1 norte. Con O_B=`(0,0)` y O_C=`(0,−16)`, ambos triggers quedan en global `(11,−3)` y el plano de paso es global y=−4. |
+| P04, C→B | C tiene paso superior x=7..15 y salida `(11,13)` sobre repisa a 12; B recibe en `(12.3,−3.42)` sobre el fondo del pozo a −4. | El retorno usa salto normal desde la terraza C de 8 a un apoyo de 10 y luego a la repisa de 12. El segundo tramo del retorno en B sube desde −4 mediante dos apoyos a −2 hasta suelo 0. |
+
+El eje P04 se desplazó de x=8 en la propuesta a **x=11** en este graybox. En B, la Llama existente ocupa x=6.6 y el escalón existente `B Step 1` ocupa x=8..11 a altura 1.5; el pozo x=9..15 permite conservarlos y dejar un descenso practicable. El plano de paso y=−4 y la relación vertical B1/C1 sí se conservan. Las apariciones difieren de las orientativas de T21 porque se ubicaron sobre apoyos seguros y separadas de los triggers. El techo de C se construyó en dos tramos sólidos x=0..7 y x=15..24, dejando la abertura superior.
+
+En B se retiraron únicamente los dos apoyos altos de la conexión provisional de T20 con A. Su suelo quedó en x=0..9 y x=15..24, con fondo del pozo x=9..15 y repisas x=9..10.5 y x=13..15 a −2. La cámara de B amplió su límite inferior local de −4 a −6 para incluir el pozo; mantiene x=0..24, límite superior 12 y tamaño ortográfico. En C permanecen las terrazas anteriores, y se añadieron apoyos x=6.5..9.5 y x=11.5..14.5 a 10, más la repisa x=9.5..12.5 a 12. Sus límites de cámara no cambiaron.
+
+P01 y P04 ya expresan la dirección y altura del mapa T21 mediante geometría jugable, aunque RoomSession todavía carga escenas Single y reinicia velocidad al atravesar los triggers. Los pasos C↔D, C↔F y F↔B siguen siendo **enlaces técnicos** con sus posiciones anteriores. En particular F↔B continúa este↔este y no representa P12/B3. Tampoco se implementaron P02, P03, P05 ni las restantes subdivisiones o puertos del SVG. La extensión oriental actual de C se superpone a la zona reservada para F1 si se aplica literalmente el ancla de T21; deberá separarse al construir C1/F1. El dibujo a escala es una guía de destino, no una captura del graybox T22.
+
+La siguiente adaptación deberá resolver la división B1/B2 y la extensión C1/F1, reubicar los enlaces técnicos sin perder vida, Colmillo ni checkpoint, y probar manualmente las vistas y la lectura del pozo. T22 no decide todavía la función de P17 ni modifica GDD, movimiento, combate o conexiones externas.
