@@ -2,11 +2,13 @@
 
 ## 1. Estado y decisiones
 
-**Documento histórico de propuesta T16, con actualizaciones hasta T22.** T16 planificó la región sin construir salas ni modificar `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
+**Documento histórico de propuesta T16, con referencias de seguimiento hasta T23.** T16 planificó la región sin construir salas ni modificar `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
 **Estado técnico actualizado en T22:** el usuario confirma T01–T21 aprobadas. T22 adapta la geografía inicial de A↔B↔C; se mantienen los seis enlaces bidireccionales del circuito. E↔B y G siguen sin implementar. Las secciones 11–15 conservan el historial de propuestas T16–T21; la sección 16 registra lo construido en T22.
 
 **Referencia espacial:** [Region1SpatialMap.md](Region1SpatialMap.md) y su [plano de bloques](Region1SpatialMap.svg) concretan la planta T21 aprobada como base provisional. Solo P01 y P04 recibieron adaptación física parcial en T22. Las franjas, conexiones y atajos de T16/T20 se conservan aquí como antecedentes; el SVG no representa todavía todas las escenas construidas.
+
+**Seguimiento regional T23:** [Region1DevelopmentRoadmap.md](Region1DevelopmentRoadmap.md) organiza geografía/exploración, enemigos/contenido, progresión/mapa/jefe y arte/ambientación. El encargo confirma T01–T22 aprobadas manualmente; T23 queda pendiente de revisión. La hoja distingue las seis escenas técnicas de las 16 salas objetivo, conserva pendientes P17 y las adquisiciones, y registra por separado la propuesta de sala 17 del jefe, cuya relación con la arena G2 debe resolverse sin duplicar contenido. T24 iniciará la Fase 1; las tareas posteriores y su numeración son provisionales. No se modifican aquí el GDD, la planta espacial ni los assets.
 
 | Estado | Decisión |
 | --- | --- |

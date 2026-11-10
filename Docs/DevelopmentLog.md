@@ -1396,3 +1396,39 @@ Los validadores históricos del circuito que fijan por número la posición anti
 4. Abrir `MovementTest` y `ArboledaPrototype` y ejecutar sus recorridos y combate habituales. La automatización T22 prueba las conexiones del circuito, pero no sustituye la evaluación humana de estos prototipos ni de la claridad geográfica.
 
 **Archivos T22:** modificadas `Arboleda_B_ClaroSendas.unity`, `Arboleda_C_RaicesProfundas.unity`, `Docs/Region1SpatialMap.md`, `Docs/Region1Plan.md` y este registro; creados `InitialRegionGeographySetup.cs`, `InitialRegionGeographyValidation.cs` y sus `.meta`. No se cambian GDD, A, D/E/F, RoomDefinitions, prefabs ni datos de movimiento.
+
+## T23 — Hoja de ruta de desarrollo de Arboleda Verdescente
+
+**Estado:** entrega documental preparada, pendiente de revisión y aprobación manual del usuario. El encargo de T23 confirma **T01–T22 desarrolladas y aprobadas mediante pruebas manuales**, actualizando el estado pendiente histórico de T22. No implica que las 16 salas estén construidas. Corte: 9 de noviembre de 2026; Git inicialmente limpio, rama `main`, HEAD `d877b91`.
+
+### Inspección y alcance
+
+Se revisaron AGENTS, GDD, Region1Plan, Region1SpatialMap y su SVG, el historial T16–T22 y la estructura real de escenas, definiciones, prefabs, datos del enemigo y validadores. Hay **seis escenas técnicas A–F**, seis RoomDefinitions y 12 salidas dirigidas. No se encontraron referencias al enemigo terrestre en las escenas regionales guardadas; el prefab y sus pruebas pertenecen todavía a los prototipos. No hay escena G, jefe ni minimapa implementados.
+
+T22 adapta P01 y P04, con eje efectivo del pozo x=11 frente al x=8 del SVG T21. B1/C1 solo tienen arranques parciales; las extensiones técnicas no son B2/C2/F1. F↔B continúa este↔este y la extensión de C requiere separación de la reserva F1. El mapa se conserva íntegro y se referencia su sección 17 para no confundir objetivo con implementación.
+
+### Documentación entregada
+
+- **Creado `Docs/Region1DevelopmentRoadmap.md`:** propósito, fuentes, inventario real, principios y cuatro fases con criterios de cierre: geografía/exploración; enemigos/combate/contenido; progresión/minimapa/jefe; arte/animación/ambientación.
+- Seguimiento de tareas aprobadas, T23 en revisión, T24 como siguiente bloque propuesto y T25–T51 con numeración provisional. Cada tarea incluye fase, objetivo, dependencias, estado y criterio de aprobación. Los bloques amplios permiten subdivisión explícita y pruebas por sala/sector; no hay fechas ni número definitivo de tareas de arte.
+- Tabla de las **16 salas con los IDs/nombres de T21**, distinguiendo área, sala de mapa y escena Unity: una muestra A1, dos arranques parciales B1/C1 y trece subdivisiones no construidas. Contenidos futuros y conexiones se marcan como candidatos/objetivo, no objetos existentes.
+- Registro separado de **sala 17 del jefe**, sin ID espacial, RoomId, ubicación o geometría asignados. G2 ya reserva la arena en T21: queda pendiente decidir ampliación, sustitución o sala adicional, sin contar dos arenas. P17 es el puerto candidato E3↔B3, no la sala 17.
+- Registro de 16 problemas/riesgos y nueve decisiones pendientes con responsable y momento límite. Se conservan abiertos ritmo ofensivo, eficacia del dash y medición exacta de 0.8 s; las dos primeras son observaciones del encargo, sin medición nueva ni ajuste de parámetros. La ejecución queda para jefes en Fase 3; el enemigo normal conserva vulnerabilidad temporal.
+- Reglas de mantenimiento, evidencias, aprobación manual y cierre de fases. El arte dibujado a mano del usuario se integra progresivamente; no se exige completar recursos antes del avance técnico ni se fija su cantidad final de tareas.
+- **Actualizado `Docs/Region1Plan.md`:** referencia a la hoja de ruta y estado comunicado de aprobación T01–T22. **Actualizado este registro.** GDD, mapa Markdown/SVG y archivos de producto conservados.
+
+### Validaciones documentales
+
+`TASK23_DOC_PASS`: cuatro fases con criterios de cierre; tabla de 16 IDs/nombres coincidente con Region1SpatialMap y etiquetas del SVG; 29 filas T23–T51 con seis campos completos, dependencias de tareas anteriores sin ciclos y T24 en Fase 1; problemas y decisiones presentes; enlaces locales y formato de tablas correctos. El registro separado de sala 17 no modifica el inventario de 16 ni asigna una coordenada ficticia. Las dependencias condicionadas por diseño también se revisaron manualmente, especialmente la decisión de alcance G2/sala 17 antes de cerrar Fase 1 y su diseño concreto posterior, evitando una dependencia circular con Fase 3.
+
+Los **266 archivos protegidos** conservan sus hashes SHA-256 iniciales, incluidos GDD, Region1SpatialMap.md/.svg, escenas, prefabs, scripts, assets, física/input y configuración Unity. `git diff --check` pasa; el documento nuevo se comprueba además por separado porque todavía no está rastreado. Se mantienen `main` y `d877b91`; no hay commits, push ni cambios de rama.
+
+No se ejecuta Unity, compilación ni Play Mode en T23: no se modifica el producto y la entrega es exclusivamente documental. No se atribuyen nuevas pruebas físicas, de balance, rendimiento o regresión a esta hoja. La aprobación manual previa de T22 no resuelve por sí sola las incidencias históricas Search/Burst/paquetes ni actualiza las expectativas espaciales de los validadores antiguos; se registran para preparar la siguiente validación técnica.
+
+### Revisión pendiente y siguiente paso
+
+Abrir la vista previa de [Region1DevelopmentRoadmap.md](Region1DevelopmentRoadmap.md), revisar las fases/tablas y las decisiones, contrastar los IDs con el [plano espacial](Region1SpatialMap.md) y aprobar o ajustar el alcance. T23 no se declara aprobada.
+
+Se recomienda **T24: graybox B2 y adaptación B1↔B2/P02**, definiendo primero la migración del borde oriental y del enlace técnico F para no perder rutas operativas. Conservar A/Colmillo, Llama, pozo T22 y sesión; probar exploración/regreso con salto normal, vida reducida, muerte/R y regresiones. Después, B3 y separación C1/F1 permiten resolver físicamente F↔B. No se inicia ninguna implementación en esta entrega.
+
+La medición manual exacta de los **0.8 s de invulnerabilidad de PlayerHealth** continúa pendiente; se incorpora al seguimiento de Fase 2 sin modificar su duración ni afirmar que se midió.
