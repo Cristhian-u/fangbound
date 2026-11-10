@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Fangbound.EditorTools
 {
-    public static class InitialRegionGeographySetup
+    public static partial class InitialRegionGeographySetup
     {
         private const string Folder = RoomCircuitSceneSetup.SceneFolder;
         private const string APath = Folder + "/Arboleda_A_ClaroDespertar.unity";

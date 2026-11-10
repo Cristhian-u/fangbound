@@ -1,8 +1,8 @@
 # Arboleda Verdescente — Hoja de ruta de desarrollo regional T23
 
-**Estado: documento preparado para revisión; T23 pendiente de aprobación manual.** Corte: 9 de noviembre de 2026, rama `main`, base `d877b91` (T22). El usuario confirma **T01–T22 desarrolladas y aprobadas mediante pruebas manuales**. Esa confirmación actualiza los estados pendientes de las entradas históricas; no convierte toda la planta T21 en geometría construida.
+**Estado actualizado en T24:** el usuario confirma **T01–T23 completadas y aprobadas**. Corte: 9 de noviembre de 2026, rama `main`, base `f64dcf0` (T23). T24 implementa B2/P02 para revisión manual; no se declara aprobada. La confirmación de las tareas anteriores no convierte toda la planta T21 en geometría construida.
 
-Esta es la hoja de ruta regional propuesta como referencia oficial de seguimiento. Su adopción requiere revisión del usuario. **T23 solo documenta**: no autoriza ni inicia T24, no cambia sistemas y no promete fechas de entrega. T24 iniciará la Fase 1; el alcance recomendado figura al final. La numeración posterior es provisional.
+Esta es la hoja de ruta regional oficial aprobada en T23, con su seguimiento posterior. **T23 fue documental; T24 inicia la siguiente implementación de Fase 1** con un encargo propio. La numeración posterior sigue siendo provisional y no se prometen fechas de entrega.
 
 ## 1. Qué construimos y dónde consultar cada dato
 
@@ -12,7 +12,7 @@ Arboleda Verdescente será una región explorable, con orientación espacial, de
 | --- | --- |
 | [GDD](GDD.md), especialmente 5, 7 y 8.1 | Visión, historia, reglas de combate, Guardián Raíz y principios de exploración. No se reescribe aquí. |
 | [Region1Plan](Region1Plan.md) | Funciones de las siete áreas y antecedentes T16–T22; sus propuestas antiguas no son inventario actual. |
-| [Region1SpatialMap](Region1SpatialMap.md), secciones 4–6 y 17; [SVG](Region1SpatialMap.svg) | IDs de las 16 salas, planta provisional, anclas/puertos y diferencias implementadas en T22. No se copian las tablas de coordenadas. |
+| [Region1SpatialMap](Region1SpatialMap.md), secciones 4–6, 17–18; [SVG](Region1SpatialMap.svg) | IDs de las 16 salas, planta provisional, anclas/puertos y diferencias implementadas en T22/T24. No se copian las tablas de coordenadas. |
 | Este documento | Fases, dependencias, tareas, estado por sala, decisiones abiertas y criterios de cierre. |
 | [DevelopmentLog](DevelopmentLog.md), T16–T23 | Evidencias de entregas y pruebas, limitaciones y contexto de cada aprobación. |
 
@@ -20,22 +20,22 @@ El objetivo previo es **15–18 salas, con base provisional de 16** agrupadas en
 
 El cronograma original del GDD corresponde a un alcance menor y ya advertía que debía revisarse. Esta hoja ordena trabajo por resultados, sin trasladar esas fechas automáticamente al nuevo alcance.
 
-## 2. Base comprobada al iniciar T23
+## 2. Base técnica y seguimiento actualizado en T24
 
 **Área** = conjunto geográfico A–G. **Sala del mapa** = ID A1–G3 con una función y envolvente de diseño. **Escena Unity** = asset que carga el juego. No son unidades intercambiables: seis escenas no equivalen a seis áreas completas ni a las 16 salas terminadas.
 
 | Existe realmente | Alcance y límite |
 | --- | --- |
-| Seis escenas en `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/` | `Arboleda_A_ClaroDespertar`, `Arboleda_B_ClaroSendas`, `Arboleda_C_RaicesProfundas`, `Arboleda_D_RuinasColmillo`, `Arboleda_E_CopasVigia`, `Arboleda_F_GrutaRetorno`, todas `.unity`, con seis RoomDefinitions homónimas. No hay escena G ni arena independiente. |
-| Seis enlaces bidireccionales | A↔B, B↔C, C↔D, D↔E, C↔F y F↔B: 12 salidas dirigidas. E↔B no existe. |
-| Adaptación T22 | A sirve de muestra A1. B contiene el arranque B1 y extensión oriental técnica, sin B2/B3 construidas. C contiene el arranque C1 y extensión hacia D/F, sin C2/F1 construidas. |
-| P01 y P04 parciales | A↔B a suelo 0; B↔C vertical con plano global y=−4. **P04 implementado usa x=11**, frente al x=8 de la propuesta/SVG T21. La sección 17 del mapa registra la diferencia; no aplicar literalmente el SVG al graybox actual. |
+| Siete escenas en `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/` | Las seis muestras A–F anteriores y **`Arboleda_B2_PasarelaQuebrada.unity`** nueva, con siete RoomDefinitions. No hay escena G ni arena independiente. |
+| Siete enlaces bidireccionales | A↔B, B↔C, C↔D, D↔E, C↔F, F↔B y **B↔B2/P02**: 14 salidas dirigidas. E↔B no existe. |
+| Adaptaciones T22/T24 | A sirve de muestra A1. B se adapta a B1 de 16 unidades, conserva RoomId B y Llama, y conecta con B2 independiente. B3 no existe. C conserva el arranque C1 y la extensión técnica hacia D/F, sin C2/F1 construidas. |
+| P01/P04 y P02 | P01/P04 conservan su relación T22; **P04 usa x=11** frente al x=8 del SVG. T24 ajusta solo el lado este del pozo B a x=14. P02 conecta B1 este↔B2 oeste en global (16,0). Mapa §17 conserva el estado T22 y §18 da las posiciones vigentes. |
 | Sistemas aprobados | Movimiento, dash/doble salto sujetos a desbloqueos, ataques/pogo, parry, postura/vulnerabilidad del enemigo, daño/muerte, feedback T10/T20, HUD, Llamas, transición y estado de sesión. La aprobación funcional no implica balance regional final. |
-| Colmillo y descanso | Recogida inicial en A; Llama única del circuito en B, ID `B.memory-flame`. No hay adquisición jugable de dash/doble salto ni enemigos colocados en A–F. |
+| Colmillo y descanso | Recogida inicial en A; Llama única en B, ID `B.memory-flame`. No hay adquisición jugable de dash/doble salto ni enemigos colocados en A–F/B2. |
 | Pruebas y prototipos | `MovementTest` y `ArboledaPrototype` conservan sus objetivos y enemigo de prueba; existen prefab/datos de enemigo terrestre. No se da por realizada su distribución regional. |
 | Arquitectura de salas | RoomSession carga Single y conserva vida/arma/desbloqueos/checkpoint durante la sesión; cada sala recrea RoomPlayerRig. RoomDefinition no guarda ancla global o límites de mapa. No hay minimapa ni guardado permanente. |
 
-T22 aprobó un tramo parcial, no todo el circuito geográfico. F↔B sigue este↔este; C↔D/C↔F son enlaces técnicos. La extensión oriental de C invadiría la reserva de F1 al aplicar literalmente las anclas T21. Son trabajos pendientes, no fallos nuevos atribuidos a T22.
+T22 aprobó un tramo parcial y T24 continúa su adaptación. F↔B sigue este↔este: su acceso B se recoloca sobre una terraza elevada, separado de P02, sin cambiar IDs ni escena F. C↔D/C↔F siguen técnicos y la extensión de C invade la reserva futura F1. Ninguno de esos pendientes se declara resuelto por añadir B2.
 
 ## 3. Principios de trabajo
 
@@ -149,8 +149,8 @@ Estados: **Aprobada** = resultado y aprobación manual comunicados; **En revisi�
 
 | Tarea | Fase | Objetivo acotado | Dependencias | Estado | Criterio específico de aprobación |
 | --- | --- | --- | --- | --- | --- |
-| T23 | Transversal | Consolidar esta hoja de ruta y referencias. | Lectura de T16–T22 y encargo actual. | En revisión; no aprobada. | Usuario revisa fases, alcance, tabla de salas y decisiones; controles documentales pasan. |
-| T24 | 1 | Construir graybox B2 y adaptar B1↔B2/P02, con límites/anclas coherentes. | T23 aprobada; T22; definir migración de borde oriental/puerto técnico F. | Propuesta para iniciar. | A↔B↔C y Llama intactos; B2 se explora y se vuelve con salto normal; ningún destino roto o ruta F perdida sin sustitución documentada. |
+| T23 | Transversal | Consolidar esta hoja de ruta y referencias. | Lectura de T16–T22 y encargo actual. | Aprobada por contexto T24. | Hoja de ruta con commit y aprobación comunicada por el usuario. |
+| T24 | 1 | Construir graybox B2 y adaptar B1↔B2/P02, con límites/anclas coherentes. | T23 aprobada; T22; migración de borde oriental/F documentada en mapa §18. | Implementada para revisión manual; no aprobada. | A↔B↔C y Llama intactos; B2 se explora y se vuelve con salto normal; verificar además ritmo, orientación y transiciones provisionales. Resultados en DevelopmentLog T24. |
 | T25 | 1 | Construir B3 y B2↔B3/P03, preparando la base del tronco. | T24; separación física de accesos futuros. | Propuesta. | Recorrer B2↔B3 y reconocer el claro; descenso previsto recuperable, sin salida falsa hacia F/E inexistentes. |
 | T26 | 1 | Separar C1 de la extensión técnica y adaptar F como F1/P11. | T22; revisar ramas técnicas C↔D y F↔B antes de moverlas. | Propuesta. | C1↔F1 a cotas alineadas, sin solape global; conexión B↔C y rutas técnicas todavía necesarias permanecen accesibles. Dividir si la migración supera una entrega. |
 | T27 | 1 | Construir ascenso F1↔B3/P12 y sustituir el retorno este↔este. | T25 y T26. | Propuesta prioritaria. | B1→C1→F1→B3→B2→B1 y recorrido inverso con física real; retorno reconocible sin habilidades y sin puerta técnica residual incoherente. |
@@ -192,13 +192,13 @@ Para Fase 4 se usarán **lotes sin numeración T definitiva**; no representan se
 
 ## 6. Seguimiento de las 16 salas de T21
 
-IDs y nombres proceden de la sección 4 del mapa. Las conexiones de esta tabla son **objetivo propuesto**, no enlaces construidos por subdivisión. P01/P04 tienen adaptación parcial descrita arriba. El resto requiere implementación o revisión. Los contenidos son candidatos de mapa §11, salvo el Colmillo y la Llama existente; no implican ubicaciones de habilidades aprobadas.
+IDs y nombres proceden de la sección 4 del mapa. Las conexiones son objetivo propuesto salvo P01/P04 y **P02 implementados en sus tramos descritos arriba**. El resto requiere implementación o revisión. Los contenidos son candidatos de mapa §11, salvo Colmillo/Llama existentes; no implican habilidades o encuentros aprobados.
 
 | ID / nombre | Área | Función prevista | Estado real de implementación | Conexiones objetivo | Ampliación / adaptación necesaria | Contenido documentado | Dependencias / tarea propuesta |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | A1 · Claro del Despertar | A | Inicio seguro. | Muestra jugable en escena A, aprobada T20/T22; no acabado final. | B1/P01. | Conservar inicio y escala; revisar con migraciones vecinas. | Colmillo inicial implementado, sin enemigos previstos en el inicio. | T22 conservada; regresión en T24/T36. |
-| B1 · Sendero de Esporas | B | Orientación, descanso y bifurcación. | Arranque parcial dentro de escena B; P01/P04 adaptados. | A1/P01, B2/P02, C1/P04. | Separar extensión oriental, conservar pozo x=11 y Llama. | Llama B implementada; lectura de rutas. | T24/T27; preservar checkpoint y T22. |
-| B2 · Pasarela Quebrada | B | Travesía del claro y aproximación al tronco. | No construida; x=16..24 de B es extensión técnica. | B1/P02, B3/P03. | Crear volumen y recorrido propios; revisar dimensiones/cámara. | Candidato de primer encuentro, ubicación sin decidir. | T24/T25; contenido T37. |
+| B1 · Sendero de Esporas | B | Orientación, descanso y bifurcación. | Graybox B adaptado a 16 unidades; P02 añadido en T24 pendiente de aprobación. | A1/P01, B2/P02, C1/P04; F técnico elevado provisional. | Conservar pozo x=11/Llama; retirar acceso técnico F al construir retorno B3. | Llama B implementada; lectura de rutas. | Prueba manual T24; T27 para retorno final. |
+| B2 · Pasarela Quebrada | B | Travesía del claro y aproximación al tronco. | Escena/RoomDefinition propios creados en T24, graybox para revisión manual. | B1/P02 operativo; B3/P03 reservado sin puerta. | Evaluar duración/variedad dentro de 16×16; preparar siguiente borde sin invadir B3. | Raíz amplia para encuentro futuro y mirador para descubrimiento, sin objetos nuevos. | Prueba manual T24; T25 para B3; contenido T37. |
 | B3 · Tronco Partido | B | Ascenso de retorno y referencia común. | No construida. | B2/P03, F1/P12; E3/P17 solo candidato. | Construir ascenso físico desde F; reservar parte superior sin aprobar P17. | Referencia ambiental; sin recompensa/habilidad asignada. | T25/T27; retorno superior T33 y D02. |
 | C1 · Hondonada de Helechos | C | Descenso, elección inferior y travesía. | Arranque parcial en escena C; retorno superior T22. | B1/P04, C2/P05, F1/P11. | Separar extensión oriental solapada con F1; migrar enlaces técnicos D/F. | Alternativa de primer encuentro; apoyos de recepción seguros. | T26/T28; preservar P04; T37. |
 | C2 · Raíces Resonantes | C | Explorar bajo A y llegar a cimientos. | No construida. | C1/P05, D1/P06. | Crear recorrido occidental recuperable. | Reserva de descubrimientos/secretos; sin adquisición de dash. | T28/T29; contenido aprobado T40. |
@@ -213,7 +213,7 @@ IDs y nombres proceden de la sección 4 del mapa. Las conexiones de esta tabla s
 | G2 · Cámara del Guardián Raíz | G | Arena reservada en T21. | No construida; ni jefe ni ejecución de jefe implementados. | G1/P15, G3/P16 tras jefe, sujetos a D03. | Conciliar con sala 17 antes de fijar función, geometría o accesos finales. | Guardián Raíz según GDD, sin diseño final de patrones. | D03; T35/T45–T48. |
 | G3 · Salida hacia Abismo | G | Cierre y conexión regional. | No construida; nombre funcional de la antigua Salida del Velo. | G2/P16 y salida PX a receptor aún sin diseñar, sujetos a D03. | Definir destino válido y regla posterior a la victoria. | Salida a Región 2, sin acontecimiento narrativo nuevo. | D03; T35/T50. |
 
-**Balance al corte:** una muestra A1 existente; dos arranques parciales B1/C1; trece salas sin construcción identificable como subdivisión del plano, aunque D/E/F tengan muestras jugables. Ninguna está terminada en arte definitivo. No sumar escenas técnicas y salas objetivo como si fueran dos inventarios de contenido completo.
+**Balance T24:** muestra A1, graybox B1 adaptado, B2 nuevo para revisión y arranque parcial C1; doce subdivisiones aún no construidas, aunque D/E/F tengan muestras. No se declara aprobada T24 ni terminada la geografía de B/F. Ninguna sala tiene arte final. No sumar escenas técnicas y salas objetivo como dos inventarios completos.
 
 ### Sala 17 del jefe — registro separado
 
@@ -299,7 +299,7 @@ Reglas de mantenimiento:
 
 La región se considerará terminada cuando las cuatro fases cumplan sus criterios, el usuario apruebe el recorrido completo, combate/jefe/salida, mapa, presentación y rendimiento, y no queden bloqueos o pendientes críticos sin una decisión explícita. Tener las 16 salas en una tabla, una compilación correcta o el jefe aislado no basta.
 
-## 10. Recomendación concreta para T24
+## 10. Alcance recomendado en T23 y ejecutado en T24
 
 **Primer bloque de implementación: B1↔B2/P02**, reutilizando lo aprobado en T22. Crear una Pasarela Quebrada con espacio para explorar y regresar; dejar B3/P12 para las siguientes entregas. Antes de editar, concretar la correspondencia de escenas/IDs y cómo migrar el borde oriental provisional de B sin romper el enlace técnico a F todavía en uso. No crear una puerta a B3 si B3 no existe. Si mantener operativa esa ruta exige ampliar demasiado el alcance, subdividir expresamente el bloque antes de ejecutarlo.
 
@@ -307,4 +307,4 @@ Conservar A/Colmillo, pozo B↔C (x=11), Llama B e integridad de sesión. Regist
 
 Prueba manual de aceptación propuesta: iniciar A en una sesión nueva, recoger, viajar a B, activar Llama, explorar B2 y volver; bajar y regresar por B↔C solo con salto normal; repetir con vida reducida y verificar muerte/R; probar la ruta técnica F que deba seguir disponible y revisar cámara, suelo y orientación. Ejecutar validación geográfica actualizada y regresiones pertinentes, sin regenerar escenas aprobadas. Cerrar T24 únicamente tras la revisión manual de ese tramo.
 
-Esta recomendación prepara el cierre físico inferior mediante T25–T27; no inicia su implementación ni modifica las prioridades mediante código en T23.
+Este fue el alcance aprobado para iniciar T24; su implementación y diferencias están en mapa §18 y DevelopmentLog T24. El siguiente bloque propuesto sigue siendo B3/P03 (T25 provisional), después de aprobar manualmente B2, sin adelantar en T24 el cierre inferior T26–T27.

@@ -17,14 +17,15 @@ using Object = UnityEngine.Object;
 namespace Fangbound.EditorTools
 {
     [InitializeOnLoad]
-    public static class InitialRegionGeographyValidation
+    public static partial class InitialRegionGeographyValidation
     {
         private const string Running = "Fangbound.T22.ValidationRunning";
         private const string Folder = RoomCircuitSceneSetup.SceneFolder;
         private static readonly string[] Names =
         {
             "Arboleda_A_ClaroDespertar", "Arboleda_B_ClaroSendas", "Arboleda_C_RaicesProfundas",
-            "Arboleda_D_RuinasColmillo", "Arboleda_E_CopasVigia", "Arboleda_F_GrutaRetorno"
+            "Arboleda_D_RuinasColmillo", "Arboleda_E_CopasVigia", "Arboleda_F_GrutaRetorno",
+            "Arboleda_B2_PasarelaQuebrada"
         };
         private static readonly Stack<IEnumerator> Steps = new Stack<IEnumerator>();
         private static Keyboard keyboard;
@@ -52,11 +53,17 @@ namespace Fangbound.EditorTools
         }
 
         [MenuItem("Fangbound/Validate Initial Region Geography T22 in Play Mode")]
-        public static void Run()
+        public static void Run() => StartGeographyValidation(false, false);
+
+        private static void StartGeographyValidation(bool b2, bool direct)
         {
             Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Iniciar en Edit Mode.");
+            Require(!Enumerable.Range(0, SceneManager.sceneCount).Any(i => SceneManager.GetSceneAt(i).isDirty),
+                "Guardar las escenas antes de validar.");
+            SessionState.SetBool(B2Mode, b2);
+            SessionState.SetBool(B2Direct, direct);
             ValidateAssets();
-            EditorSceneManager.OpenScene(Path(0), OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(Path(direct ? 6 : 0), OpenSceneMode.Single);
             Steps.Clear();
             hadError = false;
             expectUnlocked = false;
@@ -70,12 +77,17 @@ namespace Fangbound.EditorTools
         {
             var entrances = new Dictionary<string, HashSet<string>>();
             var destinations = new List<(string path, string entrance)>();
+            var roomIds = new HashSet<string>();
+            var exitIds = new HashSet<string>();
             for (int i = 0; i < Names.Length; i++)
             {
                 Scene scene = EditorSceneManager.OpenScene(Path(i), OpenSceneMode.Single);
                 RoomScene room = Object.FindAnyObjectByType<RoomScene>();
                 Require(room != null && room.Definition != null && room.Definition.ScenePath == scene.path,
                     "RoomDefinition inválido: " + Names[i]);
+                Require(roomIds.Add(room.Definition.RoomId) &&
+                    EditorBuildSettings.scenes.Count(item => item.path == scene.path && item.enabled) == 1,
+                    "RoomId duplicado o escena sin registro único habilitado: " + Names[i]);
                 Require(Object.FindObjectsByType<PlayerHealth>().Length == 1 &&
                     Object.FindObjectsByType<Camera>().Length == 1 &&
                     Object.FindObjectsByType<PlayerHealthUI>().Length == 1 &&
@@ -83,7 +95,7 @@ namespace Fangbound.EditorTools
                     "Rig duplicado/incompleto: " + Names[i]);
                 RoomEntrance[] points = room.GetComponentsInChildren<RoomEntrance>();
                 RoomExit[] exits = room.GetComponentsInChildren<RoomExit>();
-                Require(exits.Length == new[] { 1, 3, 3, 2, 1, 2 }[i] &&
+                Require(exits.Length == new[] { 1, 4, 3, 2, 1, 2, 1 }[i] &&
                     exits.Select(exit => exit.ConnectionId).Distinct().Count() == exits.Length,
                     "Salidas duplicadas/incompletas: " + Names[i]);
                 entrances[scene.path] = new HashSet<string>(points.Select(point => point.EntranceId));
@@ -99,6 +111,7 @@ namespace Fangbound.EditorTools
                 }
                 foreach (RoomExit exit in exits)
                 {
+                    Require(exitIds.Add(exit.ConnectionId), "ConnectionId regional duplicado: " + exit.ConnectionId);
                     Require(exit.Destination != null && !string.IsNullOrEmpty(exit.DestinationEntranceId) &&
                         exit.GetComponent<BoxCollider2D>().isTrigger,
                         "Salida sin destino o collider: " + exit.ConnectionId);
@@ -121,9 +134,10 @@ namespace Fangbound.EditorTools
                     Check("Exit B-to-C", 11, -3);
                     Check("Entry from-A", 3, .58f);
                     Check("Entry from-C", 12.3f, -3.42f);
-                    CheckSurface("B Root Pit Floor", 9, 15, -4);
+                    CheckSurface("B Root Pit Floor", 9, 14, -4);
                     CheckSurface("B Root West Ledge", 9, 10.5f, -2);
-                    CheckSurface("B Root East Ledge", 13, 15, -2);
+                    CheckSurface("B Root East Ledge", 12.9f, 14, -2);
+                    ValidateP02B1(room);
                 }
                 if (i == 2)
                 {
@@ -134,11 +148,12 @@ namespace Fangbound.EditorTools
                     CheckSurface("C Return Step", 6.5f, 9.5f, 10);
                     CheckSurface("C Return Ledge", 9.5f, 12.5f, 12);
                 }
+                if (i == 6) ValidateB2Assets(room);
             }
             foreach (var destination in destinations)
                 Require(entrances.TryGetValue(destination.path, out HashSet<string> ids) && ids.Contains(destination.entrance),
                     "Destino sin entrada: " + destination.path + "/" + destination.entrance);
-            Debug.Log("TASK22_ASSETS_PASS: seis escenas, 12 salidas, entradas seguras, pozo/repisa y referencias.");
+            Debug.Log("TASK22_ASSETS_PASS: siete escenas, 14 salidas, entradas seguras, pozo/repisa y referencias; P02 incluido.");
         }
 
         private static void Check(string name, float x, float y)
@@ -166,9 +181,9 @@ namespace Fangbound.EditorTools
                 if (Steps.Count == 0)
                 {
                     started = EditorApplication.timeSinceStartup;
-                    Steps.Push(ValidatePlay());
+                    Steps.Push(SessionState.GetBool(B2Direct, false) ? ValidateDirectB2() : ValidatePlay());
                 }
-                Require(EditorApplication.timeSinceStartup - started < 120, "T22 excedió 120 s.");
+                Require(EditorApplication.timeSinceStartup - started < 240, "Validación geográfica excedió 240 s.");
                 IEnumerator current = Steps.Peek();
                 if (!current.MoveNext())
                 {
@@ -195,7 +210,8 @@ namespace Fangbound.EditorTools
                 InputSystem.settings.backgroundBehavior = oldBackground;
                 InputSystem.settings.editorInputBehaviorInPlayMode = oldEditorInput;
             }
-            Debug.Log(success ? "TASK22_PLAYMODE_PASS" : "TASK22_PLAYMODE_FAIL");
+            string prefix = SessionState.GetBool(B2Mode, false) ? "TASK24" : "TASK22";
+            Debug.Log(prefix + (success ? "_PLAYMODE_PASS" : "_PLAYMODE_FAIL"));
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             else EditorApplication.ExitPlaymode();
         }
@@ -285,7 +301,7 @@ namespace Fangbound.EditorTools
             Keys(Key.Space);
             yield return Until(() => Body.position.y > -1.2f, 2);
             Keys(Key.D, Key.Space);
-            yield return Until(() => Body.position.x > 13.8f, 2);
+            yield return Until(() => Body.position.x > 13.3f, 2);
             Keys();
             yield return Until(() => Controller.IsGrounded, 3);
             Require(Mathf.Abs(Body.position.y - (-1.42f)) < .18f,
@@ -293,12 +309,18 @@ namespace Fangbound.EditorTools
             Keys(Key.Space);
             yield return Until(() => Body.position.y > .8f, 2);
             Keys(Key.D, Key.Space);
-            yield return Until(() => Body.position.x > 15.7f, 2);
+            yield return Until(() => Body.position.x > 14.4f, 2);
             Keys();
             yield return Until(() => Controller.IsGrounded, 3);
             Require(Mathf.Abs(Body.position.y - .58f) < .18f,
                 "No se salió del pozo al suelo de B.");
             Debug.Log("TASK22_PIT_ESCAPE_PASS: salida del pozo con dos saltos normales.");
+
+            if (SessionState.GetBool(B2Mode, false))
+            {
+                yield return ValidateB2Routes();
+                yield return ValidateLegacyFApproach();
+            }
 
             PlayerAbilities abilities = Player.GetComponent<PlayerAbilities>();
             abilities.SetDashUnlocked(true);
@@ -308,6 +330,8 @@ namespace Fangbound.EditorTools
             yield return TravelFixture("B-to-F", "F");
             yield return TravelFixture("F-to-C", "C");
             yield return TravelFixture("C-to-D", "D");
+            yield return TravelFixture("D-to-E", "E");
+            yield return TravelFixture("E-to-D", "D");
             yield return TravelFixture("D-to-C", "C");
             yield return TravelFixture("C-to-F", "F");
             yield return TravelFixture("F-to-B", "B");

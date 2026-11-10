@@ -1,6 +1,6 @@
 # Arboleda Verdescente — Plano espacial T21
 
-**Estado actualizado en T22:** el usuario confirma T01–T21 aprobadas. La planta T21 sigue siendo la referencia de diseño; T22 construye solo el primer tramo A↔B↔C. Las tablas de inspección y el SVG de este documento registran la propuesta y el estado anterior a T22, no la geometría completa que ahora existe en Unity. Las posiciones implementadas y las diferencias se detallan en la sección 17.
+**Estado actualizado en T24:** el usuario confirma T01–T23 aprobadas. La planta T21 sigue siendo la referencia provisional; T22 adaptó A↔B↔C y T24 añade B2/P02, pendiente de aprobación manual. Las tablas de inspección y el SVG registran la propuesta y el estado anterior a T22, no todas las escenas actuales. La sección 17 conserva la adaptación T22; la sección 18 registra las posiciones vigentes de B1/B2. No se construyen B3 ni G.
 
 **Contexto histórico de T21:** inspección sobre `76510b6` (T20). El usuario confirmó entonces T01–T20 aprobadas, incluidas 8/8 pruebas funcionales y 6/6 de feedback de T20. T21 solo modificó documentación; en ese momento las seis escenas y sus seis enlaces bidireccionales permanecían iguales.
 
@@ -315,3 +315,48 @@ En B se retiraron únicamente los dos apoyos altos de la conexión provisional d
 P01 y P04 ya expresan la dirección y altura del mapa T21 mediante geometría jugable, aunque RoomSession todavía carga escenas Single y reinicia velocidad al atravesar los triggers. Los pasos C↔D, C↔F y F↔B siguen siendo **enlaces técnicos** con sus posiciones anteriores. En particular F↔B continúa este↔este y no representa P12/B3. Tampoco se implementaron P02, P03, P05 ni las restantes subdivisiones o puertos del SVG. La extensión oriental actual de C se superpone a la zona reservada para F1 si se aplica literalmente el ancla de T21; deberá separarse al construir C1/F1. El dibujo a escala es una guía de destino, no una captura del graybox T22.
 
 La siguiente adaptación deberá resolver la división B1/B2 y la extensión C1/F1, reubicar los enlaces técnicos sin perder vida, Colmillo ni checkpoint, y probar manualmente las vistas y la lectura del pozo. T22 no decide todavía la función de P17 ni modifica GDD, movimiento, combate o conexiones externas.
+
+## 18. Adaptación T24 — B1↔B2 / P02
+
+**Implementación para revisión manual, no aprobación de T24.** `Arboleda_B_ClaroSendas.unity` se reutiliza como B1, sin duplicarla ni renombrar su RoomId **B** o el checkpoint `B.memory-flame`. Se crea `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_B2_PasarelaQuebrada.unity` y su RoomDefinition homónimo en `Data/World/Rooms`, RoomId **B2**, recuperación B. Es una séptima escena regional, no la construcción del área B completa. El nombre Pasarela Quebrada procede de la tabla T21; «sector central» describe su función.
+
+### Dimensiones y correspondencia global
+
+| Sala actual | Ancla global | Envolvente de planificación local/global | Límites de cámara locales |
+| --- | --- | --- | --- |
+| B1, escena técnica B adaptada | (0,0) | Local (0,−4;16×16); global X=0..16, Y=−4..12. El pozo conserva suelo a −4 y espesor sólido inferior. | X=0..16, Y=−6..12: incluye el pozo de T22. |
+| B2, escena nueva | (16,0) | Local (0,−4;16×16); global X=16..32, Y=−4..12. | X=0..16, Y=−4..12. |
+
+P02 sigue siendo **global (16,0)**: borde este B1 local (16,0) y oeste B2 local (0,0). No cambia la escala ni se desplaza B3. Los triggers están remetidos 0.4 respecto al borde y miden 0.8×2, con base a suelo 0; P no es su centro. El espesor exterior de los sólidos de frontera/fondo no representa una ruta en la sala vecina.
+
+| Paso | Trigger local → centro global | Destino / aparición local y global | Orientación al llegar |
+| --- | --- | --- | --- |
+| B-to-B2 | B1 (15.6,1) → (15.6,1) | B2/from-B: local (2.2,0.58) → global (18.2,0.58) | Derecha |
+| B2-to-B | B2 (0.4,1) → (16.4,1) | B/from-B2: local (14.6,0.58) → global (14.6,0.58) | Izquierda |
+
+Las dos caras de los triggers alcanzan el mismo borde global X=16 y su base global es Y=0. Se abren los segmentos de pared correspondientes, con apoyo, despeje y separación entre spawn y trigger completos; no basta una carga correcta. CameraFollow2D mantiene código, tamaño 5.5 y suavizado. En 16:9 la vista es más ancha que la sala de 16, por lo que se centra horizontalmente y los fondos laterales cubren el margen sin abrir espacio jugable fuera del mapa.
+
+### B1: cambio local necesario y acceso técnico a F
+
+El pozo original terminaba en x=15 y la extensión llegaba a x=24. Al fijar el borde en 16 quedaba solo una unidad para recibir desde B2 y cruzar P02: insuficiente para separar con margen al jugador del trigger. Se conserva el eje P04 x=11, la llegada desde C (12.3,−3.42), el fondo Y=−4 y la repisa occidental. **Solo el lado oriental del pozo retrocede a x=14**, quedando fondo x=9..14, suelo oriental x=14..16 y repisa este x=12.9..14 a −2. El retorno desde C sigue usando dos saltos normales; se prueba además el regreso desde el lado este hacia el oeste del claro.
+
+`B Step 1` y `B Step 2` permanecen; `B Upper` se recoloca a x=14..16, suelo 4.6. `B-to-F` conserva ID/destino y queda en (15.6,5.6); `from-F` conserva ID/orientación y aparece en (14.4,5.18). No cambia la escena F ni sus entradas/salidas. El acceso está por encima y separado de P02, con su abertura propia; se alcanza por los escalones. **Continúa siendo este↔este y geográficamente provisional**, sin túnel por B2 ni afirmación de P12. B3 y el sector inferior resolverán el retorno definitivo.
+
+Se conservan los objetos originales de B y se ajustan transformaciones/bordes concretos; no se regenera la escena. Llama, P01, P04 y sus poses permanecen. P02 añade una entrada y una salida nuevas; los demás IDs siguen válidos.
+
+### B2: recorridos y reservas de contenido
+
+Intervalos X y cotas locales de los sólidos transitables:
+
+- Suelo de recepción oeste [0,4.5]@0; raíz amplia [4.5,9.5]@1.2; escalón de descenso [9.5,10.8]@0; hondonada [9.5,12.5]@−1.2; suelo oriental [12.5,16]@0.
+- Ruta secundaria: terraza de ramas [6.5,9.8]@3 y mirador [11.4,15]@4.8. Se sube desde la raíz con dos saltos de 1.8 y se regresa por las mismas repisas o bajando al suelo oriental y al camino inferior.
+
+El recorrido principal presenta una subida moderada, plataforma de cinco unidades para un futuro encuentro, descenso y elección entre cruzar o bajar a la hondonada. El recorrido superior añade perspectiva y una vuelta por el suelo inferior. Las caídas previstas terminan en suelo/repisas seguros; la hondonada ofrece salidas de 1.2 a cada lado mediante el escalón o el suelo este. No hay daño ambiental, enemigos, recompensas, adquisiciones ni checkpoint nuevos.
+
+La raíz central, p. ej. global (23,1.2), queda como reserva para contenido de Fase 2, no un encuentro aprobado. El mirador puede alojar un descubrimiento futuro sin objeto ni indicación interactiva actual. La presentación usa bloques/ramas/musgo provisionales sin decoración turquesa.
+
+El **futuro P03** conserva B2 local (16,0), global **(32,0)**, hacia B3. Ahora está cerrado por un límite sólido con raíz/vegetación: no hay marco, trigger, entrada o destino hacia B3. P17 E3↔B3 sigue sin aprobar.
+
+Se conserva el ancho 16 previsto para dar prioridad a coherencia y variedad dentro del bloque. **B1+B2 abarcan ahora X global=0..32, frente a las 24 unidades de la escena B anterior**, sin invadir B3. B2 individual sigue siendo aproximadamente una vista horizontal y **no demuestra una duración humana suficiente**. Si la prueba encuentra el recorrido todavía corto, se propone revisar explícitamente la escala conjunta B2/B3 y sus puertos/vecinos en el plano antes de ampliar, no extender esta sala dentro de las reservas ajenas. No se aplicó esa ampliación global en T24.
+
+Los resultados de compilación, rutas con física real, inicio directo, estado de sesión, regresiones y capturas se registran en DevelopmentLog bajo T24. Su aprobación requiere la prueba manual, especialmente ritmo, orientación, lectura de la bifurcación y cámara.

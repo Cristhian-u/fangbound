@@ -1432,3 +1432,78 @@ Abrir la vista previa de [Region1DevelopmentRoadmap.md](Region1DevelopmentRoadma
 Se recomienda **T24: graybox B2 y adaptación B1↔B2/P02**, definiendo primero la migración del borde oriental y del enlace técnico F para no perder rutas operativas. Conservar A/Colmillo, Llama, pozo T22 y sesión; probar exploración/regreso con salto normal, vida reducida, muerte/R y regresiones. Después, B3 y separación C1/F1 permiten resolver físicamente F↔B. No se inicia ninguna implementación en esta entrega.
 
 La medición manual exacta de los **0.8 s de invulnerabilidad de PlayerHealth** continúa pendiente; se incorpora al seguimiento de Fase 2 sin modificar su duración ni afirmar que se midió.
+
+## T24 — B2 Pasarela Quebrada y conexión espacial B1↔B2 / P02
+
+**Estado:** implementada y validada automáticamente, pendiente de pruebas/aprobación manual del usuario. El encargo confirma T01–T23 completadas y aprobadas, con la hoja de ruta T23 registrada en commit. Base inicial limpia: `main`, HEAD `f64dcf0`. No se hacen commits, push ni cambios de rama.
+
+### Diagnóstico y decisión de migración
+
+Se revisaron AGENTS, GDD, plan regional, plano/SVG, hoja de ruta, historial T20–T23, las seis escenas/RoomDefinitions y los contratos/configuradores/validadores existentes. B medía 24 unidades, contenía el pozo T22 x=9..15 y alojaba el enlace técnico F en la terraza x=18..24. No era una B1 final ni materializaba B2.
+
+P02 exige B1 este↔B2 oeste en **global (16,0)**. Fijar B1 en 16 dejaba solo una unidad de suelo oriental tras el pozo, insuficiente para separar con margen una llegada del trigger. Se conserva el eje P04 x=11 y la pose `from-C` (12.3,−3.42), reduciendo únicamente el lado este del pozo a x=14. El suelo de llegada queda x=14..16 y la repisa este x=12.9..14 a −2; fondo −4 y repisa oeste permanecen. El regreso desde C y el cruce del pozo en ambos sentidos se probaron con salto normal.
+
+Se reutiliza `Arboleda_B_ClaroSendas.unity` como B1, **RoomId B y checkpoint B.memory-flame conservados**. Sus 35 GameObjects explícitos del YAML original se retienen y se añaden cinco; el configurador también verifica identidad de todos los objetos originales, incluidos los hijos de prefab. No se regenera B ni se ejecuta el configurador T22 sobre ella.
+
+`B Upper` pasa a x=14..16, suelo 4.6. `B-to-F` queda en (15.6,5.6) y `from-F` en (14.4,5.18), separados del nuevo P02 a suelo 0. IDs/destinos se conservan; **F no se modifica**. Se recorrió físicamente B1→F→B1 y sus escalones con habilidades bloqueadas. El enlace sigue este↔este y geográficamente provisional: no implementa P12 ni un túnel por B2. Su sustitución definitiva depende de B3 y F1.
+
+### B2, geometría y P02
+
+- Nueva escena `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_B2_PasarelaQuebrada.unity` y RoomDefinition homónimo en `Assets/_Project/Data/World/Rooms/`, con `.meta`. Nombre de trabajo tomado de T21; RoomId **B2**, ancla documental (16,0), recuperación B. Inicio directo técnico armado, sin habilidades ni checkpoint, como las otras muestras; al llegar desde A/B se conserva la posesión de sesión.
+- Envolvente local (0,−4;16×16), global X=16..32/Y=−4..12. B1+B2 suman una huella horizontal de 32 frente a las 24 anteriores. No se desplaza B3 ni cambia la escala regional. Cámara B2 x=0..16/y=−4..12, B1 x=0..16/y=−6..12. Código, tamaño ortográfico 5.5 y suavizado de CameraFollow2D permanecen.
+- Principal: recepción [0,4.5]@0, raíz ancha [4.5,9.5]@1.2 para un encuentro futuro, escalón [9.5,10.8]@0, hondonada [9.5,12.5]@−1.2 y llegada oriental [12.5,16]@0. Variación de terreno y posibilidad de cruzar o bajar, sin daño ambiental.
+- Secundaria: terraza [6.5,9.8]@3 y mirador [11.4,15]@4.8. Dos subidas de 1.8 desde la raíz; retorno por las mismas repisas o caída al suelo oriental y reconexión inferior. La hondonada se abandona con saltos de 1.2 hacia el escalón o suelo este.
+- Reserva de encuentro en la raíz, p. ej. global (23,1.2), y de descubrimiento en el mirador. Sin enemigos, recompensas, coleccionables, adquisiciones o Llamas nuevas. Decoración geométrica de bosque sin objetos turquesas.
+- P03 futuro: B2 local (16,0), global **(32,0)**. Límite oriental sólido con raíz/vegetación, sin marco, trigger ni referencia a una escena B3 inexistente. G y P17 tampoco se construyen.
+
+| Salida | Centro de trigger local/global | Aparición destino local → global | Orientación |
+| --- | --- | --- | --- |
+| B-to-B2 | B1 (15.6,1) → (15.6,1) | B2/from-B (2.2,0.58) → (18.2,0.58) | Derecha |
+| B2-to-B | B2 (0.4,1) → (16.4,1) | B/from-B2 (14.6,0.58) → (14.6,0.58) | Izquierda |
+
+Triggers 0.8×2, base Y=0, remetidos 0.4; sus caras alcanzan el mismo borde global X=16. P es el punto de borde/suelo, no un centro de trigger o spawn. Se abren las paredes correspondientes y se validan apoyo, despeje y cuerpo completo fuera de triggers. La región queda en siete escenas, siete RoomDefinitions y 14 salidas dirigidas; todos los enlaces anteriores mantienen destinos válidos.
+
+### Archivos y herramientas
+
+**Creados:** escena B2 y RoomDefinition B2 con sus `.meta`; `Assets/_Project/Scripts/Editor/InitialRegionGeographySetup.B2.cs` y `InitialRegionGeographyValidation.B2.cs`, ambos con `.meta`.
+
+**Modificados:** escena B; los dos archivos existentes `InitialRegionGeographySetup.cs` / `InitialRegionGeographyValidation.cs`; `ProjectSettings/EditorBuildSettings.asset` solo para añadir B2 habilitada al final, sin alterar el orden/configuración anterior; `Docs/Region1SpatialMap.md`, `Docs/Region1DevelopmentRoadmap.md`, `Docs/Region1Plan.md` y este registro. No se modifica ningún script de ejecución, prefab, dato de movimiento/combate, GDD, SVG o escena existente distinta de B.
+
+Los configuradores/validadores se amplían mediante partes de las mismas clases de Editor, reutilizando sus helpers y contratos. `Fangbound/Add Central Sector B2 for T24 (once)` es una migración distinta de T22, rechaza Play/escenas sucias/B2 existente y comprueba la geometría anterior antes de tocarla. **No ejecutar configuradores para jugar las escenas entregadas.**
+
+Menús de prueba: `Fangbound/Validate Central Sector B2 T24 in Play Mode` y `Fangbound/Validate Direct Start B2 T24 in Play Mode`. El validador geográfico T22 sigue disponible, actualizado para siete escenas y la repisa/escape del pozo vigente; T24 reutiliza su recorrido completo, añade P02/B2 y comprueba también D↔E. Se conservan los validadores originales de MovementTest/ArboledaPrototype y las herramientas de daño/muerte/desbloqueo. Los validadores históricos RoomCircuit que fijaban los puertos anteriores a T22 siguen sin representar esta geografía; no se borró su cobertura para conseguir PASS.
+
+### Validaciones ejecutadas
+
+Unity **6000.5.5f1**, copia aislada `.utmp/u24`; no se usa el proyecto principal para generar/importar/probar. Entradas sintéticas del Input System con física real, sin cambiar velocidades, salto, gravedad, dash ni datos compartidos.
+
+- `Logs/Task24SetupInteractiveEditor.log`: `TASK24_SETUP_PASS`, salida 0. Compilación, creación, guardado y reapertura de B/B2 con definiciones/destinos válidos y entradas seguras. B2 no sobrescribe una escena existente.
+- **`Logs/Task24FinalNavigation.log`: `TASK24_PLAYMODE_PASS`, salida 0, batch.** Assets de siete salas/14 salidas, IDs únicos, registros habilitados, ausencia de scripts faltantes, entradas fuera de triggers y P02 global (16,0) comprobados. A↔B y B↔C/escape del pozo conservados. P02 en ambos sentidos y orientación/aparición correctas; principal, terraza/mirador, caídas y recuperación física, sin habilidades. `TASK24_A_B2_A_PASS` recorre expresamente **A→B1→B2→B1→A sin tomar C**, a 4/5 y con Colmillo. `TASK24_FLAME_HEAL_PASS`: E cura 4/5→5/5 después de volver de B2. `TASK24_RESPAWN_PASS`: muerte en B2, R a Llama B con 5/5, arma y desbloqueos conservados. Un rig/cámara/HUD/hitstop/sesión, nueve renderers de feedback y ausencia de bucles. La navegación inicial comprueba ambas habilidades bloqueadas; el fixture separado comprueba persistencia de ambas desbloqueadas.
+- `TASK24_LEGACY_F_PHYSICS_PASS` en la misma batería: escalones B1→F y regreso físicos con salto normal. Los demás enlaces heredados, incluido D↔E, usan fixtures de transferencia para verificar destinos, estado y guardia de llegada; **no se presentan como recorridos físicos de D/E/F completos**. Las cargas, checkpoint, muerte/R y restauración de vida/desbloqueos de T22 se mantienen.
+- **`Logs/Task24DirectFinal.log`: `TASK24_DIRECT_START_PASS` y `TASK24_PLAYMODE_PASS`, salida 0.** Inicio Play directamente en B2, 5/5, Colmillo disponible, habilidades bloqueadas y sin checkpoint heredado. Principal/secundaria/recuperación físicas, muerte/R sin Llama → inicio seguro B con 5/5 y sin activar la Llama automáticamente.
+- **`Logs/Task24MovementWarmRegression.log`: `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`, salida 0.** Validador existente sin cambios: caminar/dash sin empuje; recuperación IA; pogo vivo/vulnerable/letal y blancos anteriores; fallo con gravedad natural, horizontal/ascendente sin rebote; entrenador, combate/parry/postura/vulnerabilidad, vida/muerte, hitstop/HUD y Llamas/respawn.
+- **`Logs/Task24ArboledaBatchRegression.log`: `TASK12_PLAYMODE_PASS`, `TASK13_PLAYMODE_PASS`, `TASK14_PLAYMODE_PASS`, `TASK15_PLAYMODE_PASS`, salida 0.** Validador y escena originales, sin cambios: tres rutas del prototipo, ruina/mirador, conexiones, circuito inferior/recuperaciones, combate, curación/muerte/R, cámara y arco final. Se repite en batch tras una ejecución gráfica fallida descrita abajo.
+- **`Logs/Task24Render.log`: `TASK24_RENDER_PASS`, salida 0.** Cinco capturas nativas inspeccionadas: B2 entrada, mirador, hondonada, P02 en B1 y acceso alto F. `Logs/Task24Preview-*.png`. Todas conservan cámara/tamaño 5.5; el fixture solo congela poses para inspección y corrige la orientación del readback DirectX. Capturador y automatizador solo están en la copia de prueba, fuera de Assets entregados. No son recorridos físicos ni aprobación de ritmo humano.
+- Sin errores/avisos C# en las ejecuciones finales. Los cuatro fuentes de Editor entregados coinciden por hash con los compilados; escenas/datos/configuración/metadatos coinciden con la copia validada, normalizando únicamente espacios finales de YAML. Los **261 archivos protegidos** conservan sus hashes iniciales, incluidos A/C/D/E/F, MovementTest, ArboledaPrototype, sus validadores, todos los componentes de ejecución, prefabs, datos de diseño, física/input, GDD y SVG. `TASK24_B_RETENTION_PASS`, `TASK24_ASSET_EQUIVALENCE_PASS`, `TASK24_CODE_EQUALITY_PASS`, `TASK24_DOC_PASS` y `git diff --check` correctos.
+
+### Incidencias de entorno y límites
+
+El primer arranque restringido no pudo abrir bases del Editor/licencia; el primer batch posterior no resolvió la licencia headless. Ejecutar el Editor normal con la licencia Personal existente permitió importar/generar, y el batch final quedó disponible. No se hizo una activación de cuenta ni se cambió configuración del producto para resolverlo. Un auxiliar de cierre de las primeras ejecuciones gráficas quedó bloqueado tras completar las aserciones: se detuvieron únicamente sus procesos aislados, se corrigió ese auxiliar y se repitieron las pruebas con salida 0.
+
+La copia vuelve a registrar la excepción inicial `UnityEditor.Search.SearchDatabase` ya conocida en T22. La primera regresión MovementTest pasó sus aserciones de juego pero emitió FAIL global por ese error de arranque (`Task24MovementRegression.log`). Se realizó un Play de calentamiento separado y después un Play nuevo con el validador original: pasó sin filtrar errores ni modificar validadores, escenas o parámetros. La excepción inicial permanece visible en los logs; **no se declara reparado Unity Search**. También aparecen mensajes nativos de asignaciones JobTemp al cerrar el Editor, sin error C# o traza FANGBOUND en las ejecuciones finales.
+
+La primera regresión gráfica de ArboledaPrototype se detuvo en el posicionamiento del bot hacia X=112.9 (`Task24ArboledaWarmRegression.log`, pose aproximada 112.75/6.43). No se modificó ese prototipo ni su validador. La repetición batch completa pasó; la diferencia es compatible con sensibilidad del automatismo al entorno de ejecución, pero T24 no demuestra su causa exacta. Mantener su prueba manual habitual y registrar si vuelve a ocurrir; no ocultar el fallo inicial bajo el PASS final.
+
+El ancho 16 respeta T21 y añade variedad dentro del bloque; la automatización no aprueba duración percibida, orientación ni comodidad de repisas. Si B2 sigue sintiéndose corta, revisar explícitamente la escala B2/B3/vecinos en el plano antes de ampliar. El avatar/decoración siguen siendo provisionales. F↔B continúa técnicamente operativo y geográficamente pendiente, al igual que B3/P12 y la separación C1/F1.
+
+### Pruebas manuales específicas en Unity
+
+1. Salir de Play y abrir A guardada, sin ejecutar configuradores. Comenzar sesión nueva, recoger el Colmillo con E; repetir con botón norte en otra sesión. Comprobar feedback de recogida/ataques, 5/5 y habilidades bloqueadas.
+2. Llegar a B1 y activar la Llama con E. Para ir a B2 sin tomar C: subir a `B Step 1` (suelo 1.5), avanzar hacia la derecha y descender al apoyo oriental del pozo (−2); saltar a la franja derecha de suelo 0 y caminar por el borde derecho. **La abertura a suelo 0 es B2; el marco elevado a 4.6 sigue siendo F.** También se puede bajar a C y volver antes de salir por la derecha.
+3. En B2, comprobar llegada occidental mirando hacia dentro. Subir a la raíz ancha 1.2 y avanzar por el escalón de descenso; cruzar o bajar a la hondonada y subir a suelo oriental. Probar la terraza a 3 y el mirador a 4.8, regresar o caer al suelo seguro. Sin dash/doble salto, valorar claridad de ambas rutas, márgenes, variedad y duración; el extremo este está cerrado y no ofrece interacción B3.
+4. Volver por la izquierda a B1: llegada en (14.6,0.58), mirando a la izquierda. Bajar al apoyo este del pozo, saltar al oeste y salir al sendero para regresar a la Llama/A. Probar también B↔C y el acceso elevado B↔F, además de las conexiones C↔D↔E y C↔F habituales.
+5. Usar `Fangbound/Room Circuit/Damage 1 HP (Play Mode)`, esperar al fin del parpadeo y viajar B1↔B2: conservar 4/5 sin curación. Regresar a la Llama y E: 5/5. Usar `Unlock Dash and Double Jump (session)` y comprobar que ambos estados se conservan al viajar; enfocar Game View antes de Shift/Espacio.
+6. Con Llama B activa, morir en B2 con `Defeat Player (Play Mode)` y pulsar R: B junto al altar, 5/5, arma/desbloqueos conservados. En un Play nuevo iniciado directamente en B2 sin checkpoint, morir/R: inicio B con vida completa y Llama sin activar. Salir/entrar en Play debe reiniciar el progreso temporal.
+7. Revisar cámaras al entrar, subir, caer, regresar y reaparecer; HUD/feedback sin duplicados ni señales heredadas. Abrir y jugar MovementTest/ArboledaPrototype; repetir los menús T24 si se quiere contrastar la automatización. No regenerar ninguna escena aprobada.
+
+T24 no se declara aprobada. La medición manual exacta de los **0.8 s de i-frames de PlayerHealth** permanece pendiente y no se altera su duración. Sin enemigos, nuevas Llamas, habilidades, minimapa, B3/G, arte definitivo, commits, push o cambios de rama.
