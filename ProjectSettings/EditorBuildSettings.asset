@@ -29,5 +29,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_B2_PasarelaQuebrada.unity
     guid: 0225bc43a0c48f74a938da4329790396
+  - enabled: 1
+    path: Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_B3_TroncoPartido.unity
+    guid: b1c8f4e45f447fe4d9f88d09e49b1618
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

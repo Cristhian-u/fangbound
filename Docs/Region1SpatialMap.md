@@ -1,6 +1,6 @@
 # Arboleda Verdescente — Plano espacial T21
 
-**Estado actualizado en T24:** el usuario confirma T01–T23 aprobadas. La planta T21 sigue siendo la referencia provisional; T22 adaptó A↔B↔C y T24 añade B2/P02, pendiente de aprobación manual. Las tablas de inspección y el SVG registran la propuesta y el estado anterior a T22, no todas las escenas actuales. La sección 17 conserva la adaptación T22; la sección 18 registra las posiciones vigentes de B1/B2. No se construyen B3 ni G.
+**Estado actualizado en T25:** el usuario confirma T01–T24 aprobadas y duración adecuada de B2 para su función. T25 añade B3/P03, pendiente de aprobación manual. La planta T21 sigue como referencia provisional; sus tablas originales y SVG no son un inventario de escenas construidas. Ver §17 para T22, §18 para B1/B2 de T24 y **§19 para B3/P03 y la apertura oriental vigente de B2**. No se conecta B3 con F ni se construye G.
 
 **Contexto histórico de T21:** inspección sobre `76510b6` (T20). El usuario confirmó entonces T01–T20 aprobadas, incluidas 8/8 pruebas funcionales y 6/6 de feedback de T20. T21 solo modificó documentación; en ese momento las seis escenas y sus seis enlaces bidireccionales permanecían iguales.
 
@@ -360,3 +360,59 @@ El **futuro P03** conserva B2 local (16,0), global **(32,0)**, hacia B3. Ahora e
 Se conserva el ancho 16 previsto para dar prioridad a coherencia y variedad dentro del bloque. **B1+B2 abarcan ahora X global=0..32, frente a las 24 unidades de la escena B anterior**, sin invadir B3. B2 individual sigue siendo aproximadamente una vista horizontal y **no demuestra una duración humana suficiente**. Si la prueba encuentra el recorrido todavía corto, se propone revisar explícitamente la escala conjunta B2/B3 y sus puertos/vecinos en el plano antes de ampliar, no extender esta sala dentro de las reservas ajenas. No se aplicó esa ampliación global en T24.
 
 Los resultados de compilación, rutas con física real, inicio directo, estado de sesión, regresiones y capturas se registran en DevelopmentLog bajo T24. Su aprobación requiere la prueba manual, especialmente ritmo, orientación, lectura de la bifurcación y cámara.
+
+## 19. T25 — Tronco Partido / B3 y P03
+
+**Implementada para revisión, pendiente de aprobación manual.** Se crea `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_B3_TroncoPartido.unity`, con RoomDefinition homónimo en `Data/World/Rooms`, RoomId **B3**, entrada inicial `start` y recuperación B. Inicio directo técnico armado, habilidades bloqueadas y sin checkpoint; al viajar se conserva el estado real de la sesión. B1 mantiene RoomId B y su Llama; F no se modifica.
+
+### Envolvente y correspondencia de P03
+
+B3 conserva la planta T21: **12×20**, ancla **O=(32,−4)**, rectángulo local (0,−4;12×20) y global **X=32..44, Y=−8..12**. No se ajustó la escala ni se desplazaron vecinos. B2 permanece en X global 16..32/Y=−4..12. Comparten borde X=32; el suelo local 4 de B3 corresponde al suelo global 0 de B2. No es una subida oculta en la carga.
+
+| Puerto / extremo | Punto local de borde/suelo | Ancla | Punto global |
+| --- | --- | --- | --- |
+| P03 · B2 este | (16,0) | (16,0) | **(32,0)** |
+| P03 · B3 oeste | (0,4) | (32,−4) | **(32,0)** |
+
+| Salida real | Trigger local → global | Llegada destino local → global | Orientación |
+| --- | --- | --- | --- |
+| B2-to-B3 | (15.6,1) → (31.6,1) | B3/from-B2 (2.2,4.58) → (34.2,0.58) | Derecha |
+| B3-to-B2 | (0.4,5) → (32.4,1) | B2/from-B3 (13.8,0.58) → (29.8,0.58) | Izquierda |
+
+Los triggers 0.8×2 están remetidos 0.4: sus caras y bases coinciden en global (32,0); los spawns están más adentro, con cuerpo completo fuera de triggers, apoyo y despeje. La protección de llegada existente complementa esa separación. B3 solo contiene esa salida funcional, `start` y `from-B2`; no hay entrada F ni E.
+
+En B2 se elimina únicamente la raíz decorativa que cerraba el borde reservado (`Overgrown Eastern Root`), se divide su límite oriental en zócalo y tramo superior y se añaden entrada/salida P03. P02, cámara, terreno, mirador y reservas de contenido se conservan. Una caída por el extremo oriental del mirador puede desembocar en el paso real a B3; la prueba de recuperación interna B2 usa ahora el lado occidental del mirador para no cruzar accidentalmente P03. No se modifica el movimiento para evitar la transición.
+
+### Recorrido interior, niveles y recuperación
+
+Tronco ancho y hueco mediante corteza lateral, raíces y puntas fracturadas de fondo, sin colisión ornamental ni arte final. El suelo inferior cierra la sala; paredes y copa delimitan el volumen. La cámara local usa **X=0..12, Y=−6..16**: conserva tamaño 5.5 y comportamiento global, añadiendo dos unidades visuales bajo la envolvente para mostrar suelo y pies en la cuenca. El espesor exterior de límites/fondo no cuenta como ruta en otra sala.
+
+| Apoyo | Intervalo X local | Suelo local / global | Función |
+| --- | --- | --- | --- |
+| B3 Entry Root | 0..3.6 | 4 / 0 | Llegada occidental y regreso inmediato. |
+| B3 East Clearing | 7..12 | 4 / 0 | Descanso amplio y reserva de encuentro/parry. |
+| B3 Root Floor Seal | 0..12 | −4 / −8 | Cuenca segura y reserva inferior P12 cerrada. |
+| B3 Lower East Root | 7..10.2 | −2.2 / −6.2 | Primer apoyo desde el fondo. |
+| B3 Lower West Root | 1.8..4.8 | −0.3 / −4.3 | Giro hacia el oeste y descanso. |
+| B3 Inner Knot | 4.8..7 | 1.8 / −2.2 | Reconexión de la cuenca con el acceso. |
+| B3 West Fork | 3.5..6.5 | 5.8 / 1.8 | Bifurcación principal del tronco. |
+| B3 East Fork | 7.8..11.6 | 7.5 / 3.5 | Ascenso por el lado oriental. |
+| B3 Crown West | 3.8..7 | 9.5 / 5.5 | Cambio de dirección y reconexión. |
+| B3 Crown Rest | 7.6..11.6 | 11.3 / 7.3 | Destino alto y pausa. |
+| B3 Split Pocket | 0.8..3 | 7.6 / 3.6 | Desvío occidental para descubrimiento futuro. |
+
+**Principal:** llegada → bifurcación oeste → rama este → corona oeste → descanso alto, con cambios de dirección y subidas 1.8/1.7/2/1.8. El claro oriental ofrece una excursión al mismo nivel global del sendero antes o después del ascenso.
+
+**Capa inferior:** desde el claro se desciende al nudo interior, raíz este y cuenca. Desde suelo −4 se regresa por raíces a −2.2, −0.3, 1.8 y entrada 4: saltos 1.8/1.9/2.1/2.2, todos normales. No se obliga a remontar ocho unidades con una habilidad futura. Las caídas previstas terminan en ese suelo o apoyos desde los que se puede regresar.
+
+**Secundaria:** bifurcación oeste → bolsillo a 7.6 → corona oeste a 9.5; también permite bajar y regresar por la bifurcación. Reconecta con el ascenso principal y no exige una recompensa o un desbloqueo. Reservas de Fase 2: claro oriental, p. ej. global (41.5,0), para encuentro terrestre/práctica de parry; bolsillo global aproximado (34,3.6) para descubrimiento opcional. No se añade contenido, dificultad de combate ni narrativa.
+
+### Preparación inferior y compatibilidad
+
+**P12 permanece reservado, no implementado:** B3 sur local **(6,−4)** + ancla (32,−4) = global **(38,−8)**. Coincide con F1 norte previsto local (22,8) + ancla (16,−16). La cuenca y sus raíces preparan la subida desde esa cota; el suelo sigue sólido, sin hueco falso, marco, trigger, RoomEntrance o interacción hacia F. Apertura, repisas y poses definitivas se diseñarán al separar C1/F1 y construir su salida superior segura.
+
+La escena técnica F existente no es F1 terminado ni posee un acceso superior compatible. **F↔B1 sigue operativo y geográficamente incorrecto**, con sus IDs/poses de T24 intactos; no se traslada a B3 ni se duplica. Las tareas futuras de sector inferior/P12 deberán ofrecer el reemplazo funcional antes de retirarlo. T25 no cierra el circuito inferior geográfico.
+
+P17 superior B3 local (6,16), global (38,12), continúa como candidato sin aprobar. La copa permanece cerrada, sin puerta ni referencia a E. G y sala 17 del jefe siguen pendientes, sin relación con la numeración de puertos.
+
+Las pruebas, limitaciones y guía manual T25 figuran en DevelopmentLog. El usuario confirmó en T25 que B2 tiene duración adecuada; no se igualan artificialmente las duraciones de ambas salas ni se amplía la región para alargar B3.

@@ -2,7 +2,7 @@
 
 ## 1. Estado y decisiones
 
-**Documento histórico de propuesta T16, con referencias de seguimiento hasta T24.** T16 planificó la región sin construir salas ni modificar `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
+**Documento histórico de propuesta T16, con referencias de seguimiento hasta T25.** T16 planificó la región sin construir salas ni modificar `ArboledaPrototype`. Los nombres de áreas y salas son de trabajo. Los identificadores A–G y L1–L8 permiten revisar las conexiones sin depender de esos nombres.
 
 **Estado técnico actualizado en T22:** el usuario confirma T01–T21 aprobadas. T22 adapta la geografía inicial de A↔B↔C; se mantienen los seis enlaces bidireccionales del circuito. E↔B y G siguen sin implementar. Las secciones 11–15 conservan el historial de propuestas T16–T21; la sección 16 registra lo construido en T22.
 
@@ -11,6 +11,8 @@
 **Seguimiento regional T23:** [Region1DevelopmentRoadmap.md](Region1DevelopmentRoadmap.md) organiza geografía/exploración, enemigos/contenido, progresión/mapa/jefe y arte/ambientación. El encargo confirma T01–T22 aprobadas manualmente; T23 queda pendiente de revisión. La hoja distingue las seis escenas técnicas de las 16 salas objetivo, conserva pendientes P17 y las adquisiciones, y registra por separado la propuesta de sala 17 del jefe, cuya relación con la arena G2 debe resolverse sin duplicar contenido. T24 iniciará la Fase 1; las tareas posteriores y su numeración son provisionales. No se modifican aquí el GDD, la planta espacial ni los assets.
 
 **Actualización T24:** el usuario confirma T01–T23 aprobadas. Se reutiliza la escena B como B1 de 16 unidades, con RoomId B/checkpoint conservados; se añade B2 Pasarela Quebrada como escena y definición propias, conectada por P02 a cota global (16,0). El lado este del pozo B termina ahora en x=14 para una llegada segura, manteniendo el eje P04 x=11. El acceso técnico F se recoloca elevado y separado de P02, conserva IDs y sigue geográficamente provisional. B3 no existe y P03 queda cerrado sin puerta falsa. Dimensiones, recorridos, posiciones vigentes y límites figuran en [Region1SpatialMap.md](Region1SpatialMap.md), sección 18. T24 queda pendiente de aprobación manual; GDD, SVG y las otras escenas existentes no se modifican.
+
+**Actualización T25:** el usuario confirma T01–T24 aprobadas y duración adecuada de B2. B3 Tronco Partido incorpora escena/RoomDefinition propios, ancla (32,−4), envolvente 12×20 y P03 bidireccional en global (32,0). Se abre únicamente el borde reservado de B2, conservando su terreno y P02. La cuenca y raíces interiores permiten recorrer desde la reserva P12 (38,−8) hasta el sendero, pero el suelo inferior sigue sellado: no hay enlace B3↔F. F↔B1 continúa técnico/geográficamente incorrecto, sin modificaciones, hasta adaptar F1 y validar su salida superior. P17 y G siguen pendientes. Datos, recorridos y estados vigentes en el mapa §19; T25 espera aprobación manual.
 
 | Estado | Decisión |
 | --- | --- |

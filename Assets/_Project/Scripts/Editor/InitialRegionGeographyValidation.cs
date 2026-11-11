@@ -25,7 +25,7 @@ namespace Fangbound.EditorTools
         {
             "Arboleda_A_ClaroDespertar", "Arboleda_B_ClaroSendas", "Arboleda_C_RaicesProfundas",
             "Arboleda_D_RuinasColmillo", "Arboleda_E_CopasVigia", "Arboleda_F_GrutaRetorno",
-            "Arboleda_B2_PasarelaQuebrada"
+            "Arboleda_B2_PasarelaQuebrada", "Arboleda_B3_TroncoPartido"
         };
         private static readonly Stack<IEnumerator> Steps = new Stack<IEnumerator>();
         private static Keyboard keyboard;
@@ -55,15 +55,16 @@ namespace Fangbound.EditorTools
         [MenuItem("Fangbound/Validate Initial Region Geography T22 in Play Mode")]
         public static void Run() => StartGeographyValidation(false, false);
 
-        private static void StartGeographyValidation(bool b2, bool direct)
+        private static void StartGeographyValidation(bool b2, bool direct, bool b3 = false)
         {
             Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Iniciar en Edit Mode.");
             Require(!Enumerable.Range(0, SceneManager.sceneCount).Any(i => SceneManager.GetSceneAt(i).isDirty),
                 "Guardar las escenas antes de validar.");
             SessionState.SetBool(B2Mode, b2);
             SessionState.SetBool(B2Direct, direct);
+            SessionState.SetBool(B3Mode, b3);
             ValidateAssets();
-            EditorSceneManager.OpenScene(Path(direct ? 6 : 0), OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(Path(direct ? (b3 ? 7 : 6) : 0), OpenSceneMode.Single);
             Steps.Clear();
             hadError = false;
             expectUnlocked = false;
@@ -95,7 +96,7 @@ namespace Fangbound.EditorTools
                     "Rig duplicado/incompleto: " + Names[i]);
                 RoomEntrance[] points = room.GetComponentsInChildren<RoomEntrance>();
                 RoomExit[] exits = room.GetComponentsInChildren<RoomExit>();
-                Require(exits.Length == new[] { 1, 4, 3, 2, 1, 2, 1 }[i] &&
+                Require(exits.Length == new[] { 1, 4, 3, 2, 1, 2, 2, 1 }[i] &&
                     exits.Select(exit => exit.ConnectionId).Distinct().Count() == exits.Length,
                     "Salidas duplicadas/incompletas: " + Names[i]);
                 entrances[scene.path] = new HashSet<string>(points.Select(point => point.EntranceId));
@@ -148,12 +149,13 @@ namespace Fangbound.EditorTools
                     CheckSurface("C Return Step", 6.5f, 9.5f, 10);
                     CheckSurface("C Return Ledge", 9.5f, 12.5f, 12);
                 }
-                if (i == 6) ValidateB2Assets(room);
+                if (i == 6) { ValidateB2Assets(room); ValidateP03B2(room); }
+                if (i == 7) ValidateB3Assets(room);
             }
             foreach (var destination in destinations)
                 Require(entrances.TryGetValue(destination.path, out HashSet<string> ids) && ids.Contains(destination.entrance),
                     "Destino sin entrada: " + destination.path + "/" + destination.entrance);
-            Debug.Log("TASK22_ASSETS_PASS: siete escenas, 14 salidas, entradas seguras, pozo/repisa y referencias; P02 incluido.");
+            Debug.Log("TASK22_ASSETS_PASS: ocho escenas, 16 salidas, entradas seguras, pozo/repisa y referencias; P02/P03 incluidos.");
         }
 
         private static void Check(string name, float x, float y)
@@ -181,7 +183,8 @@ namespace Fangbound.EditorTools
                 if (Steps.Count == 0)
                 {
                     started = EditorApplication.timeSinceStartup;
-                    Steps.Push(SessionState.GetBool(B2Direct, false) ? ValidateDirectB2() : ValidatePlay());
+                    Steps.Push(SessionState.GetBool(B2Direct, false)
+                        ? (SessionState.GetBool(B3Mode, false) ? ValidateDirectB3() : ValidateDirectB2()) : ValidatePlay());
                 }
                 Require(EditorApplication.timeSinceStartup - started < 240, "Validación geográfica excedió 240 s.");
                 IEnumerator current = Steps.Peek();
@@ -210,7 +213,8 @@ namespace Fangbound.EditorTools
                 InputSystem.settings.backgroundBehavior = oldBackground;
                 InputSystem.settings.editorInputBehaviorInPlayMode = oldEditorInput;
             }
-            string prefix = SessionState.GetBool(B2Mode, false) ? "TASK24" : "TASK22";
+            string prefix = SessionState.GetBool(B3Mode, false) ? "TASK25" :
+                SessionState.GetBool(B2Mode, false) ? "TASK24" : "TASK22";
             Debug.Log(prefix + (success ? "_PLAYMODE_PASS" : "_PLAYMODE_FAIL"));
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             else EditorApplication.ExitPlaymode();

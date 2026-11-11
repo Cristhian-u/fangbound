@@ -56,8 +56,8 @@ namespace Fangbound.EditorTools
                 Object.FindObjectsByType<Fangbound.Enemies.GroundEnemyController>().Length == 0 &&
                 Object.FindObjectsByType<FangPickup>().Length == 0 && room.FindEntrance("from-B").FacingDirection == 1,
                 "B2 contiene contenido ajeno o una llegada invertida.");
-            Require(room.GetComponentsInChildren<RoomExit>().Length == 1, "B2 no debe salir a B3/F.");
-            RoomExit p02 = room.GetComponentsInChildren<RoomExit>().Single();
+            Require(room.GetComponentsInChildren<RoomExit>().Length == 2, "B2 debe conservar P02 y añadir únicamente P03.");
+            RoomExit p02 = room.GetComponentsInChildren<RoomExit>().Single(e => e.ConnectionId == "B2-to-B");
             Require(p02.Destination.RoomId == "B" && p02.DestinationEntranceId == "from-B2", "Retorno P02 inválido.");
             CheckP02Global(p02, new Vector2(16, 0));
             var bounds = room.GetComponentInChildren<Fangbound.CameraSystem.CameraFollow2D>()
@@ -127,6 +127,7 @@ namespace Fangbound.EditorTools
             Keys();
             yield return Wait(.4f);
             AssertB2State("B2", 4);
+            if (SessionState.GetBool(B3Mode, false)) yield return ValidateB3FromB2();
             Keys(Key.A);
             yield return UntilRoom("B", 6);
             Keys();
@@ -144,6 +145,8 @@ namespace Fangbound.EditorTools
             yield return Wait(.4f);
             AssertB2State("B", 4);
             Debug.Log("TASK24_A_B2_A_PASS: A→B1→B2→B1→A físico, sin tomar C, con arma y vida reducida.");
+            if (SessionState.GetBool(B3Mode, false))
+                Debug.Log("TASK25_A_B3_A_PASS: A→B1→B2→B3→B2→B1→A físico, sin tomar C, a 4/5 y con Colmillo.");
 
             // Explicit state fixture: the physical P02 routes were already tested.
             Player.GetComponent<PlayerAbilities>().SetDashUnlocked(true);
@@ -151,6 +154,7 @@ namespace Fangbound.EditorTools
             expectUnlocked = true;
             yield return TravelFixture("B-to-B2", "B2");
             AssertB2State("B2", 4);
+            if (SessionState.GetBool(B3Mode, false)) yield return ValidateB3Checkpoint();
             yield return Wait(.9f);
             Require(Player.TryTakeDamage(Player.MaximumHealth, (Vector2)Player.transform.position + Vector2.right),
                 "No se pudo probar muerte en B2.");
@@ -225,9 +229,10 @@ namespace Fangbound.EditorTools
             yield return B2Jump(7.2f, 3);
             yield return Walk(9.0f);
             yield return B2Jump(12.3f, 4.8f);
-            yield return Walk(15.5f);
+            // P03 now occupies the eastern edge: recover westward within B2.
+            yield return Walk(10.3f);
             yield return Until(() => Controller.IsGrounded && Body.position.y < 1, 4);
-            Require(Mathf.Abs(Body.position.y - .58f) < .18f, "Caída del mirador sin recuperación.");
+            Require(Mathf.Abs(Body.position.y - .58f) < .18f, "Caída del mirador sin recuperación en el escalón inferior.");
             yield return Walk(11.6f);
             yield return Until(() => Controller.IsGrounded, 3);
             yield return B2Jump(10.15f, 0);
@@ -236,7 +241,7 @@ namespace Fangbound.EditorTools
             yield return Walk(3.0f);
             yield return Until(() => Controller.IsGrounded, 3);
             Require(Mathf.Abs(Body.position.y - .58f) < .18f, "No se volvió al sendero occidental de B2.");
-            Debug.Log("TASK24_SECONDARY_RECOVERY_PASS: terraza/mirador, caída oriental y salida de hondonada con física real.");
+            Debug.Log("TASK24_SECONDARY_RECOVERY_PASS: terraza/mirador, caída al escalón y salida de hondonada con física real.");
         }
 
         private static IEnumerator B2Jump(float x, float top)

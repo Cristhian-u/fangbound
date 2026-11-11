@@ -1507,3 +1507,65 @@ El ancho 16 respeta T21 y añade variedad dentro del bloque; la automatización 
 7. Revisar cámaras al entrar, subir, caer, regresar y reaparecer; HUD/feedback sin duplicados ni señales heredadas. Abrir y jugar MovementTest/ArboledaPrototype; repetir los menús T24 si se quiere contrastar la automatización. No regenerar ninguna escena aprobada.
 
 T24 no se declara aprobada. La medición manual exacta de los **0.8 s de i-frames de PlayerHealth** permanece pendiente y no se altera su duración. Sin enemigos, nuevas Llamas, habilidades, minimapa, B3/G, arte definitivo, commits, push o cambios de rama.
+
+## T25 — B3 Tronco Partido y conexión B2↔B3 / P03
+
+**Estado:** implementada y validada automáticamente, pendiente de pruebas y aprobación manual del usuario. El encargo confirma T01–T24 aprobadas y duración adecuada de B2. Base inicial limpia: `main`, HEAD `72e7961`. No se hacen commits, push ni cambios de rama.
+
+### Inspección y diagnóstico
+
+Se revisaron AGENTS, GDD, plan, plano completo/SVG, hoja de ruta, historial T21–T24, escenas B/B2/C/F, contratos RoomDefinition/Entrance/Exit/Scene/Session y herramientas existentes. P03 seguía vigente en global **(32,0)**: B2 terminaba en local X=16, suelo 0, con límite sólido y `Overgrown Eastern Root` decorativa cerrando ese borde. No había una salida B3 defectuosa: faltaban escena, destino y apertura. Las dimensiones T21 permiten el recorrido sin ampliar ni desplazar la región.
+
+B2 conserva todos sus terrenos, cámara y P02. Se retira únicamente esa raíz decorativa, se divide el límite este para abrir el paso a suelo 0 y se agregan `Entry from-B3` / `Exit B2-to-B3`. Auditoría del YAML: **27 GameObjects originales explícitos retenidos, solo esa decoración retirada y cuatro objetos añadidos**; el configurador comprueba también identidad de los objetos cargados, incluidos hijos de prefab. No se reconstruye B2 ni se ejecutan sus configuradores históricos.
+
+### Geografía implementada
+
+- Nueva `Arboleda_B3_TroncoPartido.unity` y RoomDefinition homónimo: RoomId **B3**, recuperación B, entrada `start`. Inicio técnico directo armado, sin habilidades ni checkpoint; el viaje conserva el estado real de sesión. Inventario regional: ocho escenas, ocho definiciones, **16 salidas dirigidas**.
+- **12×20**, ancla **(32,−4)**; envolvente local (0,−4;12×20), global **X=32..44/Y=−8..12**. Se mantiene T21. P03 une B2 local **(16,0)** y B3 local **(0,4)** en global **(32,0)**.
+- `B2-to-B3`: trigger local (15.6,1), global (31.6,1); llegada B3/from-B2 local **(2.2,4.58)**, global **(34.2,0.58)**, mirando a la derecha. `B3-to-B2`: trigger local (0.4,5), global (32.4,1); llegada B2/from-B3 local **(13.8,0.58)**, global **(29.8,0.58)**, mirando a la izquierda. Triggers 0.8×2 remetidos 0.4; caras/bases coincidentes, apariciones apoyadas y completamente fuera de triggers.
+- Tronco hueco provisional con corteza, puntas fracturadas y raíces de fondo sin colisiones ornamentales. Principal: entrada a 4 → bifurcación oeste 5.8 → rama este 7.5 → corona oeste 9.5 → descanso alto 11.3. Cambios de dirección y apoyos amplios; claro oriental [7,12] a 4 reservado para encuentro/parry futuro.
+- Secundaria: bifurcación oeste → bolsillo [0.8,3] a 7.6 → corona oeste 9.5, con retorno y reconexión. El bolsillo reserva un descubrimiento, sin recompensa ni interacción actuales.
+- Capa inferior: claro oriental → nudo interior 1.8 → raíz este −2.2 → cuenca −4. Recuperación desde el fondo por apoyos a **−2.2, −0.3, 1.8 y 4**: saltos normales de 1.8/1.9/2.1/2.2. Caídas previstas terminan en suelo o repisas recuperables. Tabla completa de once apoyos y coordenadas en [Region1SpatialMap §19](Region1SpatialMap.md#19-t25--tronco-partido--b3-y-p03).
+- Cámara local X=0..12/Y=−6..16: dos unidades visuales bajo el fondo para mostrar cuenca/pies. Tamaño ortográfico **5.5**, código y comportamiento global de CameraFollow2D intactos. No se amplía el espacio transitable bajo el mapa.
+
+**P12 solo reservado:** B3 sur local **(6,−4)** + ancla (32,−4) = global **(38,−8)**; coincide con F1 norte previsto local (22,8) + ancla (16,−16). Cuenca y raíces preparan la subida física, pero el suelo permanece continuo y sólido: sin hueco, puerta falsa, trigger, RoomEntrance ni destino F. La escena técnica F todavía no equivale a F1 construido; separar C1/F1 y crear su salida superior es requisito previo. **F↔B1 continúa operativo y geográficamente incorrecto**, con sus IDs/poses intactos, sin trasladarlo ni duplicarlo. P17 superior permanece candidato no aprobado, con copa cerrada y sin enlace E. No se construye G ni sala de jefe.
+
+### Archivos y herramientas
+
+**Creados:** escena B3 y RoomDefinition B3 con sus `.meta`; `Assets/_Project/Scripts/Editor/InitialRegionGeographySetup.B3.cs` y `InitialRegionGeographyValidation.B3.cs`, ambos con `.meta`.
+
+**Modificados:** escena B2; `InitialRegionGeographyValidation.cs` y `InitialRegionGeographyValidation.B2.cs`; `ProjectSettings/EditorBuildSettings.asset` solo para añadir B3 habilitada al final; `Docs/Region1SpatialMap.md`, `Docs/Region1DevelopmentRoadmap.md`, `Docs/Region1Plan.md` y este registro. Ningún componente de ejecución, prefab, parámetro del jugador/combate, checkpoint, dato de física/input, GDD, SVG ni otra escena existente cambia.
+
+Se amplían las clases parciales y helpers existentes. La migración específica `Fangbound/Add Split Trunk B3 for T25 (once)` rechaza Play, escenas sucias, B3 existente e incompatibilidades de la base B2; no regenera escenas aprobadas. **No ejecutar configuradores para jugar la entrega.** Menús de comprobación: `Fangbound/Validate Split Trunk B3 T25 in Play Mode` y `Fangbound/Validate Direct Start B3 T25 in Play Mode`. El validador B2 identifica P02 por ID, espera P03 adicional y prueba ahora la caída interna por el lado oeste del mirador: caer por su extremo oriental puede conducir legítimamente a B3.
+
+### Validaciones ejecutadas
+
+Unity **6000.5.5f1**, copia aislada `.utmp/u24` sincronizada con el producto actual. Compilación y pruebas batch con Input System sintético y física real. Automatizador/capturador auxiliares solo en la copia ignorada, fuera de Assets entregados; no modifican validadores de MovementTest/ArboledaPrototype ni filtran errores.
+
+| Log en `Logs/` | Resultado ejecutado, salida 0 |
+| --- | --- |
+| `Task25Setup.log` | `TASK25_SETUP_PASS`: compilación, creación nativa, guardado y reapertura de escenas/datos; comprobaciones de identidad y geometría. |
+| `Task25Direct1.log` | `TASK25_DIRECT_START_PASS`, `TASK25_PLAYMODE_PASS`: B3 directa, 5/5, Colmillo, habilidades bloqueadas, sin checkpoint; principal/secundaria/cuenca y recuperación con física real; muerte/R al inicio seguro B, sin activar la Llama automáticamente. |
+| `Task25Navigation1.log` | `TASK25_PLAYMODE_PASS`: ocho escenas/16 salidas, IDs/referencias/entradas seguras, P03 global, P12 reservado; ida/vuelta y orientación. `TASK25_A_B3_A_PASS`: **A→B1→B2→B3→B2→B1→A físico, sin tomar C, conservando 4/5 y Colmillo**. Rutas B3 con saltos normales, caídas y regreso. `TASK25_CHECKPOINT_PASS`: desbloqueos conservados y muerte en B3/R a Llama B, 5/5, arma y habilidades conservadas. |
+| `Task25B2Regression.log` | `TASK24_PLAYMODE_PASS`: rutas B2, mirador/hondonada/recuperación, P02 y sesión; compatibilidad del menú anterior con P03 añadido. |
+| `Task25MovementRegression.log` | `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`: caminar/dash sin empuje, IA, entrenador, pogo vivo/vulnerable/letal y blancos anteriores; fallo/gravedad, horizontal/ascendente sin rebote; combate/parry/postura/daño/muerte, hitstop/HUD y Llamas/respawn. Validador original intacto. |
+| `Task25ArboledaRegression.log` | `TASK12/13/14/15_PLAYMODE_PASS`: rutas del prototipo, ruina/mirador, conexiones y circuito inferior, recuperaciones, cámara, combate/checkpoint y arco final. Escena y validador originales intactos. |
+| `Task25Render.log` | `TASK25_RENDER_PASS`: siete capturas nativas `Task25Preview-*.png` inspeccionadas: vista completa B3, entrada, cuenca, raíces inferiores, corona, bolsillo y P03 en B2. |
+
+La batería regional conserva pruebas heredadas de A/B/C, pozo y curación E de 4/5 a 5/5; también acceso/regreso físico B1↔F con salto normal. Los restantes enlaces heredados C/D/E/F se comprueban mediante fixtures de transferencia para destinos/estado/guardia de llegada, **no como recorridos físicos completos**. La persistencia con habilidades desbloqueadas usa un fixture separado de la navegación con ambas bloqueadas. No se atribuye a esa comprobación una adquisición nueva ni un recorrido de B3 que requiera habilidades.
+
+Capturas con poses congeladas, no evidencia de recorrido: seis mantienen tamaño 5.5; solo la vista general usa 11.2 en el fixture para abarcar el tronco completo, sin guardar ese valor en la escena. Las siete ejecuciones terminaron con salida 0; no se detectaron errores/avisos C#, excepciones o aserciones fallidas en estos logs. Las regresiones antiguas se inician tras un Play de calentamiento separado del Play realmente validado. No se declara reparado el incidente histórico de Unity Search ni se ocultan sus registros anteriores de T24.
+
+Los **269 archivos protegidos** conservan sus hashes SHA-256 iniciales, incluidos A/B1/C/D/E/F, MovementTest/ArboledaPrototype y sus validadores, todos los scripts de ejecución, prefabs y parámetros. Los cuatro fuentes de Editor entregados coinciden con los compilados; escenas/datos/metadatos/Build Settings coinciden con la copia nativa validada normalizando solo espacios finales/saltos de línea. Build Settings conserva íntegra la configuración anterior más B3 al final. Auditorías de retención B2, equivalencia de entrega, documentos y `git diff --check` correctas.
+
+### Pruebas manuales y límites pendientes
+
+1. Abrir A guardada e iniciar Play nuevo, recoger el Colmillo con E/botón norte, ir a B1 y activar su Llama. Cruzar P02 hacia B2 y recorrer el sendero hasta su borde este: ahora comunica con B3. No ejecutar configuradores.
+2. Comprobar llegada occidental B3, suelo local 4/global 0, mirando a la derecha. Regresar inmediatamente por la izquierda: B2 recibe en (13.8,0.58), mirando a la izquierda. Repetir sin bucles ni duplicados de jugador/cámara/HUD.
+3. Sin desbloquear habilidades, subir entrada → bifurcación oeste → rama este → corona oeste → descanso superior. Desviarse al bolsillo occidental desde la bifurcación y reconectar con corona. Evaluar lectura del tronco hueco, dirección, descansos, comodidad y cámara; la automatización no sustituye esa evaluación humana.
+4. Bajar al claro oriental y por las raíces hasta la cuenca. Subir desde suelo −4 por −2.2, −0.3, 1.8 y entrada 4. Probar caídas desde las ramas y recuperación. El fondo es sólido: no ofrece E ni lleva a F; la copa tampoco lleva a E.
+5. Usar `Fangbound/Room Circuit/Damage 1 HP (Play Mode)`, esperar al fin de invulnerabilidad y recorrer A/B1/B2/B3/retorno: mantener 4/5 y Colmillo sin curación por viaje. E en Llama B restaura 5/5. Probar `Unlock Dash and Double Jump (session)` y persistencia entre salas, sin ajustar sus valores.
+6. Con Llama B activada, usar `Defeat Player (Play Mode)` en B3 y R: volver al altar con 5/5, arma y desbloqueos conservados. Play nuevo directamente en B3: inicio técnico armado/habilidades bloqueadas/sin checkpoint; muerte/R lleva a inicio seguro B, sin activar la Llama automáticamente.
+7. Repetir conexiones antiguas, MovementTest y ArboledaPrototype; revisar cámara al subir, bajar, viajar y reaparecer. Los dos menús T25 permiten repetir la automatización desde Edit Mode con escenas guardadas.
+
+T25 **no se declara aprobada**. Presentación provisional, orientación, comodidad y duración de B3 pendientes de revisión humana; B2 no se amplía, pues su duración ya fue aprobada. El circuito inferior geográfico queda pendiente de C1/F1/P12 y no está implementado por reservar sus coordenadas. Sin enemigos, nuevas Llamas, habilidades, recompensas, minimapa ni arte definitivo. La medición manual exacta de los **0.8 s de i-frames de PlayerHealth** continúa pendiente. Sin commits, push ni cambios de rama.
