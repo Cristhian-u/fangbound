@@ -180,6 +180,14 @@ namespace Fangbound.EditorTools
                 return;
             try
             {
+                // These historical routes assert exact transferred health, not combat.
+                // Isolate their navigation fixture; T26 validates the active encounter separately.
+                if (Room != null && Room.Definition.RoomId == "B2")
+                    foreach (var enemy in Object.FindObjectsByType<Fangbound.Enemies.GroundEnemyController>())
+                    {
+                        enemy.gameObject.SetActive(false);
+                        Debug.Log("TASK26_NAVIGATION_FIXTURE: enemigo aislado solo en esta prueba de geografía; combate en validador T26.");
+                    }
                 if (Steps.Count == 0)
                 {
                     started = EditorApplication.timeSinceStartup;

@@ -53,9 +53,9 @@ namespace Fangbound.EditorTools
             CheckSurface("B2 Canopy Terrace", 6.5f, 9.8f, 3);
             CheckSurface("B2 Lookout", 11.4f, 15, 4.8f);
             Require(Object.FindObjectsByType<MemoryFlame>().Length == 0 &&
-                Object.FindObjectsByType<Fangbound.Enemies.GroundEnemyController>().Length == 0 &&
                 Object.FindObjectsByType<FangPickup>().Length == 0 && room.FindEntrance("from-B").FacingDirection == 1,
                 "B2 contiene contenido ajeno o una llegada invertida.");
+            B2EncounterValidation.ValidateAssets(room);
             Require(room.GetComponentsInChildren<RoomExit>().Length == 2, "B2 debe conservar P02 y añadir únicamente P03.");
             RoomExit p02 = room.GetComponentsInChildren<RoomExit>().Single(e => e.ConnectionId == "B2-to-B");
             Require(p02.Destination.RoomId == "B" && p02.DestinationEntranceId == "from-B2", "Retorno P02 inválido.");

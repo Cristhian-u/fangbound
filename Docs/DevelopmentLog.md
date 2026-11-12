@@ -1569,3 +1569,91 @@ Los **269 archivos protegidos** conservan sus hashes SHA-256 iniciales, incluido
 7. Repetir conexiones antiguas, MovementTest y ArboledaPrototype; revisar cámara al subir, bajar, viajar y reaparecer. Los dos menús T25 permiten repetir la automatización desde Edit Mode con escenas guardadas.
 
 T25 **no se declara aprobada**. Presentación provisional, orientación, comodidad y duración de B3 pendientes de revisión humana; B2 no se amplía, pues su duración ya fue aprobada. El circuito inferior geográfico queda pendiente de C1/F1/P12 y no está implementado por reservar sus coordenadas. Sin enemigos, nuevas Llamas, habilidades, recompensas, minimapa ni arte definitivo. La medición manual exacta de los **0.8 s de i-frames de PlayerHealth** continúa pendiente. Sin commits, push ni cambios de rama.
+
+## T26 — Primera sección con combate y descubrimiento en B2
+
+**Estado:** implementada para revisión manual, no aprobada. Fecha: 11 de noviembre de 2026. Base inicial limpia: `main`, HEAD **`fd431b0`**, commit de B3/P03 T25 confirmado antes de trabajar. El encargo confirma T01–T24 aprobadas; no se deduce una aprobación manual adicional de T25 solamente por tener commit. Se conserva íntegra su implementación. Sin commits, push ni cambios de rama.
+
+### Diagnóstico y alcance del ensayo
+
+Se revisaron AGENTS, GDD, plan regional, plano espacial, hoja de ruta, historial, B1/B2/B3, PlayerCombat/Pogo/Abilities/Parry, enemigo/datos/prefab, daño/postura, feedback, interacción y validadores. B2 tenía una raíz ancha [4.5,9.5] a suelo 1.2 y un mirador [11.4,15] a 4.8 reservados para contenido futuro. Se aprovechan sin cambiar geometría, cámaras, P02/P03, dimensiones, mapa ni escenas vecinas.
+
+El enemigo no tenía un temporizador extra de inactividad: usa Patrol→Chase→Telegraph→Attack→Recovery. Persigue a 2.6 u/s, inicia ataque a distancia horizontal ≤1.3 y con diferencia vertical ≤1.2; conserva orientación durante el aviso y no persigue mientras anticipa/ataca/recupera. La recuperación base de 1.3 s es el tramo más largo del ciclo. Contra objetivos fuera del suelo accesible vuelve a patrulla, con espera de reintento basada en esa recuperación; no se añade pathfinding. Saltar a la terraza o retirarse del lado anunciado puede evitar el ataque por diseño.
+
+Se midió la base **antes de crear el perfil ajustado** con el prefab real en MovementTest: cinco inicios de ataque/cuatro intervalos, objetivo fijo dentro de detección/alcance pero fuera de la forma de daño en altura. Sin impactos, parries, knockback o hitstop que alteren el ciclo. Medidas de tiempo físico a paso 0.02 s; no frecuencia garantizada en combate humano.
+
+| Parámetro | Base aprobada | Perfil local B2 |
+| --- | --- | --- |
+| Vida / daño / multiplicador vulnerable | 4 / 1 / ×2 | 4 / 1 / ×2 |
+| Patrulla / persecución | 1.3 / 2.6 u/s | Sin cambios |
+| Detección / pérdida / altura | 3.5 / 5.5 / 1.2 | Sin cambios |
+| Alcance de inicio | 1.3 | 1.3 |
+| Anticipación configurada / observada | 0.65 / 0.66 s | 0.65 / 0.66 s |
+| Ventana activa | 0.14 s | 0.14 s |
+| Recuperación | **1.3 s** | **0.75 s** |
+| Intervalos observados, cuatro muestras | 2.160 / 2.160 / 2.160 / 2.160 s | 1.600 / 1.600 / 1.600 / 1.600 s |
+| Media / frecuencia neutra calculada | **2.16 s / 27.78 ataques/min** | **1.60 s / 37.50 ataques/min** |
+
+Intervalo 25.9 % menor, frecuencia neutra 35 % mayor. Solo cambia recuperación en **`B2GroundEnemyData.asset`**, copia del ScriptableObject existente; comparación de todos los demás parámetros serializados idéntica. También se acorta localmente el reintento tras una persecución bloqueada, porque la IA reutiliza ese mismo valor. Prefab, datos originales y lógica compartida intactos. Se conserva el aviso completo de 0.65 s para reaccionar; no se intenta impedir una esquiva correcta. Parry 0.15 s/recuperación 0.4 s, hitstop, estadísticas y controlador del jugador no cambian.
+
+### Encuentro y descubrimiento
+
+- **Enemigo:** única instancia del prefab existente `GroundEnemy`, en B2 local **(7.4,1.72)**, global aproximado **(23.4,1.72)**, sobre raíz a 1.2. Límites de centro X=**6.2..8.6**, dentro de los cinco metros de suelo. La entrada occidental (2.2,0.58) queda fuera del alcance de detección incluso en el extremo de patrulla cercano; llegada desde B3 también separada. El jugador puede acercarse, practicar parry desde el flanco occidental abierto, atacar, saltar/pogear, retroceder o tomar otra ruta. Ninguna puerta se cierra al detectar al jugador.
+- **Ruta superior:** se conserva raíz→terraza a 3→mirador a 4.8. **Brote del mirador**, local **(13.2,5.1)**, global **(29.2,5.1)**: tallo/hojas ocres y pequeño destello ámbar, sin pedestal, turquesa, collider ni aspecto de Llama.
+- `LookoutDiscovery` reutiliza el InputAction **Interact** compartido y el patrón existente de FangPickup; PlayerCheckpoint mantiene su ciclo de habilitación. E/botón norte dentro de 1.35 muestra durante 4 s una observación ambiental provisional: «Un pequeño brote crece entre la corteza, por encima del sendero». El marcador se atenúa tras examinar. Puede releerse; mantener el botón no renueva el mensaje. No pausa, cura, concede inventario/habilidades/monedas, cambia estadísticas ni activa checkpoints. Rechaza jugador muerto, en dash/control bloqueado, fuera de rango, ajeno a la sala o durante carga.
+- Tanto enemigo como estado de observación pertenecen a la escena: **se reinician al salir y volver a B2 o recargarla**. No se añade persistencia de enemigos/descubrimientos a RoomSession ni guardado permanente. Vida, arma, desbloqueos y Llama siguen las reglas existentes.
+
+Secuencia propuesta: llegada B1→B2, aproximación por suelo occidental, encuentro en raíz, bifurcación superior, descubrimiento opcional, caída de regreso por el escalón/hondonada y continuación oriental a B3. Puede ignorarse el brote, evitarse al enemigo o retirarse a B1; no se exige derrotarlo para abrir el paso. Esto permite evaluar el primer encuentro incluso si se omitió recoger el Colmillo, sin encerrar al jugador desarmado.
+
+### Archivos y herramientas
+
+**Creados, con `.meta`:** `Assets/_Project/Data/Enemies/B2GroundEnemyData.asset`; `Assets/_Project/Scripts/World/LookoutDiscovery.cs`; `Assets/_Project/Scripts/Editor/B2EncounterSceneSetup.cs`, `B2EncounterValidation.cs` y `B2EncounterValidation.Combat.cs`.
+
+**Modificados:** `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/Arboleda_B2_PasarelaQuebrada.unity`; los validadores de Editor `InitialRegionGeographyValidation.cs` y `InitialRegionGeographyValidation.B2.cs`; `Docs/Region1DevelopmentRoadmap.md` y este registro. Ninguna sala nueva, cambio del plano, script de jugador/IA compartida, prefab, escena vecina/técnica, Build Settings o dato original de combate/movimiento.
+
+La adición puntual `Fangbound/Add B2 Encounter and Discovery T26 (once)` rechaza Play/escenas sucias/perfil ya existente/contenido duplicado, conserva identidades previas y guarda/cierra/reabre B2. No ejecuta configuradores históricos. **No ejecutar configuradores para jugar las escenas entregadas.** Menús de prueba:
+
+- `Fangbound/Measure Ground Enemy Baseline T26`.
+- `Fangbound/Measure B2 Enemy Rhythm T26`.
+- `Fangbound/Validate B2 Encounter and Discovery T26 in Play Mode`.
+
+Los medidores usan un override sin guardar de MovementTest y lo descartan al volver a Edit Mode. El validador geográfico ya espera un enemigo y una observación válidos en B2; **desactiva el enemigo solo en su fixture de navegación**, explicitándolo en log, para conservar las aserciones históricas de 4/5 durante las rutas. No se presenta esa batería como combate con IA activa: el validador T26 separado comprueba el encuentro activo, parry/pogo/muerte y viajes P03 con contenido activo.
+
+### Validaciones ejecutadas
+
+Unity **6000.5.5f1** en copia aislada `.utmp/u24`; los auxiliares de automatización/captura solo viven en esa copia ignorada. Entrada sintética del nuevo Input System y física real; los fixtures de estado/pose se distinguen de las rutas físicas.
+
+| Log en `Logs/` | Evidencia |
+| --- | --- |
+| `Task26Baseline.log` | `TASK26_MEASUREMENT_PASS`, salida 0: medición original 2.16 s antes de ajustar. |
+| `Task26Setup.log` | `TASK26_SETUP_PASS`, salida 0: compilación, generación nativa, guardado/cierre/reapertura e identidades B2 conservadas. |
+| `Task26RhythmFinal.log` | `TASK26_MEASUREMENT_PASS`, salida 0: perfil local 1.60 s, misma anticipación observada 0.66 s. |
+| `Task26Combat9.log` | `TASK26_PLAYMODE_PASS`, salida 0: inicio directo B2 armado/sin habilidades, patrulla física en ambos sentidos, detección/aproximación, esquiva, tres K reales, ruptura/aturdimiento, J vulnerable sin instakill, salto/pogo con rebote y muerte. Ruta física superior, E/norte, texto temporal y sin repetición al mantener. P03 B2→B3→B2 físico con IA activa y 4/5/Colmillo; una instancia de contenido/rig/cámara/HUD. Fixtures separados comprueban E en Llama B, curación, transferencia a B2 con 4/5, muerte y R a Llama B con 5/5 y arma. |
+| `Task26Navigation.log` | `TASK25_PLAYMODE_PASS`, salida 0: geografía de ocho salas/16 salidas, P02/P03, rutas B2/B3, circuito físico A→B1→B2→B3→B2→B1→A conservando 4/5/Colmillo, curación/checkpoint, persistencia de desbloqueos y ausencia de duplicados/bucles. Enemigo aislado explícitamente solo en este fixture de navegación. |
+| `Task26DirectB2.log` | `TASK24_PLAYMODE_PASS`, salida 0: inicio directo B2, ambas habilidades bloqueadas, rutas y recuperación sin checkpoint hacia B sin activar la Llama automáticamente; mismo aislamiento de navegación. |
+| `Task26MovementRegression.log` | `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`, salida 0. Validador original: caminar/dash físicos en ambos sentidos sin empuje, recuperación IA, pogo vivo/vulnerable/letal y blancos previos, fallo/gravedad y horizontal/ascendente sin rebote; combate, entrenador, parry/postura/vulnerabilidad/daño/muerte, hitstop/feedback/HUD y Llamas/respawn. |
+| `Task26ArboledaRegression.log` | `TASK12_PLAYMODE_PASS`, `TASK13_PLAYMODE_PASS`, `TASK14_PLAYMODE_PASS`, `TASK15_PLAYMODE_PASS`, salida 0. Escena/validador originales intactos: tres rutas, cambios de ruta, ruina/mirador, circuito inferior y conexiones, caídas/recuperaciones, cámara, combate, Llama/respawn y arco final. |
+| `Task26Render.log` | `TASK26_RENDER_PASS`, salida 0: tres capturas nativas inspeccionadas `Task26Preview-Approach.png`, `Task26Preview-Telegraph.png`, `Task26Preview-Discovery.png`. Enemigo, aviso y brote distinguibles; texto legible. Cámara normal 5.5. Poses congeladas/observación activada como fixture visual, no como prueba adicional de recorrido. |
+
+El fixture de esquiva desbloquea dash temporalmente y usa el dash real; no cambia fuerza, distancia, duración ni invulnerabilidad. La desaceleración posterior existente puede llevar la retirada occidental por P02 hasta B1: el bot lo contempla y vuelve físicamente a B2, en lugar de cambiar el movimiento o cerrar la salida. Después vuelve a bloquear dash para la prueba principal de combate/plataformas con salto normal. Reflexión solo lee el tiempo de anticipación para sincronizar K; no amplía ventanas ni fuerza resultados de parry.
+
+Auditorías de entrega: los seis fuentes nuevos/modificados coinciden con los compilados en la copia; siete assets/metadatos nativos coinciden normalizando solo espacios finales/saltos de línea. Los **109 bloques serializados originales de B2** se conservan idénticos salvo SceneRoots, que añade la raíz nueva de contenido; terreno, cámara, entradas/salidas y todos los objetos previos intactos. Los **280 archivos protegidos** conservan sus hashes SHA-256 iniciales, incluidos B1/B3/A/C/D/E/F, prototipos/validadores originales, GDD/plano/SVG/plan, componentes de jugador/IA/combate/sesión, prefabs, Input System/física, Build Settings y datos originales. Comparación completa del perfil local, enlaces/tablas documentales y `git diff --check` correctos.
+
+Todas las ejecuciones finales de la tabla terminaron con salida 0, sin errores/avisos C#, excepciones o marcadores FAIL. Esto no borra los intentos fallidos de los fixtures descritos abajo. Las regresiones originales usan un Play de calentamiento y otro Play nuevo para la prueba, sin filtrar errores ni alterar sus aserciones. El cierre del Editor emite resúmenes nativos de asignaciones; no se declara resuelto Unity Search ni las incidencias históricas de T24. El ciclo A→B1→B2→B3→retorno se recorre físicamente en la prueba geográfica; los enlaces heredados C/D/E/F usan sus fixtures de transferencia y B1↔F conserva además el acceso físico comprobado. No se presentan como recorridos físicos completos de todas esas salas.
+
+### Incidencias de las pruebas
+
+Las primeras comparaciones locales quedaron bloqueadas por el fixture: cargar su perfil antes de abrir MovementTest permitía que el cambio de escena lo descargase. Se detuvieron únicamente esos procesos aislados y se corrigió la carga después de abrir la escena, además del descarte del override de medición al volver a Edit Mode. `Task26Rhythm.log`/`Task26Rhythm2.log` conservan esos intentos; no se atribuye su fallo al enemigo del producto.
+
+`Task26Combat1`–`Task26Combat8` incluyen iteraciones fallidas del bot. La patrulla se estaba midiendo mediante Transform interpolado en ejecución sin gráficos; ahora se observa el Rigidbody2D, como en el validador original. Otro intento caminaba contra el escalón oriental tras caer del mirador sin saltar; se usa la bajada occidental/hondonada y salto de retorno existentes. La prueba de dash suponía permanecer en B2, pero la retirada y desaceleración aprobadas alcanzaban B1; se añadió su regreso físico y la renovación de referencias de la sala. La traza confirmó el desplazamiento inicial de dash de 3.2 antes de esa desaceleración. Se conservaron los logs y se corrigieron los fixtures, sin modificar la IA, geometría o controlador para satisfacerlos.
+
+### Pruebas manuales pendientes
+
+1. Salir de Play, abrir A guardada y comenzar sesión nueva. Recoger el Colmillo con E/botón norte; activar la Llama B. Ir a B2 por P02. También iniciar B2 directamente en otra sesión: Colmillo técnico disponible, dash/doble salto bloqueados, sin checkpoint heredado.
+2. Acercarse a la raíz ancha: observar patrulla y aviso de ataque antes de entrar en alcance. Probar K cerca del impacto tres veces, aturdimiento y golpe vulnerable; probar J, salto y abajo+J/pogo. Verificar vida 4 y daño 1 del enemigo, muerte y ausencia de empuje al caminar. Retirarse a B1 y volver si se desea; no hay bloqueo de arena.
+3. Comparar el ritmo con MovementTest, que conserva el perfil anterior. Evaluar legibilidad, frecuencia, margen de reacción y comodidad real; la media sintética no demuestra que sea divertido ni que el balance sea justo. Opcionalmente desbloquear habilidades con el menú de desarrollo y comprobar esquiva/dash sin empuje; no son necesarias para las rutas.
+4. Desde la raíz, subir a terraza y mirador sin habilidades. Buscar el brote ocre/ámbar, pulsar E y repetir con botón norte; leer la observación, dejarla finalizar y mantener el botón para comprobar que no se repite sola. Verificar ausencia de curación, recompensa estadística y checkpoint. Bajar por el lado oeste al escalón/hondonada, saltar al suelo oriental y continuar a B3.
+5. Recibir daño y viajar B1↔B2↔B3: comprobar vida reducida y Colmillo, sin curación automática. Tras volver a B2 se reinician enemigo y observación, sin duplicados. E en Llama B cura; morir en B2 y R vuelve a esa Llama con 5/5. Probar también inicio directo sin checkpoint.
+6. Repetir navegación de B3, MovementTest/ArboledaPrototype, cámara al viajar/subir/bajar, feedback y HUD. Los menús de validación permiten contrastar las pruebas, con escenas guardadas y desde Edit Mode; no regenerar las escenas.
+
+La hoja de ruta registra T26 como ensayo autorizado durante Fase 1 que adelanta parte de T37/T38/T40. No se renumeran todas las tareas: la separación C1/F1 antes propuesta como T26 sigue pendiente sin número reasignado, y condiciona P12/T27/T28/T34. F↔B1 permanece técnico/geográficamente incorrecto; P12 no se abre. **T26 pendiente de aprobación manual**; no se afirma diversión por pruebas sintéticas. La medición manual exacta de **0.8 s de i-frames de PlayerHealth** sigue pendiente.
