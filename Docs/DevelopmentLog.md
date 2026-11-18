@@ -1657,3 +1657,91 @@ Las primeras comparaciones locales quedaron bloqueadas por el fixture: cargar su
 6. Repetir navegación de B3, MovementTest/ArboledaPrototype, cámara al viajar/subir/bajar, feedback y HUD. Los menús de validación permiten contrastar las pruebas, con escenas guardadas y desde Edit Mode; no regenerar las escenas.
 
 La hoja de ruta registra T26 como ensayo autorizado durante Fase 1 que adelanta parte de T37/T38/T40. No se renumeran todas las tareas: la separación C1/F1 antes propuesta como T26 sigue pendiente sin número reasignado, y condiciona P12/T27/T28/T34. F↔B1 permanece técnico/geográficamente incorrecto; P12 no se abre. **T26 pendiente de aprobación manual**; no se afirma diversión por pruebas sintéticas. La medición manual exacta de **0.8 s de i-frames de PlayerHealth** sigue pendiente.
+
+## T27 — Retorno geográfico F1↔B3 y retirada de F↔B1
+
+**Estado:** implementada y validada automáticamente, pendiente de aprobación manual. Fecha: 11 de noviembre de 2026. Base inicial limpia: `main`, HEAD **`02c08ef`**, commit T26 confirmado. El usuario confirma T01–T25 aprobadas y T26 aprobada manualmente **6/6**; no se modifica su encuentro/descubrimiento ni se reabre su balance. Sin commits, push o cambios de rama.
+
+### Diagnóstico y decisiones
+
+Se revisaron AGENTS, GDD, plan regional, plano completo/SVG, hoja de ruta, historial T17–T26, B1/B2/B3/C/F, RoomDefinition/Entrance/Exit/Scene/Session, SpawnSafety2D, Llama/respawn y herramientas. El retorno antiguo conectaba el este elevado de F con el este elevado de B1; no representaba el ascenso regional. F seguía midiendo 24 unidades y no era F1 completo; C ocupaba 24 e invadía el tramo X global 16..24 previsto para F1. B3 conservaba el suelo sellado en P12.
+
+Se reutiliza **`Arboleda_F_GrutaRetorno.unity` como F1**, sin duplicarla ni cambiar RoomId **F**, RoomDefinition/GUID, inicio `start` o recuperación B. F1 adopta los **32×12** de T21, ancla **(16,−16)** y rectángulo global **X=16..48/Y=−20..−8**. C se ajusta a **C1 16×16**, ancla **(0,−16)**, global X=0..16/Y=−20..−4; mantiene terrazas y P04, retirando el solape. B3 mantiene **12×20**, ancla **(32,−4)** y global X=32..44/Y=−8..12. No se desplaza ni reescala la región.
+
+El enlace C↔D se conserva como **ramal técnico occidental** para liberar la envolvente F1: C-to-D pasa a (0.4,1), C/from-D a (2.2,0.58) mirando a la derecha. D/from-C y D-to-C conservan sus IDs/destinos; D/E no cambian. Se conserva/reduce el apoyo oriental C Ruins Approach a [13.5,16]@6 y se retiran C Ruins Gate/Cap de la extensión antigua. No se presenta este ramal técnico como C2/P05/P06 ya construidos ni se afirma continuidad global final de toda la excursión de ruinas/copas.
+
+### P12 y geometría recorrible
+
+**P12 está implementado, no solo reservado:** F1 norte local **(22,8)** + ancla (16,−16) y B3 sur local **(6,−4)** + ancla (32,−4) coinciden en **global (38,−8)**. Abertura de seis unidades, global X=35..41: techo F1 abierto en local 19..25 y suelo B3 en 3..9.
+
+| Salida | Centro de trigger local → global | Aparición destino local → global | Apoyo / orientación |
+| --- | --- | --- | --- |
+| F-to-B3 | (22,8.4) → (38,−7.6), 6×0.8 | B3/from-F (6,−3.22) → **(38,−7.22)** | Raíz [5.1,6.9] a −3.8; derecha. |
+| B3-to-F | (6,−4.4) → (38,−8.4), 6×0.8 | F/from-B3 (22,6.58) → **(38,−9.42)** | Descanso [20,24] a 6; izquierda. |
+
+Las caras enfrentadas de los triggers comparten el plano Y global −8. Los spawns mantienen X global **38**, tienen apoyo y cuerpo completo fuera de los triggers de regreso. La diferencia entre apoyos es **2.2**, inferior al salto normal medido; la raíz central alta está 0.2 sobre el plano para separar los pies del trigger inferior. Sus dos lados dejan 2.1 de abertura cada uno: no sella todo el hueco ni obliga a una ranura de precisión. La guardia de llegada existente complementa esa geometría; no se cambia RoomSession ni se añade impulso/salto automático.
+
+En F1 permanecen Low [6,8.5]@0.8, Middle [10,13]@2, High [15,18]@3.8 y East [19,24]@3.8. Se amplía el suelo a [0,32]@0 y se añade el descanso P12 [20,24]@6, con salto desde el flanco occidental, más repisa oriental [26,30.5]@2.2. Ascenso desde C: 0→0.8→2→3.8→6→P12. Descenso desde B3 por gravedad a ese descanso; caída oriental a repisa/suelo y regreso al apoyo Middle comprobados. En B3 se remonta −3.8→−2.2→−0.3→1.8→4 hasta P03/B2/B1. El desnivel global −16→0 se recorre dentro de las dos salas. P13 hacia F2 y P17 hacia E siguen cerrados, sin puertas falsas.
+
+**P11** también queda alineado: C1 este local (16,0) y F1 oeste local (0,0), global **(16,−16)**. C-to-F usa (15.6,1), F-to-C (0.4,1), triggers 0.8×2; llegadas F/from-C (2.2,0.58) derecha y C/from-F (13.8,0.58) izquierda, con suelo global −16. Detalle completo de tablas, cámaras y reservas en [Region1SpatialMap §20](Region1SpatialMap.md#20-t27--retorno-geográfico-f1b3--p12).
+
+Cámara: solo cambian los límites locales de C a X=0..16/Y=−4..17 y F a X=0..32/Y=−4..12; se conserva el margen superior para ver el acceso. B1/B3 mantienen sus límites y todas las cámaras conservan tamaño **5.5**, suavizado y código CameraFollow2D. Su comodidad y la lectura del cambio de sala requieren evaluación humana.
+
+### Retirada efectiva y presentación
+
+Se eliminan **B-to-F**, B/from-F, **F-to-B**, F/from-B y sus marcos hijos. La antigua abertura elevada de B1 se rellena con pared sólida y raíz visual; B Step 1/2/Upper siguen disponibles y se prueba su regreso al sendero. No hay una salida oculta o un retorno paralelo que cargue B1 desde F. La recuperación por muerte sigue pudiendo cargar B por el checkpoint: no es el puerto geográfico retirado.
+
+P12 tiene hueco sombreado, bordes de raíces fracturadas y apoyo central. P11 y el acceso C↔D modificado tienen receso oscuro, raíz superior y labio de roca. Son sprites/geométricos provisionales reutilizando el cuadrado existente, sin colisiones ornamentales, triángulos como única señal, nuevas interacciones o decoración turquesa. No se crea arte final.
+
+### Archivos y herramientas
+
+**Creados, con `.meta`:** `Assets/_Project/Scripts/Editor/InitialRegionGeographySetup.P12.cs` y `InitialRegionGeographyValidation.P12.cs`, partes de las clases existentes y sus helpers.
+
+**Modificados:** las cuatro escenas B/B3/C/F; `InitialRegionGeographyValidation.cs`, `InitialRegionGeographyValidation.B2.cs`, `InitialRegionGeographyValidation.B3.cs`; `RoomCircuitValidation.cs`; `Docs/Region1SpatialMap.md`, `Docs/Region1DevelopmentRoadmap.md`, `Docs/Region1Plan.md` y este registro. No cambia ningún script de ejecución, prefab, RoomDefinition, dato de diseño/física/input, Build Settings, GDD, SVG, escena A/B2/D/E o prototipo técnico. Continúan ocho escenas/definiciones y **16 salidas dirigidas**, sustituyendo dos antiguas por dos nuevas.
+
+`Fangbound/Connect F1 and B3 P12 for T27 (once)` es una migración nueva, no una repetición de configuradores T17/T22/T24/T25. Prevalida las cuatro escenas antes de mutar, rechaza Play/escenas sucias/topología ya adaptada, conserva identidades y guarda/cierra/reabre. Se verifica además que reaplicarla sobre T27 se rechaza antes de modificar los cuatro archivos. **No ejecutar configuradores para jugar la entrega.** Menús:
+
+- `Fangbound/Validate F1 B3 Return T27 in Play Mode`.
+- `Fangbound/Validate Direct Start F1 T27 in Play Mode`.
+
+Los menús geográficos anteriores siguen disponibles con expectativas P11/P12 actualizadas. Los puntos de entrada de validación T17–T20 detectan expresamente la topología T27 y redirigen a la suite actual, o a F1 directa para RunF; no ejecutan las rutas históricas F↔B1 ya inexistentes. Las rutinas históricas se conservan como referencia, sin presentar esa redirección como ejecución idéntica de todas sus antiguas aserciones. Herramientas Damage/Defeat/Unlock/Clear y validadores de combate/prototipos no cambian.
+
+### Validaciones ejecutadas
+
+Unity **6000.5.5f1**, copia aislada `.utmp/u24`, con Input System sintético y física real. El Editor principal del usuario no se controla. Los auxiliares de automatización/captura solo están en la copia ignorada. Los fixtures de estado/transferencia se distinguen de las rutas físicas.
+
+| Log en `Logs/` | Resultado, salida 0 |
+| --- | --- |
+| `Task27SetupFinal.log` | `TASK27_SETUP_PASS`: compilación, migración nativa desde copia de la base aprobada, guardado/cierre/reapertura, referencias y entradas seguras. Retenidas **53/46/29/47 identidades** de objetos cargados en B/C/F/B3 respectivamente, incluidos hijos de prefab, salvo eliminaciones explícitas. |
+| `Task27DirectFinal.log` | `TASK27_PLAYMODE_PASS` y `TASK27_DIRECT_F1_PASS`: F directa, 5/5, Colmillo, habilidades bloqueadas y sin checkpoint. Ascenso/descenso P12, repisa oriental/suelo y recuperación, F1↔C1 en ambos sentidos por P11, C1 oeste↔D y regreso físicos; C1 desde suelo por terrazas 2/4/6/8/10 hasta P04/B1. Fixtures separados vuelven a F para probar muerte/R hacia inicio B con 5/5 y sin activar Llama automáticamente. |
+| `Task27Navigation1.log` | `TASK27_PLAYMODE_PASS`: ocho salas/16 salidas, P03/P11/P12 medidos contra colliders, entradas seguras/fuera de triggers y ningún puerto antiguo. **`TASK27_A_F1_A_PASS`: A→B1→B2→B3→F1→B3→B2→B1→A físico sin tomar C, con 4/5 y Colmillo**. B3 mantiene rutas superior/secundaria y recuperación. **`TASK27_CHECKPOINT_PASS`**: muerte F1/R a Llama B con 5/5, arma y ambos desbloqueos conservados, en fixture separado de la navegación sin habilidades. **`TASK27_RETIRED_RETURN_PASS`**: ascenso a la antigua alcoba B1, contacto con pared cerrada sin cargar F y regreso al sendero. Curación E, pozo P04, muerte B2/B3, restauración y ausencia de duplicados/bucles conservados. |
+| `Task27B2Combat.log` | `TASK26_PLAYMODE_PASS`: validador T26 intacto, enemigo activo; patrulla/detección/anticipación, esquiva, K/parry/postura/aturdimiento, golpe vulnerable, salto/pogo/muerte, ruta superior, E/norte y observación temporal, P03 con 4/5/arma y checkpoint/respawn. |
+| `Task27LegacyFMenu.log` | `ROOM_CIRCUIT_VALIDATION_MIGRATED`, `TASK27_DIRECT_F1_PASS`, `TASK27_PLAYMODE_PASS`: el punto de entrada anterior RunF ejecuta correctamente la suite de F1 actual. |
+| `Task27MovementRegression.log` | `TASK09_PLAYMODE_PASS`, `TASK10_FEEDBACK_PASS`, `TASK11_CHECKPOINT_PASS`: validadores originales intactos; caminar/dash sin empuje, recuperación IA, pogo vivo/vulnerable/letal y blancos anteriores, fallo/gravedad, horizontal/ascendente, combate/entrenador/parry/postura/vida/muerte, hitstop/HUD, Llamas y respawn. |
+| `Task27ArboledaRegression.log` | `TASK12/13/14/15_PLAYMODE_PASS`: escena/validador originales, rutas central/inferior/superior, conexiones/circuitos, caídas/recuperaciones, ruina/mirador, cámara, combate/checkpoint y arco final. |
+| `Task27Render.log` | `TASK27_REAPPLY_GUARD_PASS`: segundo intento de migración rechazado, hashes de cuatro escenas sin cambios. `TASK27_RENDER_PASS`: siete capturas nativas `Task27Preview-*.png`, inspeccionadas: vista F1, ascenso, ambos lados P12, P11 F1, pasajes C1 y antigua alcoba B1 cerrada. |
+
+La batería geográfica **aísla al enemigo B2 solo en su fixture de navegación**, con mensaje explícito, para conservar aserciones de 4/5. No se presenta ese circuito como combate continuo con IA activa: T26 se ejecuta por separado con el encuentro activo. D↔E y las transferencias heredadas conservan sus comprobaciones de destino/sesión mediante fixtures; C↔D se prueba además físicamente, pero no se afirma un recorrido físico completo de D/E en T27.
+
+Las capturas usan poses congeladas; seis mantienen cámara 5.5 y la vista general F1 usa 9.5 solo en el fixture para mostrar sus 32 unidades. No se guarda ese zoom ni se confunden capturas con navegación. Las regresiones originales usan calentamiento separado y un Play nuevo, sin filtrar errores ni modificar sus aserciones. Todas las ejecuciones finales anteriores terminaron en 0, sin errores/avisos C#, excepciones o FAIL; los resúmenes nativos de asignaciones al cerrar el Editor no implican una reparación de Unity Search ni borran incidencias históricas.
+
+### Incidencias y auditoría de conservación
+
+La primera geometría de prueba usaba abertura de cuatro unidades. `Task27Direct1.log` completó la subida pero falló su aserción de llegada/orientación inferior mientras el bot mantenía D al cargar. El fixture ahora neutraliza su dispositivo sintético al cargar la nueva escena, antes del Update del jugador entrante; no cambia el input de producción. También se amplió la abertura a seis para dejar caídas laterales de 2.1 junto a la raíz central, evitando depender de un hueco estrecho. Se restauraron **solo las cuatro escenas de la copia aislada** desde la base aprobada y se ejecutó la migración final sobre esa base limpia; no se reaplicó sobre escenas ya modificadas ni se reejecutaron configuradores históricos. `Task27Direct2.log` pasó antes de añadir la comprobación física C↔D; `Task27DirectFinal.log` añade y supera esa comprobación.
+
+Auditoría de YAML: conservados **37/37/20/38 GameObjects explícitos originales** en B/C/F/B3; solo se eliminan puertos/marcos obsoletos y C Ruins Gate/Cap. B3 Root Floor Seal conserva identidad y se renombra Root Floor West al dividirlo. Las identidades de objetos cargados adicionales incluyen el rig compartido y se comprobaron durante la migración. Los seis fuentes entregados coinciden con los compilados, y las cuatro escenas/dos metadatos nativos con la copia validada, normalizando únicamente espacios finales/saltos de línea.
+
+Los **283 archivos protegidos** mantienen sus hashes SHA-256 iniciales: todos los sistemas de ejecución/jugador/combate/cámara/sesión, prefabs, RoomDefinitions, estadísticas e input/física, escena/enemigo/brote/perfil B2, A/D/E, MovementTest/ArboledaPrototype y sus validadores, Build Settings, GDD y SVG. Auditorías de topología, rectángulos sin solape, referencias documentales/tablas y `git diff --check` correctas. `main`/`02c08ef` intactos, sin commits/push.
+
+### Prueba manual de aceptación
+
+1. Salir de Play y reabrir las escenas guardadas desde Project; **no ejecutar configuradores**. Iniciar A, recoger el Colmillo con E/botón norte y activar la Llama B. Ir por B1→B2; comprobar que encuentro y brote conservan su comportamiento T26, y continuar a B3.
+2. Desde la entrada B3, subir al apoyo oeste 5.8 para pasar al claro oriental a 4; descender al nudo 1.8, raíz este −2.2 y raíz central de P12 a −3.8. Caminar fuera de esa raíz por uno de los huecos laterales: gravedad y transición llevan al descanso superior F1. Verificar orientación, apoyo, cámara y ausencia de rebote de sala.
+3. Desde el descanso F1 a 6, saltar hacia arriba por el hueco central para volver a B3. Remontar raíces a −2.2/−0.3/1.8/4 y regresar B2→B1→A. Repetir sin dash ni doble salto; no hacen falta para ningún tramo principal.
+4. Abrir F directamente en un Play nuevo. Subir desde suelo 0 por Low 0.8, Middle 2, High 3.8 y descanso P12 6. Probar la caída oriental a repisa 2.2/suelo y remontar por Middle; bajar por F hacia el oeste y atravesar P11 a C, regresar y repetir.
+5. En C, comprobar el ramal occidental a D y regreso, conexiones D↔E y retorno desde el suelo C por terrazas hasta P04/B1. El ramal D sigue siendo técnico: C2/ruinas finales no se construyen en T27.
+6. Subir a la antigua alcoba elevada oriental B1: debe estar cerrada por raíz/pared, sin marco funcional ni transición F. Se puede regresar por los apoyos existentes; P02 a suelo 0 continúa llevando a B2.
+7. Recibir daño con la herramienta existente y recorrer B1/B2/B3/F/C: conservar vida reducida y Colmillo, sin curación por viajar. E en Llama cura. Con Llama B activa, morir en F1 y R: altar B, 5/5, arma/desbloqueos conservados. Probar inicio F sin checkpoint: muerte/R a inicio seguro B, sin activar Llama. Desbloquear habilidades solo con el menú de desarrollo si se quiere comprobar su persistencia.
+8. Revisar legibilidad de raíces/huecos, cambios de cámara, orientación y comodidad de saltos en ambos sentidos. Ejecutar los dos menús T27 y los de B2/MovementTest/ArboledaPrototype si se quiere repetir la automatización. No debe haber jugadores/cámaras/HUD duplicados ni bucles.
+
+**T27 pendiente de aprobación manual**; no se declara terminada toda la región. P12 y F↔B1 ya no se posponen: el primero existe y el segundo está retirado. Pendientes distintos: C2 y geografía final D/E, F2/G, P17, arte final y evaluación humana de accesos/cámara/recorrido. Se conserva pendiente la medición manual exacta de los **0.8 s de i-frames de PlayerHealth**. Sin cambios de estadísticas, nuevos enemigos/habilidades/checkpoints, minimapa, commits, push o rama.

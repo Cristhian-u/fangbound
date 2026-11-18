@@ -28,8 +28,8 @@ namespace Fangbound.EditorTools
         {
             Check("Exit B-to-B2", 15.6f, 1);
             Check("Entry from-B2", 14.6f, .58f);
-            Check("Entry from-F", 14.4f, 5.18f);
-            Check("Exit B-to-F", 15.6f, 5.6f);
+            Require(room.FindEntrance("from-F") == null && room.GetComponentsInChildren<RoomExit>()
+                .All(e => e.Destination.RoomId != "F"), "B1 conserva el retorno técnico retirado.");
             CheckSurface("B East Floor", 14, 16, 0);
             CheckSurface("B Upper", 14, 16, 4.6f);
             RoomExit p02 = room.GetComponentsInChildren<RoomExit>().Single(e => e.ConnectionId == "B-to-B2");
@@ -147,6 +147,8 @@ namespace Fangbound.EditorTools
             Debug.Log("TASK24_A_B2_A_PASS: A→B1→B2→B1→A físico, sin tomar C, con arma y vida reducida.");
             if (SessionState.GetBool(B3Mode, false))
                 Debug.Log("TASK25_A_B3_A_PASS: A→B1→B2→B3→B2→B1→A físico, sin tomar C, a 4/5 y con Colmillo.");
+            if (SessionState.GetBool(P12Mode, false))
+                Debug.Log("TASK27_A_F1_A_PASS: A→B1→B2→B3→F1→B3→B2→B1→A físico, sin tomar C, 4/5 y Colmillo.");
 
             // Explicit state fixture: the physical P02 routes were already tested.
             Player.GetComponent<PlayerAbilities>().SetDashUnlocked(true);
@@ -155,6 +157,7 @@ namespace Fangbound.EditorTools
             yield return TravelFixture("B-to-B2", "B2");
             AssertB2State("B2", 4);
             if (SessionState.GetBool(B3Mode, false)) yield return ValidateB3Checkpoint();
+            if (SessionState.GetBool(P12Mode, false)) yield return ValidateF1Checkpoint();
             yield return Wait(.9f);
             Require(Player.TryTakeDamage(Player.MaximumHealth, (Vector2)Player.transform.position + Vector2.right),
                 "No se pudo probar muerte en B2.");
@@ -185,7 +188,7 @@ namespace Fangbound.EditorTools
             yield return Walk(6.1f);
         }
 
-        private static IEnumerator ValidateLegacyFApproach()
+        private static IEnumerator ValidateRetiredReturn()
         {
             yield return Walk(7.1f);
             yield return B2Jump(9.5f, 1.5f);
@@ -193,21 +196,17 @@ namespace Fangbound.EditorTools
             yield return B2Jump(13.4f, 3);
             yield return B2Jump(14.4f, 4.6f);
             Keys(Key.D);
-            yield return UntilRoom("F", 6);
+            yield return Wait(.35f);
             Keys();
-            yield return Wait(.4f);
-            AssertB2State("F", 4);
-            Keys(Key.D);
-            yield return UntilRoom("B", 6);
-            Keys();
-            yield return Wait(.4f);
+            Require(Room.Definition.RoomId == "B" && Body.position.x < 15.8f,
+                "El retorno retirado no está cerrado físicamente.");
             AssertB2State("B", 4);
             yield return Walk(13.3f);
             yield return Until(() => Controller.IsGrounded, 3);
             yield return B2Jump(9.8f, 1.5f);
             yield return Walk(7.1f);
             yield return Until(() => Controller.IsGrounded, 3);
-            Debug.Log("TASK24_LEGACY_F_PHYSICS_PASS: escalones B1→F y regreso recorridos sin habilidades; enlace sigue técnico.");
+            Debug.Log("TASK27_RETIRED_RETURN_PASS: alcoba B1 accesible, pared sólida y sin salida F; se puede regresar al sendero.");
         }
 
         private static IEnumerator ValidateB2Walks()

@@ -1,43 +1,43 @@
 # Arboleda Verdescente — Hoja de ruta de desarrollo regional T23
 
-**Estado actualizado en T26:** T01–T24 aprobadas; T25/B3 está registrada en commit `fd431b0`, sin atribuirle una aprobación manual adicional no comunicada. Corte: 11 de noviembre de 2026, rama `main`, base `fd431b0`. El encargo T26 autoriza una primera prueba de combate y descubrimiento en B2 durante Fase 1, adelantando contenido de Fase 2. T26 queda pendiente de aprobación manual; no completa la geografía regional.
+**Estado actualizado en T27:** el usuario confirma **T01–T26 aprobadas**, T26 con 6/6 y commit `02c08ef`. Corte: 11 de noviembre de 2026, rama `main`, base `02c08ef`. T27 adapta C1/F1, implementa P11/P12 y **retira F↔B1**; queda pendiente de aprobación manual. El encuentro y brote de B2 permanecen intactos. No se declara terminada la región.
 
 Esta es la hoja de ruta regional oficial aprobada en T23, con su seguimiento posterior. **T23 fue documental; T24 inicia la siguiente implementación de Fase 1** con un encargo propio. La numeración posterior sigue siendo provisional y no se prometen fechas de entrega.
 
 ## 1. Qué construimos y dónde consultar cada dato
 
-Arboleda Verdescente será una región explorable, con orientación espacial, decisiones de ruta, aprendizaje de combate, descubrimientos y cierre hacia Abismo Lagrimal. Las seis escenas actuales son una base técnica. Se pueden ampliar, dividir, fusionar o adaptar si el diseño y las pruebas lo justifican; una puerta programada no obliga a conservar una conexión artificial.
+Arboleda Verdescente será una región explorable, con orientación espacial, decisiones de ruta, aprendizaje de combate, descubrimientos y cierre hacia Abismo Lagrimal. Las muestras originales y ocho escenas actuales son una base técnica en adaptación. Se pueden ampliar, dividir, fusionar o adaptar si el diseño y las pruebas lo justifican; una puerta programada no obliga a conservar una conexión artificial.
 
 | Fuente | Responsabilidad |
 | --- | --- |
 | [GDD](GDD.md), especialmente 5, 7 y 8.1 | Visión, historia, reglas de combate, Guardián Raíz y principios de exploración. No se reescribe aquí. |
 | [Region1Plan](Region1Plan.md) | Funciones de las siete áreas y antecedentes T16–T22; sus propuestas antiguas no son inventario actual. |
-| [Region1SpatialMap](Region1SpatialMap.md), secciones 4–6, 17–19; [SVG](Region1SpatialMap.svg) | IDs de las 16 salas, planta provisional, anclas/puertos y diferencias implementadas en T22/T24/T25. No se copian las tablas de coordenadas. |
+| [Region1SpatialMap](Region1SpatialMap.md), secciones 4–6, 17–20; [SVG](Region1SpatialMap.svg) | IDs de las 16 salas, planta provisional, anclas/puertos y adaptaciones hasta P11/P12 T27. No se copian las tablas de coordenadas. |
 | Este documento | Fases, dependencias, tareas, estado por sala, decisiones abiertas y criterios de cierre. |
-| [DevelopmentLog](DevelopmentLog.md), T16–T26 | Evidencias de entregas y pruebas, limitaciones y contexto de cada aprobación. |
+| [DevelopmentLog](DevelopmentLog.md), T16–T27 | Evidencias de entregas y pruebas, limitaciones y contexto de cada aprobación. |
 
 El objetivo previo es **15–18 salas, con base provisional de 16** agrupadas en siete áreas. No es un límite absoluto. La sala 17 para el jefe es una propuesta adicional de planificación, pendiente de conciliar con G2, que ya tiene función de arena en T21. Ninguna de esas reservas está construida. Un aumento, fusión o cambio de función debe registrar su efecto sobre alcance, mapa, dependencias y pruebas antes de ejecutarse.
 
 El cronograma original del GDD corresponde a un alcance menor y ya advertía que debía revisarse. Esta hoja ordena trabajo por resultados, sin trasladar esas fechas automáticamente al nuevo alcance.
 
-## 2. Base técnica y seguimiento actualizado en T26
+## 2. Base técnica y seguimiento actualizado en T27
 
 **Área** = conjunto geográfico A–G. **Sala del mapa** = ID A1–G3 con una función y envolvente de diseño. **Escena Unity** = asset que carga el juego. No son unidades intercambiables: seis escenas no equivalen a seis áreas completas ni a las 16 salas terminadas.
 
 | Existe realmente | Alcance y límite |
 | --- | --- |
 | Ocho escenas en `Assets/_Project/Scenes/Arboleda/TechnicalCircuit/` | Seis muestras A–F, B2 Pasarela Quebrada y **`Arboleda_B3_TroncoPartido.unity`**, con ocho RoomDefinitions. No hay escena G ni arena independiente. |
-| Ocho enlaces bidireccionales | A↔B, B↔C, C↔D, D↔E, C↔F, F↔B, B↔B2/P02 y **B2↔B3/P03**: 16 salidas dirigidas. E↔B no existe. |
-| Adaptaciones T22–T25 | A sirve de muestra A1. B1 conserva RoomId B/Llama; B2 y B3 son escenas independientes enlazadas consecutivamente. B3 respeta ancla (32,−4) y envolvente 12×20, con capas inferior/superior. C aún conserva extensión técnica hacia D/F, sin C2/F1 construidas. |
+| Ocho enlaces bidireccionales | A↔B, B↔C, C↔D técnico, D↔E técnico, **C↔F/P11**, B↔B2/P02, B2↔B3/P03 y **F↔B3/P12**: 16 salidas dirigidas. **F↔B1 retirado**; E↔B no existe. |
+| Adaptaciones T22–T27 | A representa A1; B1 mantiene RoomId B/Llama. B2/B3 siguen independientes. C sirve de C1 16×16 y F de F1 32×12, anclas (0,−16)/(16,−16), sin solape de interiores. RoomIds C/F, GUID y recuperación B conservados; no hay escenas duplicadas C1/F1. |
 | P01/P04 y P02 | P01/P04 conservan su relación T22; **P04 usa x=11** frente al x=8 del SVG. T24 ajusta solo el lado este del pozo B a x=14. P02 conecta B1 este↔B2 oeste en global (16,0). Mapa §17 conserva el estado T22 y §18 da las posiciones vigentes. |
-| P03 y reserva P12 | P03 une B2 este a B3 oeste en global (32,0), con suelo local 0/4. B3 tiene cuenca y ascenso desde local −4 hasta 4; **P12 (38,−8) sigue sellado y sin transición**. No se atribuye su reserva a la escena técnica F actual. |
+| P03/P11/P12 | P03 continúa en (32,0). **P11** enfrenta C1 este/F1 oeste en (16,−16); **P12** enfrenta F1 norte/B3 sur en (38,−8), con abertura, apoyos, subida y descenso reales. Datos completos en mapa §20. |
 | Sistemas aprobados | Movimiento, dash/doble salto sujetos a desbloqueos, ataques/pogo, parry, postura/vulnerabilidad del enemigo, daño/muerte, feedback T10/T20, HUD, Llamas, transición y estado de sesión. La aprobación funcional no implica balance regional final. |
 | Colmillo y descanso | Recogida inicial en A; Llama única en B, ID `B.memory-flame`. No hay adquisición jugable de dash/doble salto. T26 coloca un único enemigo terrestre en B2; no añade enemigos a las demás salas. |
 | Ensayo de jugabilidad T26 | Enemigo de prefab en la raíz ancha B2, perfil local con recuperación 0.75 s frente a 1.3 s de base; anticipación 0.65 s intacta. Brote examinable con E/botón norte en el mirador, sin estadísticas ni progreso guardado. Navegación/geografía conservadas; resultados y límites en DevelopmentLog T26. |
 | Pruebas y prototipos | `MovementTest` y `ArboledaPrototype` conservan sus objetivos y enemigo de prueba; existen prefab/datos de enemigo terrestre. No se da por realizada su distribución regional. |
 | Arquitectura de salas | RoomSession carga Single y conserva vida/arma/desbloqueos/checkpoint durante la sesión; cada sala recrea RoomPlayerRig. RoomDefinition no guarda ancla global o límites de mapa. No hay minimapa ni guardado permanente. |
 
-T22 aprobó un tramo parcial y T24 continúa su adaptación. F↔B sigue este↔este: su acceso B se recoloca sobre una terraza elevada, separado de P02, sin cambiar IDs ni escena F. C↔D/C↔F siguen técnicos y la extensión de C invade la reserva futura F1. Ninguno de esos pendientes se declara resuelto por añadir B2.
+T27 sustituye el retorno este↔este por F1→B3→B2→B1 y elimina sus triggers/entradas/marcos antiguos, cerrando la abertura B1. También corrige el solape C/F y alinea P11. **C↔D y D↔E permanecen muestras técnicas**, sin C2/D1/D2/E1–E3 construidas: el ramal D sale ahora por el oeste de C1, conservando IDs y D/E intactas. No se presenta esa excursión como geografía regional terminada.
 
 ## 3. Principios de trabajo
 
@@ -64,7 +64,7 @@ Adaptar/ampliar las muestras A–F, construir los recintos necesarios y corregir
 
 La reserva G2/G3 se trata como graybox sin jefe ni salida regional operativa. Antes de fijarla, decidir cómo afecta la propuesta de sala 17 (D03). Si se difiere alguna geometría a Fase 3, hace falta una **revisión explícita aprobada del alcance de Fase 1**; no se considera construida por estar dibujada.
 
-**Excepción acotada autorizada en T26:** probar ahora un encuentro, su ritmo ofensivo y un descubrimiento en la B2 estable, para evaluar si mejoran la exploración. Adelanta parte de las validaciones propuestas para T37/T38/T40, sin cerrar Fase 1 ni Fase 2, repartir enemigos por toda la región o cambiar criterios de cierre. La separación C1/F1 antes propuesta como T26 queda pendiente **sin número nuevo asignado**; no se renumera el resto de la hoja. T27/T28/T34 siguen condicionadas a ese trabajo geométrico, que este ensayo no realiza.
+**Ensayo acotado autorizado y aprobado en T26:** encuentro/ritmo y descubrimiento en B2, adelantando parte de T37/T38/T40 sin cerrar Fase 1/2 ni distribuir enemigos por toda la región. La separación C1/F1 antes propuesta como T26 se incorpora al encargo real **T27 junto con P11/P12**. No se renumera el resto de la hoja; T28/T34 usan esa base una vez aprobada manualmente.
 
 **Cierre de Fase 1, todos exigibles:**
 
@@ -149,22 +149,22 @@ Estados: **Aprobada** = resultado y aprobación manual comunicados; **En revisi�
 
 ### Entrega actual y trabajo propuesto
 
-**T23–T26 tienen su número de encargo establecido. T27–T51 siguen como secuencia provisional**, sin fechas ni compromiso de cantidad. Se pueden insertar, dividir, fusionar o renumerar tareas no iniciadas, actualizando referencias. Los prefijos Txx no son IDs de sala. Todas las aprobaciones futuras requieren una prueba manual del objetivo indicado, además de los controles comunes de la sección 9.
+**T23–T27 tienen su número de encargo establecido. T28–T51 siguen como secuencia provisional**, sin fechas ni compromiso de cantidad. Se pueden insertar, dividir, fusionar o renumerar tareas no iniciadas, actualizando referencias. Los prefijos Txx no son IDs de sala. Todas las aprobaciones futuras requieren una prueba manual del objetivo indicado, además de los controles comunes de la sección 9.
 
 | Tarea | Fase | Objetivo acotado | Dependencias | Estado | Criterio específico de aprobación |
 | --- | --- | --- | --- | --- | --- |
 | T23 | Transversal | Consolidar esta hoja de ruta y referencias. | Lectura de T16–T22 y encargo actual. | Aprobada por contexto T24. | Hoja de ruta con commit y aprobación comunicada por el usuario. |
 | T24 | 1 | Construir graybox B2 y adaptar B1↔B2/P02, con límites/anclas coherentes. | T23 aprobada; T22; migración de borde oriental/F documentada en mapa §18. | Aprobada por contexto T25. | Pruebas manuales y duración adecuada de B2 confirmadas; enlazar resultados históricos T24. |
-| T25 | 1 | Construir B3 y B2↔B3/P03, preparando la base del tronco. | T24 aprobada; puertos T21. | Implementada para revisión manual, no aprobada. | Probar entrada, ascenso/descenso, ruta secundaria, recuperación, ciclo desde A y estado de sesión. P12 sigue reservado; resultados en DevelopmentLog T25 y mapa §19. |
-| T26 | 1, ensayo de contenido de Fase 2 | Primera sección con combate, práctica de parry y descubrimiento opcional en B2. | B2 aprobada T24; integración B3/P03 T25; encargo expreso de ensayo. | Implementada para revisión manual, no aprobada. | Comparar ritmo base/local, combate y descubrimiento alcanzable; conservar rutas/sesión/prototipos y evaluar interés mediante juego humano. |
-| T27 | 1 | Construir ascenso F1↔B3/P12 y sustituir el retorno este↔este. | T25 y separación C1/F1 pendiente, sin número reasignado. | Propuesta prioritaria. | B1→C1→F1→B3→B2→B1 y recorrido inverso con física real; retorno reconocible sin habilidades y sin puerta técnica residual incoherente. |
-| T28 | 1 | Construir C2 y su bifurcación desde C1/P05. | Separación C1/F1 pendiente; posición del futuro acceso occidental D. | Propuesta. | Descubrir C2, explorar y regresar; mantener ruta a D hasta su sustitución, sin activar puertas a salas ausentes. |
+| T25 | 1 | Construir B3 y B2↔B3/P03, preparando la base del tronco. | T24 aprobada; puertos T21. | Aprobada por contexto T27. | Pruebas manuales confirmadas; base y resultados históricos en DevelopmentLog T25 y mapa §19. |
+| T26 | 1, ensayo de contenido de Fase 2 | Primera sección con combate, práctica de parry y descubrimiento opcional en B2. | B2 aprobada T24; integración B3/P03 T25; encargo expreso de ensayo. | Aprobada manualmente 6/6; commit 02c08ef. | Base/perfil B2 medidos, encuentro y observación aprobados; conservarlos en entregas posteriores. |
+| T27 | 1 | Adaptar C1/F1, implementar P11/P12 y retirar definitivamente F↔B1. | T01–T26 aprobadas; anclas/puertos T21 y reserva T25. | Implementada para revisión manual, no aprobada. | Probar A→B1→B2→B3→F1 y regreso, P11/C1, alcoba antigua cerrada, caídas/ascensos normales, sesión y respawn; mapa §20/DevelopmentLog T27. |
+| T28 | 1 | Construir C2 y su bifurcación desde C1/P05. | Base C1/F1 T27 aprobada; revisar ramal técnico occidental D. | Propuesta. | Descubrir C2, explorar y regresar; mantener ruta a D hasta su sustitución, sin activar puertas a salas ausentes. |
 | T29 | 1 | Adaptar D en D1/D2 y acceso C2↔D1/P06, ascenso P07. | T28; envolventes/descansos revisados. | Propuesta; dividir en D1 y D2 si hace falta. | Subir y bajar las ruinas con pausas, caídas recuperables y salto normal; sustituir el acceso oriental técnico de C y conservar llegada a la muestra E hasta migrarla. |
 | T30 | 1 | Adaptar llegada E1 desde D2/P08. | T29. | Propuesta. | Entrada a copas a cota compatible, descenso inverso y orientación legibles; sin pérdida de rutas E que sigan en uso. |
 | T31 | 1 | Construir E2 y travesía E1↔E2/P09. | T30. | Propuesta. | Travesía superior y retorno con apoyos/descansos; comprobar cámara y caídas. |
 | T32 | 1 | Adaptar mirador E3 y E2↔E3/P10. | T31. | Propuesta. | Alcanzar y abandonar el mirador con ambas direcciones claras; vistas y recuperación sin requerir doble salto. |
 | T33 | 1 | Resolver segundo circuito regional y probar el retorno elegido. | T25, T32 y decisión D02. | Condicionada: P17 o alternativa aprobada. | Segundo circuito útil y geográficamente representable, probado en ambos sentidos; no se exige construir P17 si se rechaza. |
-| T34 | 1 | Construir F2 y acceso/refugio G1/P13/P14. | Separación C1/F1 pendiente; criterios de ascenso y descanso. | Propuesta; separar por sala si es necesario. | F1↔F2↔G1 accesible y recuperable con salto normal; descanso prejefe reservado, sin prometer jefe/puerta regional funcional. |
+| T34 | 1 | Construir F2 y acceso/refugio G1/P13/P14. | F1/P12 T27 aprobada; criterios de ascenso y descanso. | Propuesta; separar por sala si es necesario. | F1↔F2↔G1 accesible y recuperable con salto normal; descanso prejefe reservado, sin prometer jefe/puerta regional funcional. |
 | T35 | 1 | Preparar graybox/reservas G2/G3, sin implementar jefe ni salida a Región 2. | T34; D03 resuelta en cuanto a alcance/funciones. | Condicionada. | Volúmenes y accesos de prueba coherentes, o revisión explícita aprobada que difiere su geometría; ninguna arena doble asumida. |
 | T36 | 1 | Cerrar navegación regional y registro global. | T24–T35, incluida resolución de alcance de T35. | Propuesta. | Todos los criterios de Fase 1, revisión humana de orientación y regresiones; no basta conectar todos los nodos. |
 | T37 | 2 | Consolidar el primer encuentro tras obtener el Colmillo. | T36; resultado y aprobación del ensayo B2 de T26. | Propuesta; ensayo inicial adelantado en T26. | Encuentro legible, daño/muerte/parry/pogo válidos y salida segura si se omitió el arma; sin empuje al caminar/dash. |
@@ -196,28 +196,28 @@ Para Fase 4 se usarán **lotes sin numeración T definitiva**; no representan se
 
 ## 6. Seguimiento de las 16 salas de T21
 
-IDs y nombres proceden de la sección 4 del mapa. Las conexiones son objetivo propuesto salvo P01/P04, **P02 y P03 implementados en sus tramos descritos arriba**. El resto requiere implementación o revisión. Los contenidos son candidatos, salvo Colmillo/Llama existentes; no implican habilidades o encuentros aprobados.
+IDs y nombres proceden de la sección 4 del mapa. Las conexiones son objetivo propuesto salvo P01/P04, **P02/P03/P11/P12 implementados en sus tramos descritos arriba**. El resto requiere implementación o revisión. Colmillo/Llama y encuentro/brote B2 T26 existen; los demás contenidos siguen siendo candidatos.
 
 | ID / nombre | Área | Función prevista | Estado real de implementación | Conexiones objetivo | Ampliación / adaptación necesaria | Contenido documentado | Dependencias / tarea propuesta |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | A1 · Claro del Despertar | A | Inicio seguro. | Muestra jugable en escena A, aprobada T20/T22; no acabado final. | B1/P01. | Conservar inicio y escala; revisar con migraciones vecinas. | Colmillo inicial implementado, sin enemigos previstos en el inicio. | T22 conservada; regresión en T24/T36. |
-| B1 · Sendero de Esporas | B | Orientación, descanso y bifurcación. | Graybox B de 16 unidades y P02 aprobados en T24; sin cambios en T25. | A1/P01, B2/P02, C1/P04; F técnico elevado provisional. | Conservar pozo x=11/Llama; retirar acceso técnico F al construir retorno B3. | Llama B implementada; lectura de rutas. | Regresión T25; T27 para retorno final. |
-| B2 · Pasarela Quebrada | B | Travesía del claro y aproximación al tronco. | Geometría T24 aprobada y P03 T25 conservado; ensayo de contenido T26 pendiente de aprobación. | B1/P02 y B3/P03 operativos. | Terreno/16×16/cámara conservados; evaluar ahora combate y propósito de la desviación. | Un enemigo terrestre de perfil local en la raíz y brote examinable sin recompensa estadística en el mirador. | Prueba manual T26; consolidación T37 y contenido regional T40. |
-| B3 · Tronco Partido | B | Ascenso de retorno y referencia común. | Escena/RoomDefinition 12×20 implementados en T25, commit registrado; sin aprobación manual adicional atribuida. | B2/P03 operativo; F1/P12 reservado/sellado; E3/P17 candidato. | Validar lectura/ritmo; abrir P12 solo al construir salida superior compatible en F1. | Claro oriental para encuentro/parry y bolsillo para descubrimiento, sin objetos nuevos. | Revisión T25; separación C1/F1 pendiente y T27; retorno superior T33/D02. |
-| C1 · Hondonada de Helechos | C | Descenso, elección inferior y travesía. | Arranque parcial en escena C; retorno superior T22. | B1/P04, C2/P05, F1/P11. | Separar extensión oriental solapada con F1; migrar enlaces técnicos D/F. | Alternativa de encuentro posterior al ensayo B2; apoyos de recepción seguros. | Separación C1/F1 sin número reasignado; T28/P04; T37. |
+| B1 · Sendero de Esporas | B | Orientación, descanso y bifurcación. | Graybox 16; T27 retira F y cierra su abertura elevada. | A1/P01, B2/P02 y C1/P04; sin salida directa F. | Conservar pozo/Llama y evaluar continuidad del retorno nuevo. | Llama B; apoyos superiores conservados sin puerta falsa. | Revisión T27; consolidación T36. |
+| B2 · Pasarela Quebrada | B | Travesía del claro y aproximación al tronco. | Geometría/P03 y contenido T26 aprobados; ningún archivo de B2 cambia en T27. | B1/P02 y B3/P03 operativos. | Conservar encuentro, perfil y ruta/observación. | Un enemigo terrestre de perfil local y brote examinable sin recompensa estadística. | Regresión T27; consolidación T37/T40. |
+| B3 · Tronco Partido | B | Ascenso de retorno y referencia común. | T25 aprobada; T27 abre el suelo P12 con raíz de llegada, sin cambiar ancla/12×20. | B2/P03 y F1/P12 operativos; E3/P17 candidato. | Aprobar manualmente entrada inferior, caída y ascenso. | Reservas de encuentro/descubrimiento conservadas, sin contenido nuevo. | Revisión T27; retorno superior T33/D02. |
+| C1 · Hondonada de Helechos | C | Descenso, elección inferior y travesía. | Escena C ajustada a 16×16 en T27; P04 y terrazas conservados, solape F1 retirado. | B1/P04 y F1/P11 operativos; C2/P05 pendiente y D técnico occidental. | Construir C2 antes de sustituir el ramal D por la geografía final. | Apoyos de recepción y retorno; sin enemigo nuevo. | Revisión T27; T28/P05 y T29/P06. |
 | C2 · Raíces Resonantes | C | Explorar bajo A y llegar a cimientos. | No construida. | C1/P05, D1/P06. | Crear recorrido occidental recuperable. | Reserva de descubrimientos/secretos; sin adquisición de dash. | T28/T29; contenido aprobado T40. |
 | D1 · Galería de Musgo | D | Ascenso por cimientos de ruinas. | No construida como subdivisión; escena D es muestra del área. | C2/P06, D2/P07. | Adaptar/split de muestra D; ampliar y medir ascenso/descansos. | Ruinas provisionales como referencia, sin nuevo lore. | T29 tras C2. |
 | D2 · Santuario del Colmillo | D | Destino de ruinas y acceso elevado a copas. | No construida como subdivisión; no memoria implementada. | D1/P07, E1/P08. | Distribuir ascenso y cámara; preparar llegada a E a cota común. | Memoria opcional del maestro candidata. | T29/T30; contenido T40 con aprobación. |
 | E1 · Nido Suspendido | E | Recepción desde ruinas y comienzo de copas. | No construida; escena E es muestra del área. | D2/P08, E2/P09. | Adaptar la llegada y recuperar caídas. | Identidad de ramas/copa; sin recompensa fijada. | T30/T31. |
 | E2 · Cámara del Polen Quieto | E | Travesía superior y pausa ambiental. | No construida. | E1/P09, E3/P10. | Crear espacio propio, revisar anchura y descansos. | Repisas opcionales para revisitas candidatas, habilidades pendientes. | T31/T32; D04 si se propone bloqueo opcional. |
 | E3 · Copa del Vigía | E | Mirador y destino de excursión. | No construida como subdivisión; mirador técnico en E. | E2/P10; B3/P17 candidato sin aprobar. | Reutilizar aprendizajes de T19, adaptar envolvente y descenso elegido. | Mirador; no doble salto asignado. | T32/T33; D02. |
-| F1 · Atajo de las Raíces | F | Travesía inferior y retorno al claro. | No construida como sala del mapa; escena F conserva gruta técnica. | C1/P11, B3/P12, F2/P13. | Ampliar/adaptar F, separar solape con C y retirar puerta este↔este al sustituirla. | Encuentro de preparación candidato. | Separación C1/F1 pendiente; T27/T34; contenido T39. |
+| F1 · Atajo de las Raíces | F | Travesía inferior y retorno al claro. | Escena F reutilizada como 32×12 en T27, RoomId F; subida/descenso/recuperación construidos. | C1/P11 y B3/P12 operativos; F2/P13 reservado y cerrado. | Aprobar retorno y claridad; construir F2 posteriormente. | Sin enemigo/recompensa/llama nuevos; contenido de preparación sigue candidato. | Revisión T27; T34/P13 y contenido T39. |
 | F2 · Umbral del Guardián | F | Ascenso hacia el refugio oriental. | No construida. | F1/P13, G1/P14. | Crear ascenso con pausas, caída recuperable y regreso. | Reserva lateral de descubrimiento, sin llave/habilidad asignada. | T34; contenido T40 si se aprueba. |
 | G1 · Refugio de Savia | G | Descanso previo a arena. | No construida; no escena G. | F2/P14, G2/P15 según revisión D03. | Crear acceso/refugio y revisar distancia al jefe definitivo. | Llama prejefe: función del GDD, ubicación candidata. | T34/T35; checkpoint T49 tras D03. |
 | G2 · Cámara del Guardián Raíz | G | Arena reservada en T21. | No construida; ni jefe ni ejecución de jefe implementados. | G1/P15, G3/P16 tras jefe, sujetos a D03. | Conciliar con sala 17 antes de fijar función, geometría o accesos finales. | Guardián Raíz según GDD, sin diseño final de patrones. | D03; T35/T45–T48. |
 | G3 · Salida hacia Abismo | G | Cierre y conexión regional. | No construida; nombre funcional de la antigua Salida del Velo. | G2/P16 y salida PX a receptor aún sin diseñar, sujetos a D03. | Definir destino válido y regla posterior a la victoria. | Salida a Región 2, sin acontecimiento narrativo nuevo. | D03; T35/T50. |
 
-**Balance T25:** muestra A1, graybox B1 adaptado, B2 aprobado, B3 nuevo para revisión y arranque parcial C1; once subdivisiones aún no construidas, aunque D/E/F tengan muestras. T25 no está aprobada ni el retorno geográfico B/F completo. Ninguna sala tiene arte final. No sumar escenas técnicas y salas objetivo como dos inventarios completos.
+**Balance T27:** A1/B1/B2/B3 y C1/F1 adaptadas representan seis recintos base; diez subdivisiones previstas siguen sin construir, aunque D/E tengan muestras técnicas. P12 y el retorno F1→B3→B2→B1 están implementados y validados automáticamente, pendientes de aprobación manual T27. No se declara terminada toda la geografía ni ninguna sala con arte final.
 
 ### Sala 17 del jefe — registro separado
 
@@ -233,21 +233,21 @@ Estos estados registran inspección documental o reportes del usuario. Ningún a
 
 | ID / problema | Impacto | Fase responsable | Posible tarea | Estado al corte |
 | --- | --- | --- | --- | --- |
-| R01 · F↔B geográficamente incoherente | Retorno este↔este sin ascenso regional representado. | 1 | T25–T27. | Abierto; funcional como enlace técnico, no corregido por T22. |
+| R01 · F↔B geográficamente incoherente | Retorno este↔este sin ascenso regional representado. | 1 | T27. | Corregido en implementación T27: F↔B1 retirado, F1↔B3/P12 físico y alineado. Pendiente de aprobación manual. |
 | R02 · Algunas muestras demasiado cortas | Poca variación/espacio para explorar o diseñar encuentros. | 1 | T25, T26 y bloques D/E. | B2 confirmada adecuada en T25; evaluar el resto según función, sin duración uniforme obligatoria. |
 | R03 · Exploración todavía limitada | El circuito puede sentirse artificial aunque sus transiciones funcionen. | 1, después 2 | T27/T33/T36; T40. | Abierto; requiere prueba humana de elección, orientación e interés. |
-| R04 · Sin progresión regional de encuentros | Un encuentro no equivale a distribución regional. | 1, ensayo; después 2 | T26/T37/T39. | B2 incorpora un enemigo en T26; demás salas sin distribución. Ensayo pendiente de evaluación humana. |
-| R05 · Ritmo ofensivo insuficiente | Esperas largas y menor oportunidad de práctica activa. | 1, ensayo; después 2 | T26/T38/T42. | Medición neutra T26: base 2.16 s entre ataques, perfil B2 1.60 s; solo recuperación 1.3→0.75 s. Aprobación de sensación/justicia pendiente; perfil base intacto. |
+| R04 · Sin progresión regional de encuentros | Un encuentro no equivale a distribución regional. | 1, ensayo; después 2 | T26/T37/T39. | Encuentro B2 T26 aprobado 6/6; demás salas sin distribución. No se agregan enemigos en T27. |
+| R05 · Ritmo ofensivo insuficiente | Esperas largas y menor oportunidad de práctica activa. | 1, ensayo; después 2 | T26/T38/T42. | Perfil B2 aprobado T26: base 2.16 s entre ataques, local 1.60 s; recuperación 1.3→0.75 s. No cambia en T27 ni se acelera globalmente. |
 | R06 · Dash demasiado eficaz ante ciertos ataques | Puede reducir lectura del rival e incentivo de parry. | 2 | T38/T42. | Reportado; no justifica por sí solo cambiar dash o acelerar todo. |
 | R07 · Sin minimapa | Falta lectura global de salas exploradas. | 3; preparación de datos en 1 | T36/T44. | No implementado; arquitectura de datos por decidir. |
 | R08 · Área G pendiente | No hay refugio ni tramo final construido. | 1 para geografía; 3 para integración | T34/T35/T49/T50. | Sin escena G; no confundir tres reservas con contenido existente. |
 | R09 · Sala/jefe pendientes y duplicidad G2/sala 17 | Riesgo de alcance doble y mapa contradictorio. | Decisión en 1; ejecución en 3 | D03; T35/T45–T50. | Abierto; no arena ni boss implementados. |
 | R10 · Arte/animaciones definitivos pendientes | Identidad y lectura visual aún provisionales. | 4; ensayos permitidos antes | Lotes F4 por concretar. | Abierto; el usuario produce recursos progresivamente. |
 | R11 · Medición exacta de i-frames 0.8 s pendiente | Falta confirmación humana de duración real; no invalida pruebas funcionales anteriores. | 2 / control transversal | T38, antes de cierre T42. | Pendiente explícito; no alterar PlayerHealth para darlo por probado. |
-| R12 · Extensión técnica C invade reserva F1 | Aplicar anclas literalmente solaparía recorridos distintos. | 1 | Separación C1/F1 pendiente, sin número reasignado. | Confirmado en mapa §17; T26 ensaya contenido B2 y no resuelve esta geometría. |
+| R12 · Extensión técnica C invade reserva F1 | Aplicar anclas literalmente solaparía recorridos distintos. | 1 | T27. | Corregido en implementación: C1 16×16 y F1 32×12, anclas conservadas y P11 alineado; revisión manual pendiente. C↔D sigue técnico hasta C2/D. |
 | R13 · P17 sin aprobar y segundo circuito sin cerrar | La base propuesta sin P17 solo tiene un ciclo independiente. | 1 | D02/T33/T36. | Pendiente; no declarar cumplidos los dos circuitos del GDD. |
 | R14 · Cámaras y ascensos frente a nuevas dimensiones | Salas estrechas o ascensos largos pueden resultar incómodos. | 1 | Cada graybox y T36. | Riesgo del mapa T21; requiere pruebas físicas/visuales, no cambio global automático de cámara. |
-| R15 · Validadores históricos fijan coordenadas anteriores | Resultados falsos de regresión tras T22 si se ejecutan sin revisión. | 1 / validación transversal | T24 y cada migración. | Documentado en T22; conservar cobertura y actualizar expectativas justificadas. |
+| R15 · Validadores históricos fijan coordenadas anteriores | Resultados falsos de regresión tras migraciones si se ejecutan sin revisión. | 1 / validación transversal | T27 y cada migración. | Geografía actualizada a P11/P12; entradas de validación T17–T20 redirigen expresamente a la suite actual en topología T27, con F directa cuando corresponde. Rutinas históricas no se presentan como ejecutadas sobre sus coordenadas antiguas. |
 | R16 · Errores Search/Burst/paquetes de la copia T22 | Pueden contaminar criterios globales o bloquear una ejecución. | Preparación de pruebas | Previo a validaciones de T24. | Incidencias históricas sin resolución afirmada en T23; registrar entorno y distinguir trazas de producto sin ocultar errores. |
 
 ## 8. Gestión de decisiones
@@ -260,11 +260,11 @@ Estos estados registran inspección documental o reportes del usuario. Ningún a
 - Llamas del Recuerdo como activación, curación y checkpoint, con función de descanso previa al jefe. La cantidad/ubicaciones finales no se deducen de esa función.
 - Ataques, parry, postura y alternativas elementales como dirección de combate del GDD; las alternativas elementales no están implementadas por estar en la visión.
 - Enemigo básico: ruptura de postura causa aturdimiento/vulnerabilidad temporal; no ejecución/instakill. Ejecución para jefes se aborda en Fase 3 con sus reglas concretas.
-- T01–T24 aprobadas manualmente según encargo T25. T21 es base espacial provisional y las adaptaciones siguen parciales; T25 está pendiente de revisión. La región completa no está aprobada ni terminada.
+- T01–T26 aprobadas manualmente según encargo T27, T26 con 6/6 y commit. T21 es base espacial provisional y las adaptaciones siguen parciales; T27 está pendiente de revisión. La región completa no está aprobada ni terminada.
 
 ### Propuestas provisionales
 
-Planta completa de 16 salas y nombres de trabajo, con los tramos construidos distinguidos arriba; eje A–B–C–F–G con D/E opcionales y alternativa B–F; P17 E3↔B3; sala 17; candidatos de encuentros, secretos, recompensas, recuerdos, Llamas y adquisiciones; tareas T27–T51 y lotes F4. El ensayo B2 de T26 tiene encargo expreso; una propuesta de mapa no autoriza el resto de su contenido.
+Planta completa de 16 salas y nombres de trabajo, con los tramos construidos distinguidos arriba; eje A–B–C–F–G y excursión final D/E todavía pendientes, retorno F1↔B3/P12 ya implementado; P17 E3↔B3; sala 17; candidatos de encuentros, secretos, recompensas, recuerdos, Llamas y adquisiciones; tareas T28–T51 y lotes F4. Una propuesta de mapa no autoriza el resto de su contenido.
 
 ### Decisiones pendientes y momento límite
 
@@ -311,4 +311,4 @@ Conservar A/Colmillo, pozo B↔C (x=11), Llama B e integridad de sesión. Regist
 
 Prueba manual de aceptación propuesta: iniciar A en una sesión nueva, recoger, viajar a B, activar Llama, explorar B2 y volver; bajar y regresar por B↔C solo con salto normal; repetir con vida reducida y verificar muerte/R; probar la ruta técnica F que deba seguir disponible y revisar cámara, suelo y orientación. Ejecutar validación geográfica actualizada y regresiones pertinentes, sin regenerar escenas aprobadas. Cerrar T24 únicamente tras la revisión manual de ese tramo.
 
-Ese fue el alcance aprobado de T24, ya confirmado manualmente. T25 añade B3/P03 según mapa §19, sin adelantar P12. El encargo real T26 adelanta una prueba de combate/exploración en B2, sin cambiar el mapa. Separar C1/F1 continúa pendiente, sin número reasignado; después podrá construirse/validarse F1↔B3/P12 (T27 provisional), antes de retirar F↔B1 técnico. No se declara cerrado el retorno por haber construido sus raíces interiores ni se renumera toda la hoja.
+Ese fue el alcance aprobado de T24. T25 añadió B3/P03 y T26 aprobó el ensayo de combate/exploración B2. El encargo real T27 adapta C1/F1, abre P11/P12 y retira F↔B1, con geometría y pruebas descritas en mapa §20/DevelopmentLog. Pendiente de aprobar T27 manualmente; el siguiente bloque provisional es C2/T28 o la prioridad expresamente elegida por el usuario, sin renumerar toda la hoja ni declarar completa la región.

@@ -59,6 +59,16 @@ namespace Fangbound.EditorTools
 
         static void StartValidation(int index, bool ruins = false, bool canopy = false, bool awakening = false)
         {
+            // The historical T17-T20 routines use the retired F↔B topology and
+            // pre-T22 geometry. Keep their entry points useful on the current layout.
+            if (File.Exists(InitialRegionGeographySetup.F1ScenePath) &&
+                File.ReadAllText(InitialRegionGeographySetup.F1ScenePath).Contains("F-to-B3"))
+            {
+                Debug.Log("ROOM_CIRCUIT_VALIDATION_MIGRATED: topología T27; se ejecuta la suite geográfica actual, no las rutas históricas F↔B1.");
+                if (index == 2) InitialRegionGeographyValidation.RunF1Direct();
+                else InitialRegionGeographyValidation.RunP12();
+                return;
+            }
             SessionState.SetBool(Awakening, awakening); SessionState.SetBool(AwakeningFresh, false);
             SessionState.SetBool(Canopy, canopy); SessionState.SetBool(Ruins, ruins);
             SessionState.SetBool(Fresh, false); Begin(index);

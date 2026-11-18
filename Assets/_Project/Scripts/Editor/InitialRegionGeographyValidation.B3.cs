@@ -40,7 +40,9 @@ namespace Fangbound.EditorTools
             Check("Exit B3-to-B2", .4f, 5);
             CheckSurface("B3 Entry Root", 0, 3.6f, 4);
             CheckSurface("B3 East Clearing", 7, 12, 4);
-            CheckSurface("B3 Root Floor Seal", 0, 12, -4);
+            CheckSurface("B3 Root Floor West", 0, 3, -4);
+            CheckSurface("B3 Root Floor East", 9, 12, -4);
+            CheckSurface("B3 P12 Arrival Root", 5.1f, 6.9f, -3.8f);
             CheckSurface("B3 Lower East Root", 7, 10.2f, -2.2f);
             CheckSurface("B3 Lower West Root", 1.8f, 4.8f, -.3f);
             CheckSurface("B3 Inner Knot", 4.8f, 7, 1.8f);
@@ -49,17 +51,17 @@ namespace Fangbound.EditorTools
             CheckSurface("B3 Crown West", 3.8f, 7, 9.5f);
             CheckSurface("B3 Crown Rest", 7.6f, 11.6f, 11.3f);
             CheckSurface("B3 Split Pocket", .8f, 3, 7.6f);
-            RoomExit exit = room.GetComponentsInChildren<RoomExit>().Single();
+            RoomExit exit = room.GetComponentsInChildren<RoomExit>().Single(e => e.ConnectionId == "B3-to-B2");
             Require(exit.Destination.RoomId == "B2" && exit.DestinationEntranceId == "from-B3" &&
                 room.FindEntrance("from-B2").FacingDirection == 1 &&
-                room.GetComponentsInChildren<RoomEntrance>().Length == 2, "B3 tiene puertos falsos o llegada invertida.");
+                room.GetComponentsInChildren<RoomEntrance>().Length == 3, "B3 tiene puertos falsos o llegada invertida.");
             CheckP03Global(exit, new Vector2(32, -4), false);
-            // Planned F1 is not the current technical F scene. These values verify the reservation only.
+            // F is now the adapted F1 scene; P12 is checked against its actual geometry separately.
             Vector2 p12B3 = new Vector2(32, -4) + new Vector2(6, -4);
             Vector2 p12F1 = new Vector2(16, -16) + new Vector2(22, 8);
             Require(p12B3 == new Vector2(38, -8) && p12B3 == p12F1 &&
-                room.FindEntrance("from-F") == null && room.FindEntrance("from-E") == null,
-                "P12 reservado no coincide o se creó una conexión F/E no autorizada.");
+                room.FindEntrance("from-F") != null && room.FindEntrance("from-E") == null,
+                "P12 no coincide o se creó una conexión E no autorizada.");
             Require(Object.FindObjectsByType<MemoryFlame>().Length == 0 &&
                 Object.FindObjectsByType<FangPickup>().Length == 0 &&
                 Object.FindObjectsByType<Fangbound.Enemies.GroundEnemyController>().Length == 0,
@@ -72,7 +74,7 @@ namespace Fangbound.EditorTools
                 .Find("Camera Room Bounds").GetComponent<Collider2D>().bounds;
             Require(Vector2.Distance(bounds.min, new Vector2(0, -6)) < .02f &&
                 Vector2.Distance(bounds.max, new Vector2(12, 16)) < .02f, "Límites visuales B3 incorrectos.");
-            Debug.Log("TASK25_ASSETS_PASS: P03 global (32,0), B3 12x20/ancla (32,-4), P12 sellado en (38,-8), sin falsas salidas.");
+            Debug.Log("TASK25_ASSETS_PASS: P03 global (32,0), B3 12x20/ancla (32,-4), P12 abierto en (38,-8), sin falsas salidas E.");
         }
 
         private static void CheckP03Global(RoomExit exit, Vector2 anchor, bool east)
@@ -99,6 +101,7 @@ namespace Fangbound.EditorTools
             Require(Room.Definition.RoomId == "B3" && !RoomSession.Instance.IsLoading, "Bucle al entrar en B3.");
             Debug.Log("TASK25_P03_FORWARD_PASS: suelo global 0, entrada occidental segura a 4/5 con Colmillo.");
             yield return ValidateB3Walks();
+            if (SessionState.GetBool(P12Mode, false)) yield return ValidateP12RoundTrip();
             Keys(Key.A);
             yield return UntilRoom("B2", 6);
             Keys();
@@ -133,8 +136,8 @@ namespace Fangbound.EditorTools
             yield return Walk(7.6f);
             yield return LandB3(-2.2f);
             yield return Walk(6.3f);
-            yield return LandB3(-4);
-            Debug.Log("TASK25_LOWER_DESCENT_PASS: entrada, claro oriental y raíces hasta el suelo P12 sellado.");
+            yield return LandB3(-3.8f);
+            Debug.Log("TASK25_LOWER_DESCENT_PASS: entrada, claro oriental y raíces hasta la raíz de llegada de P12.");
 
             yield return Walk(5.5f);
             yield return B2Jump(8.3f, -2.2f);
@@ -143,7 +146,7 @@ namespace Fangbound.EditorTools
             yield return Walk(3.1f);
             yield return B2Jump(5.8f, 1.8f);
             yield return B2Jump(2.6f, 4);
-            Debug.Log("TASK25_LOWER_ASCENT_PASS: desde P12 previsto a P03 mediante saltos normales 1.8/1.9/2.1/2.2.");
+            Debug.Log("TASK25_LOWER_ASCENT_PASS: desde P12 a P03 mediante saltos normales 1.6/1.9/2.1/2.2.");
 
             yield return Walk(1.9f);
             yield return B2Jump(5, 5.8f);
@@ -172,7 +175,7 @@ namespace Fangbound.EditorTools
             yield return LandB3(5.8f);
             yield return Walk(2.2f);
             yield return LandB3(4);
-            Require(Room.GetComponentsInChildren<RoomExit>().Length == 1, "Apareció una salida F durante Play.");
+            Require(Room.GetComponentsInChildren<RoomExit>().Length == 2, "B3 perdió P03/P12 durante Play.");
         }
 
         private static IEnumerator ValidateB3Checkpoint()

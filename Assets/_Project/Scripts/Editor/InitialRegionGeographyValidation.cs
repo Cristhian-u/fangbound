@@ -55,7 +55,7 @@ namespace Fangbound.EditorTools
         [MenuItem("Fangbound/Validate Initial Region Geography T22 in Play Mode")]
         public static void Run() => StartGeographyValidation(false, false);
 
-        private static void StartGeographyValidation(bool b2, bool direct, bool b3 = false)
+        private static void StartGeographyValidation(bool b2, bool direct, bool b3 = false, bool p12 = false)
         {
             Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Iniciar en Edit Mode.");
             Require(!Enumerable.Range(0, SceneManager.sceneCount).Any(i => SceneManager.GetSceneAt(i).isDirty),
@@ -63,8 +63,11 @@ namespace Fangbound.EditorTools
             SessionState.SetBool(B2Mode, b2);
             SessionState.SetBool(B2Direct, direct);
             SessionState.SetBool(B3Mode, b3);
+            SessionState.SetBool(P12Mode, p12);
+            SceneManager.sceneLoaded -= NeutralizeTransitionInput;
+            if (p12) SceneManager.sceneLoaded += NeutralizeTransitionInput;
             ValidateAssets();
-            EditorSceneManager.OpenScene(Path(direct ? (b3 ? 7 : 6) : 0), OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(Path(direct ? (p12 ? 5 : b3 ? 7 : 6) : 0), OpenSceneMode.Single);
             Steps.Clear();
             hadError = false;
             expectUnlocked = false;
@@ -96,7 +99,7 @@ namespace Fangbound.EditorTools
                     "Rig duplicado/incompleto: " + Names[i]);
                 RoomEntrance[] points = room.GetComponentsInChildren<RoomEntrance>();
                 RoomExit[] exits = room.GetComponentsInChildren<RoomExit>();
-                Require(exits.Length == new[] { 1, 4, 3, 2, 1, 2, 2, 1 }[i] &&
+                Require(exits.Length == new[] { 1, 3, 3, 2, 1, 2, 2, 2 }[i] &&
                     exits.Select(exit => exit.ConnectionId).Distinct().Count() == exits.Length,
                     "Salidas duplicadas/incompletas: " + Names[i]);
                 entrances[scene.path] = new HashSet<string>(points.Select(point => point.EntranceId));
@@ -151,11 +154,15 @@ namespace Fangbound.EditorTools
                 }
                 if (i == 6) { ValidateB2Assets(room); ValidateP03B2(room); }
                 if (i == 7) ValidateB3Assets(room);
+                if (i == 2 || i == 5 || i == 7) ValidateP12Assets(room);
+                Require(exits.All(e => e.ConnectionId != "B-to-F" && e.ConnectionId != "F-to-B") &&
+                    (i != 1 || room.FindEntrance("from-F") == null) &&
+                    (i != 5 || room.FindEntrance("from-B") == null), "Sobrevive una referencia al retorno F↔B1 retirado.");
             }
             foreach (var destination in destinations)
                 Require(entrances.TryGetValue(destination.path, out HashSet<string> ids) && ids.Contains(destination.entrance),
                     "Destino sin entrada: " + destination.path + "/" + destination.entrance);
-            Debug.Log("TASK22_ASSETS_PASS: ocho escenas, 16 salidas, entradas seguras, pozo/repisa y referencias; P02/P03 incluidos.");
+            Debug.Log("TASK22_ASSETS_PASS: ocho escenas, 16 salidas, entradas seguras; P02/P03/P11/P12 incluidos, F↔B1 retirado.");
         }
 
         private static void Check(string name, float x, float y)
@@ -192,7 +199,8 @@ namespace Fangbound.EditorTools
                 {
                     started = EditorApplication.timeSinceStartup;
                     Steps.Push(SessionState.GetBool(B2Direct, false)
-                        ? (SessionState.GetBool(B3Mode, false) ? ValidateDirectB3() : ValidateDirectB2()) : ValidatePlay());
+                        ? (SessionState.GetBool(P12Mode, false) ? ValidateDirectF1() :
+                            SessionState.GetBool(B3Mode, false) ? ValidateDirectB3() : ValidateDirectB2()) : ValidatePlay());
                 }
                 Require(EditorApplication.timeSinceStartup - started < 240, "Validación geográfica excedió 240 s.");
                 IEnumerator current = Steps.Peek();
@@ -214,6 +222,7 @@ namespace Fangbound.EditorTools
         {
             Steps.Clear();
             SessionState.SetBool(Running, false);
+            SceneManager.sceneLoaded -= NeutralizeTransitionInput;
             if (keyboard != null)
             {
                 InputSystem.RemoveDevice(keyboard);
@@ -221,7 +230,7 @@ namespace Fangbound.EditorTools
                 InputSystem.settings.backgroundBehavior = oldBackground;
                 InputSystem.settings.editorInputBehaviorInPlayMode = oldEditorInput;
             }
-            string prefix = SessionState.GetBool(B3Mode, false) ? "TASK25" :
+            string prefix = SessionState.GetBool(P12Mode, false) ? "TASK27" : SessionState.GetBool(B3Mode, false) ? "TASK25" :
                 SessionState.GetBool(B2Mode, false) ? "TASK24" : "TASK22";
             Debug.Log(prefix + (success ? "_PLAYMODE_PASS" : "_PLAYMODE_FAIL"));
             if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
@@ -331,7 +340,7 @@ namespace Fangbound.EditorTools
             if (SessionState.GetBool(B2Mode, false))
             {
                 yield return ValidateB2Routes();
-                yield return ValidateLegacyFApproach();
+                yield return ValidateRetiredReturn();
             }
 
             PlayerAbilities abilities = Player.GetComponent<PlayerAbilities>();
@@ -339,14 +348,18 @@ namespace Fangbound.EditorTools
             abilities.SetDoubleJumpUnlocked(true);
             expectUnlocked = true;
 
-            yield return TravelFixture("B-to-F", "F");
+            yield return TravelFixture("B-to-B2", "B2");
+            yield return TravelFixture("B2-to-B3", "B3");
+            yield return TravelFixture("B3-to-F", "F");
             yield return TravelFixture("F-to-C", "C");
             yield return TravelFixture("C-to-D", "D");
             yield return TravelFixture("D-to-E", "E");
             yield return TravelFixture("E-to-D", "D");
             yield return TravelFixture("D-to-C", "C");
             yield return TravelFixture("C-to-F", "F");
-            yield return TravelFixture("F-to-B", "B");
+            yield return TravelFixture("F-to-B3", "B3");
+            yield return TravelFixture("B3-to-B2", "B2");
+            yield return TravelFixture("B2-to-B", "B");
             Require(Object.FindAnyObjectByType<MemoryFlame>().IsCurrent &&
                 Player.GetComponent<PlayerCheckpoint>().Location.IsValid,
                 "La Llama/checkpoint de B no persistió.");

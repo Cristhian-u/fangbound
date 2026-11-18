@@ -1,6 +1,6 @@
 # Arboleda Verdescente — Plano espacial T21
 
-**Estado actualizado en T25:** el usuario confirma T01–T24 aprobadas y duración adecuada de B2 para su función. T25 añade B3/P03, pendiente de aprobación manual. La planta T21 sigue como referencia provisional; sus tablas originales y SVG no son un inventario de escenas construidas. Ver §17 para T22, §18 para B1/B2 de T24 y **§19 para B3/P03 y la apertura oriental vigente de B2**. No se conecta B3 con F ni se construye G.
+**Estado actualizado en T27:** T01–T26 aprobadas por el usuario, T26 con 6/6 y commit `02c08ef`. T27 adapta F como F1 y C como C1, implementa P11/P12 y retira F↔B1; queda pendiente de aprobación manual. La planta T21 y SVG siguen como referencia de destino. Ver §17–§19 para antecedentes y **§20 para coordenadas, aperturas y recorridos vigentes de T27**. No se construye G ni se modifica el contenido de B2.
 
 **Contexto histórico de T21:** inspección sobre `76510b6` (T20). El usuario confirmó entonces T01–T20 aprobadas, incluidas 8/8 pruebas funcionales y 6/6 de feedback de T20. T21 solo modificó documentación; en ese momento las seis escenas y sus seis enlaces bidireccionales permanecían iguales.
 
@@ -128,8 +128,8 @@ E/O/N/S = este/oeste/norte/sur. Cada fila es bidireccional salvo la salida exter
 | P08 · base propuesta | D2 E (12,14) | E1 O (0,6) | (−20,22) |
 | P09 · base propuesta | E1 E (20,6) | E2 O (0,6) | (0,22) |
 | P10 · base propuesta | E2 E (16,8) | E3 O (0,8) | (16,24) |
-| P11 · base propuesta | C1 E (16,0) | F1 O (0,0) | (16,−16) |
-| P12 · base propuesta | F1 N (22,8) | B3 S (6,−4) | (38,−8) |
+| P11 · base T21, implementado T27 (§20) | C1 E (16,0) | F1 O (0,0) | (16,−16) |
+| P12 · base T21, implementado T27 (§20) | F1 N (22,8) | B3 S (6,−4) | (38,−8) |
 | P13 · base propuesta | F1 E (32,0) | F2 O (0,0) | (48,−16) |
 | P14 · base propuesta | F2 N (10,16) | G1 S (6,−4) | (58,0) |
 | P15 · base propuesta | G1 E (16,0) | G2 O (0,0) | (68,4) |
@@ -416,3 +416,71 @@ La escena técnica F existente no es F1 terminado ni posee un acceso superior co
 P17 superior B3 local (6,16), global (38,12), continúa como candidato sin aprobar. La copa permanece cerrada, sin puerta ni referencia a E. G y sala 17 del jefe siguen pendientes, sin relación con la numeración de puertos.
 
 Las pruebas, limitaciones y guía manual T25 figuran en DevelopmentLog. El usuario confirmó en T25 que B2 tiene duración adecuada; no se igualan artificialmente las duraciones de ambas salas ni se amplía la región para alargar B3.
+
+## 20. T27 — Retorno geográfico F1↔B3 / P12
+
+**Implementado para revisión manual.** La escena `Arboleda_F_GrutaRetorno.unity` y su RoomDefinition se reutilizan como **F1**, conservando RoomId **F**, GUID, inicio `start` y recuperación B. No hay una escena F1 duplicada. B1 sigue siendo RoomId B y conserva `B.memory-flame`; C sigue siendo RoomId C y sirve de C1. La región mantiene ocho escenas/definiciones y 16 salidas dirigidas: se sustituyen dos salidas antiguas por las dos de P12.
+
+### Envolventes y ausencia de solape C1/F1
+
+| Sala de mapa / escena actual | Ancla global | Rectángulo local | Envolvente global | Cámara local |
+| --- | --- | --- | --- | --- |
+| B1 / B | (0,0) | (0,−4;16×16) | X=0..16, Y=−4..12 | X=0..16, Y=−6..12, sin cambios. |
+| C1 / C adaptada | (0,−16) | (0,−4;16×16) | X=0..16, Y=−20..−4 | X=0..16, Y=−4..17; conserva margen vertical para P04. |
+| F1 / F adaptada | (16,−16) | (0,−4;32×12) | X=16..48, Y=−20..−8 | X=0..32, Y=−4..12; margen superior para ver abertura y salto. |
+| B3 | (32,−4) | (0,−4;12×20) | X=32..44, Y=−8..12 | X=0..12, Y=−6..16, sin cambios. |
+
+Se conserva T21, sin mover anclas ni escala. C medía 24 y ocupaba X global 16..24 del volumen F1: su suelo/límite/cámara se ajustan a 16. Se conservan terrazas a 2/4/6/8, apoyos P04 a 10/12, entrada desde B y eje x=11. La repisa oriental de ruinas se reduce a [13.5,16]@6; se retira su antiguo apoyo de puerta [20,24] y se migra el **enlace técnico C↔D al ramal occidental**, conservando IDs y D/E intactas. No se da por construida C2/P05/P06 ni por final la geografía de ruinas/copas: esa excursión sigue siendo una muestra técnica, ahora fuera del volumen F1.
+
+C1 y F1 solo comparten borde X=16; F1 y B3 comparten el tramo de borde Y=−8. Los interiores de sus rectángulos no se solapan. Espesor exterior de paredes/techos y márgenes de cámara/decoración no equivalen a rutas en la sala vecina. Las posiciones globales se documentan y validan; RoomDefinition no recibe un sistema de mapa nuevo.
+
+### P12: abertura real y llegadas sobre apoyo
+
+| Extremo | Punto local del plano | Ancla | Punto global |
+| --- | --- | --- | --- |
+| F1 norte | **(22,8)** | (16,−16) | **(38,−8)** |
+| B3 sur | **(6,−4)** | (32,−4) | **(38,−8)** |
+
+| Salida | Trigger local / global | Llegada destino local / global | Apoyo y orientación |
+| --- | --- | --- | --- |
+| F-to-B3 | (22,8.4) / (38,−7.6), tamaño **6×0.8** | B3/from-F (6,−3.22) / **(38,−7.22)** | Raíz central a −3.8, global −7.8; derecha, hacia el ascenso. |
+| B3-to-F | (6,−4.4) / (38,−8.4), tamaño **6×0.8** | F/from-B3 (22,6.58) / **(38,−9.42)** | Descanso a 6, global −10; izquierda, hacia la gruta. |
+
+La cara inferior del trigger F1 y la superior del trigger B3 coinciden con Y global −8. La abertura mide seis unidades: F1 X=19..25 y B3 X=3..9, ambas global X=35..41. El techo F1 se divide en [0,19] y [25,32]. El antiguo suelo sellado B3 se divide en [0,3] y [9,12], con una **raíz de llegada central [5.1,6.9]@−3.8**. Cada lado de esa raíz deja 2.1 de abertura: se puede salir caminando y caer sin buscar una ranura mínima. La isla de llegada no sella todo el hueco.
+
+Los centros de aparición conservan exactamente el eje global X=38; no hay desplazamiento horizontal oculto. Los apoyos difieren 2.2 en altura, alcanzables con salto normal: descanso F1 global −10 → raíz B3 global −7.8. La llegada alta deja los pies por encima del trigger inferior; la baja deja cuerpo completo por debajo del trigger superior. Ambas se comprueban con SpawnSafety2D y contra todos los triggers; la guardia 0.25 s no sustituye su separación. RoomSession conserva la carga Single y su reinicio de velocidad, sin nuevos impulsos ni automatismos de salto.
+
+### Ascenso, descenso y recuperación
+
+| Apoyo F1 | X local | Suelo local / global | Estado |
+| --- | --- | --- | --- |
+| Safety Floor | 0..32 | 0 / −16 | Suelo original ampliado hasta la envolvente F1. |
+| F Low | 6..8.5 | 0.8 / −15.2 | Conservado. |
+| F Middle | 10..13 | 2 / −14 | Conservado. |
+| F High | 15..18 | 3.8 / −12.2 | Conservado. |
+| F East | 19..24 | 3.8 / −12.2 | Conservado como descanso/interior. |
+| F P12 Rest | 20..24 | 6 / −10 | Nuevo descanso y salto hacia la abertura. |
+| F East Root Shelf | 26..30.5 | 2.2 / −13.8 | Nuevo apoyo de caída oriental y exploración. |
+
+Desde C1 se entra por suelo 0 y se sube por roca/raíces 0.8→2→3.8→6, alternando desplazamiento horizontal y descansos. Un salto desde el descanso central atraviesa la abertura superior a B3. En B3 se continúa por −3.8→−2.2→−0.3→1.8→4 hasta P03, que lleva a B2 y después a B1/A. El desnivel total desde suelo F1 global −16 al sendero global 0 se recorre dentro de F1 y B3, sin esconderlo en una carga.
+
+El descenso B3→F1 consiste en caminar fuera de la raíz central y caer por cualquiera de sus lados; se llega al descanso F1. También se comprueban caída al apoyo oriental, caída al suelo y regreso por la repisa Middle. No hay daño ambiental ni una salida hacia F2: el extremo este permanece sólido. En C1 se comprueba además remontar desde su suelo por 2/4/6/8/10 y P04 hasta B1, sin habilidades. Las rutas principales requieren solo dirección y salto normal; cámara/estadísticas globales no cambian.
+
+### P11 y ramal técnico D conservados
+
+| Salida | Trigger local / global | Llegada destino local / global | Orientación |
+| --- | --- | --- | --- |
+| C-to-F | (15.6,1) / (15.6,−15) | F/from-C (2.2,0.58) / (18.2,−15.42) | Derecha |
+| F-to-C | (0.4,1) / (16.4,−15) | C/from-F (13.8,0.58) / (13.8,−15.42) | Izquierda |
+
+Triggers P11 0.8×2 remetidos 0.4, suelo global −16 y caras enfrentadas en X=16. Ya representa C1 este↔F1 oeste, no la antigua extensión C de 24 unidades. Su cámara y los dos spawns tienen apoyo y margen.
+
+`C-to-D` se conserva con destino D/from-C, ahora en C local (0.4,1), abertura occidental a suelo 0. `from-D` pasa a (2.2,0.58), mirando a la derecha. `D-to-C` conserva su destino por ese ID; ningún archivo D/E cambia. Se comprueba C↔D físico y D↔E mediante fixtures de transferencia; no se atribuye al ramal técnico la continuidad global definitiva de C2/D1/D2.
+
+### Retirada y lectura de accesos
+
+**F↔B1 está retirado del circuito jugable:** se eliminan `B-to-F`, B/from-F, `F-to-B`, F/from-B y sus marcos hijos. La antigua abertura elevada B1 se cierra con pared/raíz sólida; los apoyos B Step 1/2/Upper permanecen y permiten regresar al sendero. No hay retorno paralelo, puerta invisible o referencia de transición que siga cargando B directamente desde F. La recuperación tras morir en la Llama B se conserva: es respawn, no la conexión geográfica retirada.
+
+P12 se muestra como hueco sombreado entre roca/raíces, bordes fracturados y apoyo central; P11 y el ramal C↔D modificado tienen un receso oscuro, raíz superior y labio de piedra. Son sprites geométricos provisionales, sin colliders ornamentales, interacciones ni decoración turquesa. No se añaden puertas tradicionales o triángulos como única señal. La cámara conserva tamaño 5.5; la evaluación humana de claridad y comodidad sigue pendiente.
+
+P13/F2 y P17/E3 permanecen sin construir; B2 conserva su encuentro y brote T26. Resultados, incidencias y guía manual en DevelopmentLog T27. No se declara terminada toda la región.
